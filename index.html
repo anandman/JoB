@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
+  <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Jacks or Betterment</h1>
+    <p class="subtitle">Video Poker Strategy &amp; Odds</p>
+  </header>
+
+  <nav>
+    <a href="#pay-tables" class="nav-link active" data-tab="pay-tables">Pay Tables</a>
+    <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
+  </nav>
+
+  <main>
+    <section id="pay-tables" class="tab-content active">
+      <div class="variant-selector">
+        <label for="variant-select">Select variant:</label>
+        <select id="variant-select">
+          <option value="9-6">9/6 Full Pay (99.54%)</option>
+          <option value="9-5">9/5 (98.45%)</option>
+          <option value="8-6">8/6 (98.39%)</option>
+          <option value="8-5">8/5 (97.30%)</option>
+        </select>
+      </div>
+
+      <div class="pay-table-info">
+        <div class="return-badge" id="return-badge">
+          <span class="return-label">Expected Return</span>
+          <span class="return-value" id="return-value">99.54%</span>
+          <span class="return-sublabel">with optimal strategy, max bet</span>
+        </div>
+      </div>
+
+      <table class="pay-table" id="pay-table">
+        <thead>
+          <tr>
+            <th>Hand</th>
+            <th>1 Coin</th>
+            <th>2 Coins</th>
+            <th>3 Coins</th>
+            <th>4 Coins</th>
+            <th class="max-bet">5 Coins</th>
+          </tr>
+        </thead>
+        <tbody id="pay-table-body">
+        </tbody>
+      </table>
+
+      <p class="note">Always play max bet (5 coins) to get the Royal Flush bonus payout of 4,000 instead of 1,250.</p>
+
+      <h3>Compare All Variants</h3>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Hand</th>
+            <th>9/6</th>
+            <th>9/5</th>
+            <th>8/6</th>
+            <th>8/5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Royal Flush</td><td>250</td><td>250</td><td>250</td><td>250</td></tr>
+          <tr><td>Straight Flush</td><td>50</td><td>50</td><td>50</td><td>50</td></tr>
+          <tr><td>4 of a Kind</td><td>25</td><td>25</td><td>25</td><td>25</td></tr>
+          <tr class="highlight"><td>Full House</td><td>9</td><td>9</td><td>8</td><td>8</td></tr>
+          <tr class="highlight"><td>Flush</td><td>6</td><td>5</td><td>6</td><td>5</td></tr>
+          <tr><td>Straight</td><td>4</td><td>4</td><td>4</td><td>4</td></tr>
+          <tr><td>3 of a Kind</td><td>3</td><td>3</td><td>3</td><td>3</td></tr>
+          <tr><td>Two Pair</td><td>2</td><td>2</td><td>2</td><td>2</td></tr>
+          <tr><td>Jacks or Better</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+          <tr class="return-row"><td>Expected Return</td><td>99.54%</td><td>98.45%</td><td>98.39%</td><td>97.30%</td></tr>
+          <tr class="edge-row"><td>House Edge</td><td>0.46%</td><td>1.55%</td><td>1.61%</td><td>2.70%</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="strategy" class="tab-content">
+      <h2>Simple Strategy — Jacks or Better</h2>
+      <p class="strategy-intro">Scan your hand from the top down. Hold the <strong>first</strong> match you find, discard the rest.</p>
+
+      <div class="strategy-note">
+        <strong>Works for all 4 variants.</strong> Costs only ~0.08% vs. perfect play on 9/6.
+      </div>
+
+      <ol class="strategy-list" id="strategy-list">
+      </ol>
+
+      <div class="strategy-tips">
+        <h3>Key Definitions</h3>
+        <dl>
+          <dt>High Card</dt>
+          <dd>Jack, Queen, King, or Ace</dd>
+          <dt>Low Pair</dt>
+          <dd>Any pair of 2s through 10s</dd>
+          <dt>Outside Straight</dt>
+          <dd>Open-ended, can complete at either end (e.g., 7-8-9-10)</dd>
+          <dt>Inside Straight</dt>
+          <dd>Needs a middle card or one-ended (e.g., A-2-3-4 or 6-7-_-9-10)</dd>
+        </dl>
+
+        <h3>Counterintuitive Plays</h3>
+        <ul class="tips-list">
+          <li>Break a Full House, Flush, or Straight for 4 to a Royal Flush.</li>
+          <li>Break a Straight for 4 to a Straight Flush.</li>
+          <li>Hold 3 to a Royal over 4 to a Flush.</li>
+          <li>Hold a low pair over an outside straight draw.</li>
+          <li>With 3+ unsuited high cards, keep the lowest 2.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Jacks or Betterment &mdash; Video poker strategy reference.</p>
+    <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
