@@ -259,42 +259,41 @@ h3 {
 
 /* ===== Strategy section ===== */
 
+.strategy-header {
+  margin-bottom: 0.5rem;
+}
+
 #strategy h2 {
-  font-size: 1.15rem;
-  margin-bottom: 0.25rem;
+  font-size: 1.1rem;
+  margin-bottom: 0;
 }
 
 .strategy-intro {
   color: var(--color-text-muted);
-  font-size: 0.85rem;
-  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.1rem;
 }
 
-.strategy-note {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8rem;
+.strategy-meta {
+  font-size: 0.7rem;
   color: var(--color-text-muted);
-  margin-bottom: 1rem;
+  opacity: 0.8;
 }
 
 .strategy-list {
   list-style: none;
   counter-reset: strategy;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .strategy-list li {
   counter-increment: strategy;
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.25rem 0.3rem;
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.85rem;
-  flex-wrap: wrap;
+  font-size: 0.8rem;
 }
 
 .strategy-list li::before {
@@ -302,10 +301,10 @@ h3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.4rem;
-  height: 1.4rem;
+  min-width: 1.2rem;
+  height: 1.2rem;
   border-radius: 50%;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 700;
   font-family: var(--font-mono);
   flex-shrink: 0;
@@ -315,14 +314,15 @@ h3 {
 
 .strategy-hold {
   font-weight: 600;
+  font-size: 0.8rem;
 }
 
 .strategy-note-inline {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--color-text-muted);
   font-style: italic;
-  width: 100%;
-  padding-left: 1.9rem;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* Tier coloring */
@@ -346,52 +346,80 @@ h3 {
   color: var(--color-text);
 }
 
-/* ===== Strategy tips ===== */
+/* ===== Strategy legend ===== */
+
+.strategy-legend {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  padding: 0.3rem 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-gold { background: var(--color-gold); }
+.dot-green { background: var(--color-green); }
+.dot-blue { background: var(--color-accent); }
+.dot-gray { background: var(--color-border); }
+
+/* ===== Strategy tips (collapsible) ===== */
 
 .strategy-tips {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
 }
 
-.strategy-tips h3 {
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+.strategy-tips summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
   color: var(--color-accent);
-}
-
-.strategy-tips h3:not(:first-child) {
-  margin-top: 1rem;
+  padding: 0.25rem 0;
 }
 
 .strategy-tips dl {
-  margin-bottom: 0;
+  margin-top: 0.5rem;
 }
 
 .strategy-tips dt {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--color-text);
-  margin-top: 0.4rem;
+  margin-top: 0.3rem;
+  display: inline;
+}
+
+.strategy-tips dt::after {
+  content: ": ";
 }
 
 .strategy-tips dd {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  margin-left: 0.75rem;
-  margin-bottom: 0.2rem;
+  display: inline;
+  margin: 0;
 }
 
-.tips-list {
-  list-style: disc;
-  padding-left: 1.25rem;
-}
-
-.tips-list li {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-  margin-bottom: 0.3rem;
+.strategy-tips dd::after {
+  content: "";
+  display: block;
 }
 
 /* ===== Footer ===== */

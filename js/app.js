@@ -88,15 +88,13 @@
       }
 
       // Color-code by tier
-      if (i <= 2) {
-        li.classList.add("tier-pat-high");
-      } else if (i <= 10) {
-        li.classList.add("tier-strong");
-      } else if (i <= 14) {
-        li.classList.add("tier-draw");
-      } else {
-        li.classList.add("tier-speculative");
-      }
+      var tierClass = {
+        pat: "tier-pat-high",
+        made: "tier-strong",
+        draw: "tier-draw",
+        spec: "tier-speculative",
+      }[entry.tier] || "tier-speculative";
+      li.classList.add(tierClass);
 
       strategyList.appendChild(li);
     }

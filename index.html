@@ -83,38 +83,31 @@
     </section>
 
     <section id="strategy" class="tab-content">
-      <h2>Simple Strategy — Jacks or Better</h2>
-      <p class="strategy-intro">Scan your hand from the top down. Hold the <strong>first</strong> match you find, discard the rest.</p>
-
-      <div class="strategy-note">
-        <strong>Works for all 4 variants.</strong> Costs only ~0.08% vs. perfect play on 9/6.
+      <div class="strategy-header">
+        <h2>Simple Strategy</h2>
+        <p class="strategy-intro">Hold the <strong>first</strong> match from the top. Discard the rest.</p>
+        <p class="strategy-meta">All variants &middot; ~0.08% cost vs. perfect play on 9/6</p>
       </div>
 
       <ol class="strategy-list" id="strategy-list">
       </ol>
 
-      <div class="strategy-tips">
-        <h3>Key Definitions</h3>
-        <dl>
-          <dt>High Card</dt>
-          <dd>Jack, Queen, King, or Ace</dd>
-          <dt>Low Pair</dt>
-          <dd>Any pair of 2s through 10s</dd>
-          <dt>Outside Straight</dt>
-          <dd>Open-ended, can complete at either end (e.g., 7-8-9-10)</dd>
-          <dt>Inside Straight</dt>
-          <dd>Needs a middle card or one-ended (e.g., A-2-3-4 or 6-7-_-9-10)</dd>
-        </dl>
-
-        <h3>Counterintuitive Plays</h3>
-        <ul class="tips-list">
-          <li>Break a Full House, Flush, or Straight for 4 to a Royal Flush.</li>
-          <li>Break a Straight for 4 to a Straight Flush.</li>
-          <li>Hold 3 to a Royal over 4 to a Flush.</li>
-          <li>Hold a low pair over an outside straight draw.</li>
-          <li>With 3+ unsuited high cards, keep the lowest 2.</li>
-        </ul>
+      <div class="strategy-legend">
+        <span class="legend-item"><span class="dot dot-gold"></span>Pat winners</span>
+        <span class="legend-item"><span class="dot dot-green"></span>Made hands</span>
+        <span class="legend-item"><span class="dot dot-blue"></span>Draws</span>
+        <span class="legend-item"><span class="dot dot-gray"></span>Speculative</span>
       </div>
+
+      <details class="strategy-tips">
+        <summary>Definitions &amp; Tips</summary>
+        <dl>
+          <dt>High Card</dt><dd>J, Q, K, or A</dd>
+          <dt>Low Pair</dt><dd>2s through 10s</dd>
+          <dt>Outside Straight</dt><dd>Open-ended (e.g., 7-8-9-10)</dd>
+          <dt>Inside Straight</dt><dd>Gutshot or one-ended (e.g., A-2-3-4)</dd>
+        </dl>
+      </details>
     </section>
   </main>
 

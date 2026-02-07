@@ -47,26 +47,24 @@ const ROYAL_FLUSH_5COIN_PER = 800; // per-coin payout at max bet
  * Each entry: { hold, note? }
  * "note" is an optional short clarification.
  */
+/**
+ * Compressed strategy — 14 lines to fit one mobile screen.
+ * Adjacent obvious holds are merged; counterintuitive breaks are starred.
+ * tier: "pat" | "made" | "draw" | "spec" — controls color coding.
+ */
 const STRATEGY = [
-  { hold: "Royal Flush" },
-  { hold: "Straight Flush" },
-  { hold: "4 of a Kind" },
-  { hold: "4 to a Royal Flush", note: "Break a Full House, Flush, or Straight for this." },
-  { hold: "Full House" },
-  { hold: "Flush" },
-  { hold: "3 of a Kind" },
-  { hold: "Straight" },
-  { hold: "4 to a Straight Flush", note: "Break a Straight for this." },
-  { hold: "Two Pair" },
-  { hold: "High Pair (J\u2013A)" },
-  { hold: "3 to a Royal Flush", note: "Hold over 4 to a Flush." },
-  { hold: "4 to a Flush" },
-  { hold: "Low Pair (2\u201310)" },
-  { hold: "4 to an Outside Straight" },
-  { hold: "2 Suited High Cards" },
-  { hold: "3 to a Straight Flush" },
-  { hold: "2 Unsuited High Cards", note: "If 3+, keep the lowest 2." },
-  { hold: "Suited 10 + High Card", note: "10-J, 10-Q, or 10-K suited." },
-  { hold: "1 High Card" },
-  { hold: "Draw 5 New Cards", note: "Nothing worth holding." },
+  { hold: "Pat Royal / Straight Flush / 4 of a Kind", tier: "pat" },
+  { hold: "4 to a Royal Flush", note: "Break FH, Flush, or Straight!", tier: "made" },
+  { hold: "Pat Full House / Flush / 3 of a Kind", tier: "made" },
+  { hold: "Pat Straight", tier: "made" },
+  { hold: "4 to a Straight Flush", note: "Break a Straight!", tier: "made" },
+  { hold: "Two Pair / High Pair (J\u2013A)", tier: "made" },
+  { hold: "3 to a Royal Flush", note: "Beats 4 to a Flush.", tier: "draw" },
+  { hold: "4 to a Flush", tier: "draw" },
+  { hold: "Low Pair (2\u201310)", note: "Beats an outside straight draw.", tier: "draw" },
+  { hold: "4 to an Outside Straight", tier: "draw" },
+  { hold: "2 Suited High Cards / 3 to a Straight Flush", tier: "spec" },
+  { hold: "2 Unsuited High Cards", note: "Lowest 2 if 3+.", tier: "spec" },
+  { hold: "Suited 10-J/Q/K / Single High Card", tier: "spec" },
+  { hold: "Discard Everything", tier: "spec" },
 ];
