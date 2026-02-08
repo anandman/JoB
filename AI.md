@@ -1,4 +1,4 @@
-# CLAUDE.md — Project context for AI sessions
+# AI.md — Project context for AI sessions
 
 ## Project: Jacks or Betterment
 

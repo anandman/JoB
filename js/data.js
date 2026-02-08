@@ -43,11 +43,6 @@ const PAY_TABLES = {
 const ROYAL_FLUSH_5COIN_PER = 800; // per-coin payout at max bet
 
 /**
- * Strategy list — ordered by priority (highest first).
- * Each entry: { hold, note? }
- * "note" is an optional short clarification.
- */
-/**
  * Compressed strategy — 14 lines to fit one mobile screen.
  * Adjacent obvious holds are merged; counterintuitive breaks are starred.
  * tier: "pat" | "made" | "draw" | "spec" — controls color coding.

@@ -45,4 +45,4 @@ Pay table payouts and expected return percentages are standard values from video
 
 ## License
 
-This project is provided as-is for educational and entertainment purposes.
+MIT License. See [LICENSE](LICENSE).
