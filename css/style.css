@@ -263,9 +263,63 @@ h3 {
   margin-bottom: 0.5rem;
 }
 
-#strategy h2 {
-  font-size: 1.1rem;
-  margin-bottom: 0;
+.strategy-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.strategy-variant-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+.strategy-variant-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.strategy-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.toggle-btn {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toggle-btn:first-child {
+  border-right: 1px solid var(--color-border);
+}
+
+.toggle-btn.active {
+  background: var(--color-accent);
+  color: #000;
+}
+
+.toggle-btn:hover:not(.active) {
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--color-text);
 }
 
 .strategy-intro {
@@ -317,33 +371,37 @@ h3 {
   font-size: 0.8rem;
 }
 
+.strategy-ev {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .strategy-note-inline {
   font-size: 0.65rem;
   color: var(--color-text-muted);
   font-style: italic;
-  margin-left: auto;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Tier coloring */
-.tier-pat-high::before {
+/* Tier coloring — numbered circles */
+.strategy-list li.tier-pat-high::before {
   background: var(--color-gold);
   color: #000;
 }
 
-.tier-strong::before {
+.strategy-list li.tier-strong::before {
   background: var(--color-green);
   color: #000;
 }
 
-.tier-draw::before {
+.strategy-list li.tier-draw::before {
   background: var(--color-accent);
   color: #000;
-}
-
-.tier-speculative::before {
-  background: var(--color-border);
-  color: var(--color-text);
 }
 
 /* ===== Strategy legend ===== */

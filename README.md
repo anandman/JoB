@@ -6,7 +6,7 @@ Video poker strategy and odds reference app. Mobile-first, static site — no bu
 
 **Pay Tables** — View and compare pay tables for Jacks or Better variants (9/6, 9/5, 8/6, 8/5). See per-coin payouts, expected returns, and house edge at a glance.
 
-**Strategy Card** — A simplified strategy chart that fits on one phone screen. Scan from the top, hold the first match, discard the rest. Works for all four variants and costs only ~0.08% vs. perfect computer strategy on 9/6 full pay.
+**Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
 
 ## Running locally
 
@@ -26,15 +26,23 @@ This is a static site. Push to GitHub and enable GitHub Pages on the `main` bran
 ## Project structure
 
 ```
-index.html          # Single-page app shell
-css/style.css       # Mobile-first dark theme
-js/data.js          # Pay tables, expected returns, strategy data
-js/app.js           # Tab navigation, rendering logic
+index.html                # Single-page app shell
+css/style.css             # Mobile-first dark theme
+js/data.js                # Pay tables, strategy categories, note rules
+js/poker.js               # Card encoding + hand evaluator
+js/strategy-engine.js     # EV calculator + strategy generator
+js/app.js                 # Tab navigation, rendering, toggle logic
 ```
+
+## How strategy computation works
+
+Each strategy category (e.g., "Low Pair", "4 to a Flush") has a representative 5-card hand. The engine exhaustively enumerates all possible draw outcomes for the held cards, evaluates each resulting hand, and computes the exact expected value (EV). Categories are then sorted by EV to produce the optimal strategy, or grouped into ~14 merged entries for the simple strategy.
+
+Computation takes ~60ms on desktop and results are cached per pay table.
 
 ## Data sources
 
-Pay table payouts and expected return percentages are standard values from video poker literature. The simplified strategy is based on the well-known Wizard of Odds simple strategy for Jacks or Better.
+Pay table payouts and expected return percentages are standard values from video poker literature. Strategy ordering is computed from the pay tables and verified against the well-known Wizard of Odds strategy for Jacks or Better.
 
 | Variant | Expected Return | House Edge |
 |---------|----------------|------------|

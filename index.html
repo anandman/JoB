@@ -84,9 +84,20 @@
 
     <section id="strategy" class="tab-content">
       <div class="strategy-header">
-        <h2>Simple Strategy</h2>
+        <div class="strategy-controls">
+          <select id="strategy-variant-select" class="strategy-variant-select">
+            <option value="9-6">9/6 Full Pay (99.54%)</option>
+            <option value="9-5">9/5 (98.45%)</option>
+            <option value="8-6">8/6 (98.39%)</option>
+            <option value="8-5">8/5 (97.30%)</option>
+          </select>
+          <div class="strategy-toggle">
+            <button class="toggle-btn active" data-mode="simple">Simple</button>
+            <button class="toggle-btn" data-mode="optimal">Optimal</button>
+          </div>
+        </div>
         <p class="strategy-intro">Hold the <strong>first</strong> match from the top. Discard the rest.</p>
-        <p class="strategy-meta">All variants &middot; ~0.08% cost vs. perfect play on 9/6</p>
+        <p class="strategy-meta" id="strategy-meta">~0.08% cost vs. optimal play</p>
       </div>
 
       <ol class="strategy-list" id="strategy-list">
@@ -117,6 +128,8 @@
   </footer>
 
   <script src="js/data.js"></script>
+  <script src="js/poker.js"></script>
+  <script src="js/strategy-engine.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

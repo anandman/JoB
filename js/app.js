@@ -6,12 +6,19 @@
   "use strict";
 
   // --- DOM refs ---
-  const variantSelect = document.getElementById("variant-select");
-  const payTableBody = document.getElementById("pay-table-body");
-  const returnValue = document.getElementById("return-value");
-  const strategyList = document.getElementById("strategy-list");
-  const navLinks = document.querySelectorAll(".nav-link");
-  const tabContents = document.querySelectorAll(".tab-content");
+  var variantSelect = document.getElementById("variant-select");
+  var strategyVariantSelect = document.getElementById("strategy-variant-select");
+  var payTableBody = document.getElementById("pay-table-body");
+  var returnValue = document.getElementById("return-value");
+  var strategyList = document.getElementById("strategy-list");
+  var strategyMeta = document.getElementById("strategy-meta");
+  var navLinks = document.querySelectorAll(".nav-link");
+  var tabContents = document.querySelectorAll(".tab-content");
+  var toggleBtns = document.querySelectorAll(".toggle-btn");
+
+  // --- State ---
+  var currentVariant = "9-6";
+  var currentMode = "simple";
 
   // --- Tab navigation ---
   navLinks.forEach(function (link) {
@@ -64,15 +71,58 @@
     }
   }
 
+  // --- Variant selectors: keep both in sync ---
+  function setVariant(variantKey) {
+    currentVariant = variantKey;
+    variantSelect.value = variantKey;
+    strategyVariantSelect.value = variantKey;
+    renderPayTable(currentVariant);
+    renderStrategy(currentVariant, currentMode);
+  }
+
   variantSelect.addEventListener("change", function () {
-    renderPayTable(this.value);
+    setVariant(this.value);
   });
 
+  strategyVariantSelect.addEventListener("change", function () {
+    setVariant(this.value);
+  });
+
+  // --- Strategy toggle ---
+  toggleBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var mode = this.getAttribute("data-mode");
+      if (mode === currentMode) return;
+      currentMode = mode;
+      toggleBtns.forEach(function (b) { b.classList.remove("active"); });
+      this.classList.add("active");
+      renderStrategy(currentVariant, currentMode);
+    });
+  });
+
+  function formatEV(v) {
+    return v >= 10 ? v.toFixed(0) : v.toFixed(2);
+  }
+
   // --- Strategy rendering ---
-  function renderStrategy() {
+  function renderStrategy(variantKey, mode) {
+    var variant = PAY_TABLES[variantKey];
+    if (!variant) return;
+
+    // Update meta text
+    if (mode === "simple") {
+      strategyMeta.textContent = "~0.08% cost vs. optimal play";
+    } else {
+      strategyMeta.textContent = "Penalty cards not included (~0.01% effect)";
+    }
+
+    // Compute strategy
+    var strat = StrategyEngine.generateStrategy(variant.payouts);
+    var entries = mode === "simple" ? strat.simple : strat.optimal;
+
     strategyList.innerHTML = "";
-    for (var i = 0; i < STRATEGY.length; i++) {
-      var entry = STRATEGY[i];
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i];
       var li = document.createElement("li");
 
       var holdSpan = document.createElement("span");
@@ -85,6 +135,25 @@
         noteSpan.className = "strategy-note-inline";
         noteSpan.textContent = entry.note;
         li.appendChild(noteSpan);
+      }
+
+      // EV display
+      if (entry.ev != null) {
+        var evSpan = document.createElement("span");
+        evSpan.className = "strategy-ev";
+        evSpan.textContent = formatEV(entry.ev);
+        li.appendChild(evSpan);
+      } else if (entry.evs) {
+        var evSpan = document.createElement("span");
+        evSpan.className = "strategy-ev";
+        var lo = entry.evs[entry.evs.length - 1];
+        var hi = entry.evs[0];
+        if (formatEV(lo) === formatEV(hi)) {
+          evSpan.textContent = formatEV(hi);
+        } else {
+          evSpan.textContent = formatEV(lo) + "\u2013" + formatEV(hi);
+        }
+        li.appendChild(evSpan);
       }
 
       // Color-code by tier
@@ -102,5 +171,5 @@
 
   // --- Init ---
   renderPayTable("9-6");
-  renderStrategy();
+  renderStrategy("9-6", "simple");
 })();
