@@ -100,6 +100,10 @@ var StrategyEngine = (function () {
     var key = payouts.join(",");
     if (cache[key]) return cache[key];
 
+    // Strategy assumes max bet (5 coins), where Royal Flush pays 800/coin
+    var maxBetPayouts = payouts.slice();
+    maxBetPayouts[0] = ROYAL_FLUSH_5COIN_PER;
+
     // Build a set of dealt cards for each category, compute EV
     var entries = [];
     for (var i = 0; i < STRATEGY_CATEGORIES.length; i++) {
@@ -120,7 +124,7 @@ var StrategyEngine = (function () {
         held.push(cards[cat.holdMask[j]]);
       }
 
-      var ev = computeHoldEV(held, remaining, payouts);
+      var ev = computeHoldEV(held, remaining, maxBetPayouts);
 
       entries.push({
         id: cat.id,
