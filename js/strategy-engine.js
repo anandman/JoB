@@ -250,7 +250,7 @@ var StrategyEngine = (function () {
         note = STATIC_NOTES[g];
       }
       simple.push({
-        hold: mergeHoldNames(gInfo.ids, g),
+        hold: mergeHoldNames(gInfo.ids, g, categories, evById),
         tier: gInfo.tier,
         note: note,
         evs: gInfo.evs,
@@ -275,32 +275,79 @@ var StrategyEngine = (function () {
    * Get display label for a simpleGroup. If the group has only one member,
    * returns that member's hold name; otherwise returns a predefined merge label.
    */
-  function mergeHoldNames(ids, group) {
-    // Predefined merge labels for multi-member groups
-    var mergeLabels = {
-      "A": "Pat Royal / Straight Flush / 4 of a Kind",
-      "C": "Pat Full House / Flush / 3 of a Kind",
-      "E": "4 to a Straight Flush",
-      "F": "Two Pair / High Pair (J\u2013A)",
-      "K": "2 Suited High Cards / 3 to a Straight Flush",
-      "L": "2 Unsuited High Cards",
-      "M": "Suited 10\u2013J/Q/K / Single High Card",
-    };
+  /**
+   * Label for a merged simple-strategy line.
+   *
+   * The components are ordered by the expected value of their best member, not
+   * written in a fixed order — when a hand matches two members of one group
+   * (9-J-Q suited is both "3 to a straight flush" and "2 suited high cards")
+   * the label has to name the better hold first, or it points the reader at the
+   * wrong one. Ordering at render time also keeps the label honest when the pay
+   * table changes the ranking.
+   */
+  var mergeLabelParts = {
+    "A": [
+      { name: "Pat Royal", ids: ["pat_royal"] },
+      { name: "Straight Flush", ids: ["pat_straight_flush"] },
+      { name: "4 of a Kind", ids: ["pat_four_kind"] },
+    ],
+    "C": [
+      { name: "Pat Full House", ids: ["pat_full_house"] },
+      { name: "Flush", ids: ["pat_flush"] },
+      { name: "3 of a Kind", ids: ["pat_three_kind"] },
+    ],
+    "E": [{ name: "4 to a Straight Flush", ids: ["4_sf_open", "4_sf_inside"] }],
+    "F": [
+      { name: "Two Pair", ids: ["two_pair"] },
+      { name: "High Pair (J–A)", ids: ["high_pair"] },
+    ],
+    "K": [
+      { name: "3 to a Straight Flush", ids: ["3_sf_open", "3_sf_inside_1hc", "3_sf_inside_0hc"] },
+      { name: "2 Suited High Cards", ids: ["2_suited_high"] },
+    ],
+    // The inside-straight member outranks the high cards, so it has to be
+    // named — the old label mentioned only the high cards while the line's EV
+    // range quietly included a hold it never told you about.
+    "L": [
+      { name: "4 to an Inside Straight (3 high)", ids: ["4_inside_str_3hc", "4_inside_str_2hc", "4_inside_str_1hc"] },
+      { name: "2 Unsuited High Cards", ids: ["2_unsuited_high"] },
+    ],
+    "M": [
+      { name: "Suited 10–J/Q/K", ids: ["suited_10_high"] },
+      { name: "Single High Card", ids: ["single_high"] },
+    ],
+  };
+
+  function mergeHoldNames(ids, group, categories, evById) {
+    categories = categories || STRATEGY_CATEGORIES;
 
     if (ids.length === 1) {
-      // Single member: look up its hold name from STRATEGY_CATEGORIES
-      for (var i = 0; i < STRATEGY_CATEGORIES.length; i++) {
-        if (STRATEGY_CATEGORIES[i].id === ids[0]) return STRATEGY_CATEGORIES[i].hold;
+      for (var i = 0; i < categories.length; i++) {
+        if (categories[i].id === ids[0]) return categories[i].hold;
       }
     }
 
-    if (mergeLabels[group]) return mergeLabels[group];
+    var parts = mergeLabelParts[group];
+    if (parts) {
+      if (parts.length === 1) return parts[0].name;
+      if (evById) {
+        var best = function (p) {
+          var m = -Infinity;
+          for (var k = 0; k < p.ids.length; k++) {
+            var v = evById[p.ids[k]];
+            if (typeof v === "number" && v > m) m = v;
+          }
+          return m;
+        };
+        parts = parts.slice().sort(function (a, b) { return best(b) - best(a); });
+      }
+      return parts.map(function (p) { return p.name; }).join(" / ");
+    }
 
-    // Fallback: look up hold names and join
     var names = [];
-    for (var i = 0; i < ids.length; i++) {
-      for (var j = 0; j < STRATEGY_CATEGORIES.length; j++) {
-        if (STRATEGY_CATEGORIES[j].id === ids[i]) { names.push(STRATEGY_CATEGORIES[j].hold); break; }
+    for (var a = 0; a < ids.length; a++) {
+      for (var b = 0; b < categories.length; b++) {
+        if (categories[b].id === ids[a]) { names.push(categories[b].hold); break; }
       }
     }
     return names.join(" / ");
