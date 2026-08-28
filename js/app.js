@@ -472,6 +472,7 @@
       var atDenom = casino.games.filter(function (g) {
         return g.denoms.indexOf(denom) !== -1;
       });
+      var promoOpts = currentPromoOpts();
       var best = document.createElement("p");
       best.className = "casino-best";
       if (atDenom.length) {
@@ -522,6 +523,17 @@
         row.appendChild(chips);
 
         if (has) {
+          // Earn rates are per machine bank; a $20/point bank needs twice the
+          // coin-in for the same tier credits.
+          var rate = g.perPoint || promoOpts.coinInPerTc;
+          var coinIn = (promoOpts.tcCap / promoOpts.multiplier) * rate;
+          var hrs = coinIn / (denom * MAX_COINS) / promoOpts.handsPerHour;
+          var earn = document.createElement("p");
+          earn.className = "casino-earn" + (g.perPoint && g.perPoint > promoOpts.coinInPerTc ? " slow" : "");
+          earn.textContent = (g.perPoint ? fmtMoney(g.perPoint) + "/point" : fmtMoney(promoOpts.coinInPerTc) + "/point (assumed)") +
+            " — " + fmtMoney(coinIn) + " coin-in, " + hrs.toFixed(1) + " hr to cap";
+          row.appendChild(earn);
+
           var w2 = Promo.w2gForPayouts(g.payouts, g.hands, denom, MAX_COINS, threshold);
           var note = document.createElement("p");
           note.className = "casino-note";

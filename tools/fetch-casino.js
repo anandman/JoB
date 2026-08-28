@@ -95,6 +95,21 @@ function parseCasino(html, slug, promo) {
     const denoms = parseDenoms(tokens[j + 1] || "");
     if (!denoms.length) continue;
 
+    // The trailing columns (play count, manufacturer, location, machine count)
+    // vary in both presence and order, so scan the window rather than indexing
+    // a fixed offset. The location cell is the prose one, and it's where the
+    // earn rate lives when the listing states one.
+    const tail = tokens.slice(j + 2, j + 7);
+    let perPoint = null, location = "";
+    for (const t of tail) {
+      const rate = /\$\s*(\d+(?:\.\d+)?)\s*per\s*point/i.exec(t);
+      if (rate) perPoint = Number(rate[1]);
+      // Prose, not a code like "MG", "Prog", "1 Play", "4 Slant-tops".
+      if (t.split(/\s+/).length >= 3 && !/^\d+[\s-]/.test(t) && t.length > location.length) {
+        location = t;
+      }
+    }
+
     games.push({
       name: between[0] || "Unknown",
       variant: between[1] || "",
@@ -102,7 +117,8 @@ function parseCasino(html, slug, promo) {
       payouts: payouts,
       hands: FAMILIES[payouts.length] || null,
       denoms: denoms,
-      location: tokens[j + 3] || "",
+      perPoint: perPoint,
+      location: location,
     });
     i = j;
   }
@@ -112,8 +128,10 @@ function parseCasino(html, slug, promo) {
   for (const g of games) {
     const key = g.name + "|" + g.payouts.join("-");
     const prev = byKey.get(key);
-    if (!prev) byKey.set(key, g);
-    else prev.denoms = [...new Set([...prev.denoms, ...g.denoms])].sort((a, b) => a - b);
+    if (!prev) { byKey.set(key, g); continue; }
+    prev.denoms = [...new Set([...prev.denoms, ...g.denoms])].sort((a, b) => a - b);
+    if (prev.perPoint === null) prev.perPoint = g.perPoint;
+    if (!prev.location) prev.location = g.location;
   }
 
   const merged = [...byKey.values()].sort((a, b) => b.ret - a.ret);
@@ -162,8 +180,9 @@ async function main() {
     casino.name = titleOf(html) || t.slug;
     console.error(casino.games.length + " games");
     for (const g of casino.games) {
-      console.error("    " + String(g.ret).padStart(6) + "%  " + g.name.slice(0, 34).padEnd(36) +
-        g.denoms.map((d) => (d < 1 ? Math.round(d * 100) + "c" : "$" + d)).join(",") +
+      console.error("    " + String(g.ret).padStart(6) + "%  " + g.name.slice(0, 28).padEnd(30) +
+        g.denoms.map((d) => (d < 1 ? Math.round(d * 100) + "c" : "$" + d)).join(",").padEnd(24) +
+        (g.perPoint ? "$" + g.perPoint + "/point" : "") +
         (g.hands ? "" : "   [unrecognized family: " + g.payouts.length + " tiers]"));
     }
     casinos.push(casino);

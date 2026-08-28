@@ -880,3 +880,11 @@ footer p {
   border-left: 3px solid var(--color-orange);
   padding-left: 0.6rem;
 }
+
+.casino-earn {
+  font-size: 0.76rem;
+  font-family: var(--font-mono);
+  color: var(--color-green);
+}
+
+.casino-earn.slow { color: var(--color-orange); }

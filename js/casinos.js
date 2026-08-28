@@ -45,7 +45,8 @@ const CASINOS = [
           0.25,
           0.5
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "in front of Romanza"
       },
       {
         "name": "Double Deuces Wild",
@@ -80,7 +81,8 @@ const CASINOS = [
           0.5,
           1
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "near the Fireside Lounge and The Pub"
       },
       {
         "name": "All American / USA",
@@ -112,6 +114,7 @@ const CASINOS = [
           0.25,
           1
         ],
+        "perPoint": null,
         "location": "@ Tuscany Lounge Bar"
       },
       {
@@ -152,7 +155,8 @@ const CASINOS = [
           0.1,
           0.25
         ],
-        "location": "2 Machines"
+        "perPoint": null,
+        "location": "by the blue keno lounge near the Steak House"
       },
       {
         "name": "Jacks or Better",
@@ -186,7 +190,8 @@ const CASINOS = [
           0.05,
           0.25
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "in the hallway outside the coffee shop"
       },
       {
         "name": "Double Double Bonus Aces and Faces",
@@ -226,7 +231,8 @@ const CASINOS = [
           0.25,
           1
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": ""
       },
       {
         "name": "Bonus Aces and Faces",
@@ -261,6 +267,7 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
+        "perPoint": null,
         "location": "Sports Book bar"
       },
       {
@@ -298,7 +305,8 @@ const CASINOS = [
           0.1,
           0.25
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "near the change booth by the slot club."
       },
       {
         "name": "Big Split Poker - Jacks or Better",
@@ -321,7 +329,8 @@ const CASINOS = [
           1,
           2
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
       },
       {
         "name": "Big Split Poker - Deuces Wild",
@@ -344,7 +353,8 @@ const CASINOS = [
           1,
           2
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
       },
       {
         "name": "Deuces Wild 44",
@@ -377,7 +387,8 @@ const CASINOS = [
         "denoms": [
           100
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "in the High Limit Slots area"
       },
       {
         "name": "Big Split Poker - Joker Joker",
@@ -411,7 +422,8 @@ const CASINOS = [
           1,
           2
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
       },
       {
         "name": "Big Split Poker - Joker Poker",
@@ -447,7 +459,8 @@ const CASINOS = [
           1,
           2
         ],
-        "location": "1 Play"
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
       },
       {
         "name": "Super Double Bonus",
@@ -472,6 +485,7 @@ const CASINOS = [
           0.05,
           0.25
         ],
+        "perPoint": null,
         "location": "at Cabaret Bar"
       },
       {
@@ -505,7 +519,8 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "location": "@ Qube Bar"
+        "perPoint": null,
+        "location": "Logos provided by Logo.dev"
       }
     ]
   },
@@ -548,6 +563,7 @@ const CASINOS = [
           2,
           5
         ],
+        "perPoint": 10,
         "location": "near escalator from Circus Circus Reno ($10 per point)"
       },
       {
@@ -576,7 +592,8 @@ const CASINOS = [
           0.5,
           1
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "just outside poker room (with prog. meter on top)"
       },
       {
         "name": "1 Pair (Kings or Better) Joker Wild",
@@ -611,6 +628,7 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
+        "perPoint": null,
         "location": "other side of escalator to Circus Circus"
       },
       {
@@ -646,7 +664,8 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "location": "near keno"
+        "perPoint": null,
+        "location": ""
       },
       {
         "name": "Bonus Poker",
@@ -681,7 +700,8 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "location": "Prog"
+        "perPoint": null,
+        "location": ""
       },
       {
         "name": "Double Double Bonus",
@@ -720,7 +740,8 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "location": "Prog"
+        "perPoint": null,
+        "location": "in the corner near Virginia & 5th streets"
       },
       {
         "name": "1 Pair (Kings or Better) Joker Wild",
@@ -757,7 +778,8 @@ const CASINOS = [
           0.5,
           1
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "just outside poker room (with prog. meter on top)"
       },
       {
         "name": "Deuces Wild 44",
@@ -792,7 +814,8 @@ const CASINOS = [
           0.5,
           1
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "just outside poker room (with prog. meter on top)"
       },
       {
         "name": "White Hot Aces",
@@ -829,7 +852,8 @@ const CASINOS = [
           0.5,
           1
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "just outside poker room (with prog. meter on top)"
       },
       {
         "name": "All American / USA",
@@ -862,7 +886,8 @@ const CASINOS = [
           0.5,
           1
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "just outside poker room (with prog. meter on top)"
       },
       {
         "name": "Jacks or Better",
@@ -894,6 +919,7 @@ const CASINOS = [
           0.05,
           0.1
         ],
+        "perPoint": null,
         "location": "outside high limit room"
       }
     ]
@@ -936,6 +962,7 @@ const CASINOS = [
           5,
           10
         ],
+        "perPoint": 20,
         "location": "outside high limit room ($20 per point)"
       },
       {
@@ -968,7 +995,8 @@ const CASINOS = [
           0.25,
           0.5
         ],
-        "location": "MG"
+        "perPoint": 20,
+        "location": "outside high limit room ($20 per point)"
       },
       {
         "name": "Bonus Poker",
@@ -1007,7 +1035,8 @@ const CASINOS = [
           10,
           25
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "several single-line and/or multiline banks throughout"
       },
       {
         "name": "Double Double Bonus",
@@ -1050,7 +1079,8 @@ const CASINOS = [
           10,
           25
         ],
-        "location": "MG"
+        "perPoint": null,
+        "location": "several single-line and/or multiline banks throughout"
       },
       {
         "name": "Deuces Wild 44",
@@ -1084,7 +1114,8 @@ const CASINOS = [
           0.25,
           0.5
         ],
-        "location": "MG"
+        "perPoint": 20,
+        "location": "outside high limit room ($20 per point)"
       }
     ]
   }
