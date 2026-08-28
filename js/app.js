@@ -271,6 +271,73 @@
     });
   }
 
+  /**
+   * Match a scraped payout schedule to a game with verified frequencies.
+   * vpfree2 lists schedules low hand to high; GAMES stores them high to low,
+   * so one gets reversed before comparing. Returns null when we have no
+   * frequency data for that pay table — thresholds still work, rates don't.
+   */
+  var knownGameCache = {};
+  function knownGameFor(payouts) {
+    var key = payouts.join("-");
+    if (key in knownGameCache) return knownGameCache[key];
+    var reversed = payouts.slice().reverse();
+    var found = null;
+    Object.keys(GAMES).forEach(function (k) {
+      if (found) return;
+      var g = GAMES[k];
+      if (!Promo.hasFrequencies(g) || g.hands.length !== reversed.length) return;
+      for (var i = 0; i < reversed.length; i++) {
+        if (g.hands[i].maxPay !== reversed[i]) return;
+      }
+      found = g;
+    });
+    knownGameCache[key] = found;
+    return found;
+  }
+
+  /**
+   * Handpay exposure for one bank. At the selected denomination, name what
+   * crosses the line and how often. Otherwise report the largest denomination
+   * this bank offers that still stays clean — which is the useful answer when
+   * you're deciding what to sit down at.
+   */
+  function bankW2gLine(game, bank, denom, threshold, bankHas) {
+    var el = document.createElement("p");
+    el.className = "casino-w2g";
+
+    if (bankHas) {
+      var w = Promo.w2gForPayouts(game.payouts, game.hands, denom, MAX_COINS, threshold);
+      if (!w.triggers.length) {
+        el.className += " ok";
+        el.textContent = "No handpay at " + fmtDenom(denom) +
+          " — top hand pays " + fmtMoney(w.largestSafe) + ".";
+        return el;
+      }
+      var names = w.triggers.map(function (t) { return t.name + " " + fmtMoney(t.amount); });
+      // Rates need verified frequencies; thresholds never do.
+      var known = knownGameFor(game.payouts);
+      var rate = known ? Promo.w2gAnalysis(known, denom, MAX_COINS, threshold).oneIn : null;
+      var common = w.triggers.some(function (t) { return /4 of a kind|^4 [25AJQK]/i.test(t.name); });
+      el.className += common ? " danger" : " warn";
+      el.textContent = "Handpay at " + fmtDenom(denom) + ": " + names.join(", ") +
+        (rate ? " — 1 in " + fmtInt(rate) + " hands" : "");
+      return el;
+    }
+
+    // Not offered at the selected denomination: what is clean here?
+    var clean = null;
+    for (var i = 0; i < bank.denoms.length; i++) {
+      var wi = Promo.w2gForPayouts(game.payouts, game.hands, bank.denoms[i], MAX_COINS, threshold);
+      if (!wi.triggers.length) clean = bank.denoms[i];
+    }
+    el.className += " muted";
+    el.textContent = clean === null
+      ? "Every denomination here can produce a handpay."
+      : "Clean up to " + fmtDenom(clean) + " on this bank.";
+    return el;
+  }
+
   /** Short description of what triggers a handpay, for compact rows. */
   function w2gSummary(w2g) {
     var nonRoyal = w2g.triggers.filter(function (t) {
@@ -549,21 +616,6 @@
         title.appendChild(retSpan);
         row.appendChild(title);
 
-        // Handpay exposure is a property of the pay table and denomination,
-        // so it belongs to the game, not to any one bank.
-        if (has) {
-          var w2 = Promo.w2gForPayouts(g.payouts, g.hands, denom, MAX_COINS, threshold);
-          var note = document.createElement("p");
-          note.className = "casino-note";
-          if (!w2.triggers.length) {
-            note.textContent = "Nothing hits " + fmtMoney(threshold) + " at " + fmtDenom(denom) + ".";
-          } else {
-            note.textContent = "Over " + fmtMoney(threshold) + " at " + fmtDenom(denom) + ": " +
-              w2.triggers.map(function (t) { return t.name; }).join(", ");
-          }
-          row.appendChild(note);
-        }
-
         // Every bank listed separately — the locations are the point, and the
         // game filter is what keeps the volume manageable.
         var banks = (g.banks || []).slice().sort(function (a, b) {
@@ -619,6 +671,7 @@
           meta.textContent = bits.join(" · ");
           bank.appendChild(meta);
 
+          bank.appendChild(bankW2gLine(g, b, denom, threshold, bankHas));
           row.appendChild(bank);
         });
 

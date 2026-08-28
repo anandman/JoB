@@ -959,3 +959,27 @@ footer {
 .casino-bank.match .casino-loc {
   font-weight: 600;
 }
+
+.casino-w2g {
+  font-size: 0.76rem;
+  margin-top: 0.15rem;
+}
+
+.casino-w2g.ok { color: var(--color-green); }
+.casino-w2g.warn { color: var(--color-orange); }
+.casino-w2g.danger { color: var(--color-red); font-weight: 600; }
+.casino-w2g.muted { color: var(--color-text-muted); }
+
+.chip-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.9rem;
+}
+
+.chip-legend .chip {
+  font-size: 0.65rem;
+}
