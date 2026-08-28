@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
   <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
-  <link rel="stylesheet" href="css/style.css?v=b58f63f3">
+  <link rel="stylesheet" href="css/style.css?v=ad8ec915">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -35,13 +35,8 @@
   <main>
     <section id="pay-tables" class="tab-content active">
       <div class="variant-selector">
-        <label for="variant-select">Select variant:</label>
-        <select id="variant-select">
-          <option value="9-6">9/6 Full Pay (99.54%)</option>
-          <option value="9-5">9/5 (98.45%)</option>
-          <option value="8-6">8/6 (98.39%)</option>
-          <option value="8-5">8/5 (97.30%)</option>
-        </select>
+        <label for="variant-select">Select game:</label>
+        <select id="variant-select"></select>
       </div>
 
       <div class="pay-table-info">
@@ -52,24 +47,40 @@
         </div>
       </div>
 
-      <table class="pay-table" id="pay-table">
-        <thead>
-          <tr>
-            <th>Hand</th>
-            <th>1 Coin</th>
-            <th>2 Coins</th>
-            <th>3 Coins</th>
-            <th>4 Coins</th>
-            <th class="max-bet">5 Coins</th>
-          </tr>
-        </thead>
-        <tbody id="pay-table-body">
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="pay-table" id="pay-table">
+          <thead>
+            <tr>
+              <th>Hand</th>
+              <th>1 Coin</th>
+              <th>2 Coins</th>
+              <th>3 Coins</th>
+              <th>4 Coins</th>
+              <th class="max-bet">5 Coins</th>
+              <th>Odds</th>
+            </tr>
+          </thead>
+          <tbody id="pay-table-body">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="stat-grid compact" id="game-stats"></div>
 
       <p class="note">Always play max bet (5 coins) to get the Royal Flush bonus payout of 4,000 instead of 1,250.</p>
 
-      <h3>Compare All Variants</h3>
+      <h3>Compare Games</h3>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr><th>Game</th><th>Return</th><th>Edge</th><th>Variance</th><th>Royal</th></tr>
+          </thead>
+          <tbody id="game-compare"></tbody>
+        </table>
+      </div>
+
+      <h3>Jacks or Better Variants</h3>
+      <p class="note">Full House and Flush are the only payouts that differ &mdash; check those two numbers on the glass before you sit down.</p>
       <table class="compare-table">
         <thead>
           <tr>
@@ -263,12 +274,12 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/data.js?v=b58f63f3"></script>
-  <script src="js/poker.js?v=b58f63f3"></script>
-  <script src="js/strategy-engine.js?v=b58f63f3"></script>
-  <script src="js/casinos.js?v=b58f63f3"></script>
-  <script src="js/promo.js?v=b58f63f3"></script>
-  <script src="js/app.js?v=b58f63f3"></script>
+  <script src="js/data.js?v=ad8ec915"></script>
+  <script src="js/poker.js?v=ad8ec915"></script>
+  <script src="js/strategy-engine.js?v=ad8ec915"></script>
+  <script src="js/casinos.js?v=ad8ec915"></script>
+  <script src="js/promo.js?v=ad8ec915"></script>
+  <script src="js/app.js?v=ad8ec915"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

@@ -17,7 +17,7 @@
   var toggleBtns = document.querySelectorAll(".toggle-btn");
 
   // --- State ---
-  var currentVariant = "9-6";
+  var currentVariant = "job-9-6";
   var currentMode = "simple";
 
   // --- Tab navigation ---
@@ -48,51 +48,102 @@
   window.addEventListener("hashchange", tabFromHash);
 
   // --- Pay table rendering ---
-  function renderPayTable(variantKey) {
-    var variant = PAY_TABLES[variantKey];
-    if (!variant) return;
+  function renderPayTable(gameKey) {
+    var game = GAMES[gameKey];
+    if (!game) return;
 
     payTableBody.innerHTML = "";
-    returnValue.textContent = variant.expectedReturn.toFixed(2) + "%";
+    returnValue.textContent = game.ret.toFixed(2) + "%";
 
-    for (var i = 0; i < HAND_NAMES.length; i++) {
-      var basePay = variant.payouts[i];
+    game.hands.forEach(function (h) {
       var tr = document.createElement("tr");
 
-      // Hand name
       var tdName = document.createElement("td");
-      tdName.textContent = HAND_NAMES[i];
+      tdName.textContent = h.name;
       tr.appendChild(tdName);
 
-      // Coins 1-4
       for (var c = 1; c <= 4; c++) {
         var td = document.createElement("td");
-        td.textContent = (basePay * c).toLocaleString();
+        td.textContent = (h.pay * c).toLocaleString();
         tr.appendChild(td);
       }
 
-      // Coin 5 (Royal Flush gets bonus)
+      // The royal is the reason to play max coins; flag the jump.
       var td5 = document.createElement("td");
       td5.className = "max-bet";
-      if (i === 0) {
-        td5.textContent = (ROYAL_FLUSH_5COIN_PER * 5).toLocaleString();
-        td5.classList.add("bonus");
-      } else {
-        td5.textContent = (basePay * 5).toLocaleString();
-      }
+      td5.textContent = (h.maxPay * 5).toLocaleString();
+      if (h.maxPay !== h.pay) td5.classList.add("bonus");
       tr.appendChild(td5);
 
+      var tdOdds = document.createElement("td");
+      tdOdds.className = "odds";
+      tdOdds.textContent = typeof h.freq === "number" && h.freq > 0
+        ? "1 in " + fmtInt(1 / h.freq)
+        : "—";
+      tr.appendChild(tdOdds);
+
       payTableBody.appendChild(tr);
-    }
+    });
+
+    renderGameStats(game);
   }
 
-  // --- Variant selectors: keep both in sync ---
-  function setVariant(variantKey) {
-    currentVariant = variantKey;
-    variantSelect.value = variantKey;
-    strategyVariantSelect.value = variantKey;
+  function renderGameStats(game) {
+    var box = document.getElementById("game-stats");
+    var st = Promo.stats(game);
+    box.innerHTML = "";
+    box.appendChild(statCard("House edge", ((1 - st.ret) * 100).toFixed(2) + "%",
+      "per dollar of coin-in"));
+    if (!st.known) return;
+    box.appendChild(statCard("Variance", st.variance.toFixed(1),
+      "SD " + st.sd.toFixed(2) + " bets/hand"));
+    var royal = game.hands[0];
+    box.appendChild(statCard("Royal", "1 in " + fmtInt(1 / royal.freq),
+      "worth " + (royal.maxPay * royal.freq * 100).toFixed(2) + "% of return"));
+    var noRoyal = st.ret - royal.freq * royal.maxPay;
+    box.appendChild(statCard("Without a royal", (noRoyal * 100).toFixed(2) + "%",
+      "what most sessions actually return", "warn"));
+  }
+
+  function renderGameCompare() {
+    var body = document.getElementById("game-compare");
+    body.innerHTML = "";
+    Object.keys(GAMES).forEach(function (k) {
+      var g = GAMES[k], st = Promo.stats(g);
+      var tr = document.createElement("tr");
+      if (k === currentVariant) tr.className = "current";
+      function td(text) {
+        var c = document.createElement("td");
+        c.textContent = text;
+        return c;
+      }
+      var label = document.createElement("td");
+      label.className = "game-name";
+      label.textContent = g.name + " " + g.label;
+      tr.appendChild(label);
+      tr.appendChild(td(g.ret.toFixed(2) + "%"));
+      tr.appendChild(td((100 - g.ret).toFixed(2) + "%"));
+      tr.appendChild(td(st.known ? st.variance.toFixed(1) : "—"));
+      tr.appendChild(td(st.known ? "1 in " + fmtInt(1 / g.hands[0].freq) : "—"));
+      body.appendChild(tr);
+    });
+  }
+
+  // --- Selectors ---
+  // The pay table tab covers every game; the strategy tab still only covers
+  // the Jacks or Better family, so the two only sync when they overlap.
+  var JOB_VARIANT_OF = { "job-9-6": "9-6", "job-9-5": "9-5", "job-8-6": "8-6", "job-8-5": "8-5" };
+
+  function setVariant(gameKey) {
+    currentVariant = gameKey;
+    variantSelect.value = gameKey;
     renderPayTable(currentVariant);
-    renderStrategy(currentVariant, currentMode);
+    renderGameCompare();
+    var jobKey = JOB_VARIANT_OF[gameKey];
+    if (jobKey) {
+      strategyVariantSelect.value = jobKey;
+      renderStrategy(jobKey, currentMode);
+    }
   }
 
   variantSelect.addEventListener("change", function () {
@@ -100,7 +151,14 @@
   });
 
   strategyVariantSelect.addEventListener("change", function () {
-    setVariant(this.value);
+    renderStrategy(this.value, currentMode);
+    var gameKey = "job-" + this.value;
+    if (GAMES[gameKey]) {
+      currentVariant = gameKey;
+      variantSelect.value = gameKey;
+      renderPayTable(gameKey);
+      renderGameCompare();
+    }
   });
 
   // --- Strategy toggle ---
@@ -787,7 +845,17 @@
   }
 
   // --- Init ---
-  renderPayTable("9-6");
+  Object.keys(GAMES).forEach(function (k) {
+    var g = GAMES[k];
+    var opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = g.name + " — " + g.label + " (" + g.ret.toFixed(2) + "%)";
+    variantSelect.appendChild(opt);
+  });
+  variantSelect.value = "job-9-6";
+
+  renderPayTable("job-9-6");
+  renderGameCompare();
   renderStrategy("9-6", "simple");
   initPromoControls();
   renderPromo();
