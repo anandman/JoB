@@ -491,6 +491,30 @@ const GAMES = {
 
 const DENOMS = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 100];
 
+/** Line counts commonly offered on multi-play machines. */
+const LINE_COUNTS = [1, 3, 5, 10, 50, 100];
+
+/**
+ * Between-hand variance: the variance of the chosen hold's expected value
+ * across dealt hands. On an n-play machine the held cards are shared by every
+ * line, so this is the covariance between lines and the floor that no number
+ * of lines drives variance below.
+ *
+ * Measured by tools/variance-multiline.js — rare dealt classes enumerated
+ * exhaustively (a dealt royal alone contributes about 1.0), common ones
+ * rejection-sampled. Values are +/- 0.1 or so.
+ *
+ * Where a game has no measured value the app falls back to
+ * VAR_BETWEEN_RATIO x total variance. That ratio held at 0.105 for 9/6 Jacks
+ * or Better and 0.107 for Bonus Poker, but both are the same strategy family;
+ * treat it as an estimate elsewhere and label it as one.
+ */
+const VAR_BETWEEN = {
+  "job-9-6": 2.05,
+  "bp-8-5": 2.23,
+};
+const VAR_BETWEEN_RATIO = 0.106;
+
 /* ============================================================
  * Deuces Wild strategy
  * ============================================================ */

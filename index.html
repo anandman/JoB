@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
   <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
-  <link rel="stylesheet" href="css/style.css?v=da21828c">
+  <link rel="stylesheet" href="css/style.css?v=5f4952e6">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -152,6 +152,14 @@
           <select id="promo-denom"></select>
         </div>
         <div class="field">
+          <label for="promo-lines">Lines (n-play)</label>
+          <select id="promo-lines"></select>
+        </div>
+        <div class="field">
+          <label for="promo-bankroll">Bankroll</label>
+          <input id="promo-bankroll" type="number" inputmode="numeric" value="9000" min="0" step="500">
+        </div>
+        <div class="field">
           <label for="promo-cap">Tier credit cap</label>
           <input id="promo-cap" type="number" inputmode="numeric" value="40000" min="1" step="1000">
         </div>
@@ -194,6 +202,7 @@
               <th>Hours</th>
               <th>W-2G every</th>
               <th>Expected</th>
+              <th>Ruin</th>
             </tr>
           </thead>
           <tbody id="promo-ladder"></tbody>
@@ -269,12 +278,12 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/data.js?v=da21828c"></script>
-  <script src="js/poker.js?v=da21828c"></script>
-  <script src="js/strategy-engine.js?v=da21828c"></script>
-  <script src="js/casinos.js?v=da21828c"></script>
-  <script src="js/promo.js?v=da21828c"></script>
-  <script src="js/app.js?v=da21828c"></script>
+  <script src="js/data.js?v=5f4952e6"></script>
+  <script src="js/poker.js?v=5f4952e6"></script>
+  <script src="js/strategy-engine.js?v=5f4952e6"></script>
+  <script src="js/casinos.js?v=5f4952e6"></script>
+  <script src="js/promo.js?v=5f4952e6"></script>
+  <script src="js/app.js?v=5f4952e6"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

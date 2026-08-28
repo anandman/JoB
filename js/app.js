@@ -354,6 +354,8 @@
   var promoEls = {
     game: document.getElementById("promo-game"),
     denom: document.getElementById("promo-denom"),
+    lines: document.getElementById("promo-lines"),
+    bankroll: document.getElementById("promo-bankroll"),
     cap: document.getElementById("promo-cap"),
     mult: document.getElementById("promo-mult"),
     rate: document.getElementById("promo-rate"),
@@ -419,6 +421,8 @@
       coinInPerTc: Math.max(0.01, parseFloat(promoEls.rate.value) || 1),
       handsPerHour: Math.max(1, parseFloat(promoEls.hph.value) || 1),
       threshold: Math.max(1, parseFloat(promoEls.threshold.value) || W2G_THRESHOLD),
+      lines: Math.max(1, parseInt(promoEls.lines.value, 10) || 1),
+      bankroll: Math.max(0, parseFloat(promoEls.bankroll.value) || 0),
     };
   }
 
@@ -523,7 +527,7 @@
     promoEls.stats.appendChild(statCard("Coin-in needed", fmtMoney(plan.coinIn),
       fmtInt(plan.baseTc) + " base TC × " + fmtMoney(opts.coinInPerTc)));
     promoEls.stats.appendChild(statCard("Hands", fmtInt(plan.hands),
-      "at " + fmtMoney(plan.bet) + " per hand"));
+      "at " + fmtMoney(plan.bet) + " per hand" + (plan.lines > 1 ? " (" + plan.lines + " lines)" : "")));
     promoEls.stats.appendChild(statCard("Time", plan.hours.toFixed(1) + " hr",
       "at " + fmtInt(opts.handsPerHour) + " hands/hr"));
     promoEls.stats.appendChild(statCard("Expected cost", fmtMoney(plan.expectedCost),
@@ -532,9 +536,25 @@
       promoEls.stats.appendChild(statCard("Typical cost", fmtMoney(plan.noRoyalCost),
         "if no royal (" + fmtPct(1 - plan.royalChance) + " likely)", "warn"));
     }
-    if (plan.bankroll !== null) {
-      promoEls.stats.appendChild(statCard("Bankroll", fmtMoney(plan.bankroll),
-        "covers a 2σ downswing"));
+    if (plan.swing !== null) {
+      promoEls.stats.appendChild(statCard("Swing (1σ)", fmtMoney(plan.swing),
+        plan.lines > 1
+          ? "SD " + plan.linesVariance.sd.toFixed(2) + "/hand at " + plan.lines + " lines"
+          : "SD " + plan.linesVariance.sd.toFixed(2) + " per hand"));
+    }
+    if (plan.ruin !== null) {
+      // Chance of touching zero at any point, not just finishing down.
+      var ruinCls = plan.ruin >= 0.2 ? "danger" : plan.ruin >= 0.05 ? "warn" : "";
+      promoEls.stats.appendChild(statCard("Risk of ruin", fmtPct(plan.ruin),
+        "going broke on " + fmtMoney(opts.bankroll) + " before finishing", ruinCls));
+    }
+    if (plan.bankrollFor5 !== null) {
+      promoEls.stats.appendChild(statCard("Bankroll for 5%", fmtMoney(plan.bankrollFor5),
+        fmtMoney(plan.bankrollFor1) + " to hold it at 1%"));
+    }
+    if (plan.linesVariance && plan.linesVariance.estimated && plan.lines > 1) {
+      promoEls.stats.appendChild(statCard("Note", "estimated",
+        "no measured n-play variance for this game", "warn"));
     }
 
     // --- W-2G detail ---
@@ -549,6 +569,10 @@
       head.textContent = w2g.triggers.length + " hand" +
         (w2g.triggers.length === 1 ? "" : "s") + " pay " +
         fmtMoney(opts.threshold) + " or more at " + fmtDenom(opts.denom) + ".";
+    } else if (w2g.rate === 0) {
+      head.className += " ok";
+      head.textContent = "No single line reaches " + fmtMoney(opts.threshold) +
+        " at " + fmtDenom(opts.denom) + " — top hand pays " + fmtMoney(w2g.largestSafe) + ".";
     } else {
       head.textContent = "A handpay every " + fmtInt(w2g.oneIn) + " hands — " +
         plan.expectedW2g.toFixed(2) + " expected over the promo (" +
@@ -573,6 +597,32 @@
       ul.appendChild(li2);
     }
     box.appendChild(ul);
+
+    // On an n-play machine the hold is copied to every line, so a hand that is
+    // already made when dealt pays on all of them at once. That aggregate is
+    // what crosses the reporting line, and it does so far below the
+    // denomination a single line would need.
+    if (opts.lines > 1) {
+      var multi = document.createElement("p");
+      multi.className = "casino-w2g warn";
+      var dealt = [];
+      opts.game.hands.forEach(function (hand) {
+        var amount = Promo.handPayout(hand, opts.denom, opts.coins) * opts.lines;
+        if (amount >= opts.threshold) dealt.push(hand.name + " " + fmtMoney(amount));
+      });
+      multi.textContent = dealt.length
+        ? "Dealt pat on all " + opts.lines + " lines: " + dealt.slice(0, 4).join(", ") +
+          (dealt.length > 4 ? " +" + (dealt.length - 4) + " more" : "")
+        : "No dealt pat hand reaches " + fmtMoney(opts.threshold) + " across " + opts.lines + " lines.";
+      box.appendChild(multi);
+
+      var caveat = document.createElement("p");
+      caveat.className = "casino-w2g muted";
+      caveat.textContent = "Lines drawn separately are separate wins; whether a machine " +
+        "reports them singly or as one total varies — confirm at the property.";
+      box.appendChild(caveat);
+    }
+
     promoEls.w2g.appendChild(box);
 
     // --- Denomination ladder ---
@@ -582,7 +632,7 @@
         game: opts.game, denom: d, coins: MAX_COINS,
         tcCap: opts.tcCap, multiplier: opts.multiplier,
         coinInPerTc: opts.coinInPerTc, handsPerHour: opts.handsPerHour,
-        threshold: opts.threshold,
+        threshold: opts.threshold, lines: opts.lines, bankroll: opts.bankroll,
       });
       var tr = document.createElement("tr");
       if (d === opts.denom) tr.className = "current";
@@ -601,6 +651,7 @@
         p.w2g.rate === null ? "—" :
         p.w2g.rate === 0 ? "never" : fmtInt(p.w2g.oneIn) + " hands"));
       tr.appendChild(td(p.expectedW2g === null ? "—" : p.expectedW2g.toFixed(2)));
+      tr.appendChild(td(p.ruin === null ? "—" : fmtPct(p.ruin)));
       promoEls.ladder.appendChild(tr);
     });
 
@@ -910,6 +961,14 @@
       }
     } catch (e) { /* ignore */ }
 
+    LINE_COUNTS.forEach(function (n) {
+      var o = document.createElement("option");
+      o.value = String(n);
+      o.textContent = n === 1 ? "Single line" : n + "-play";
+      promoEls.lines.appendChild(o);
+    });
+    promoEls.lines.value = "1";
+
     for (var hr = 0; hr < 24; hr++) {
       var o = document.createElement("option");
       o.value = String(hr);
@@ -937,7 +996,8 @@
       if (saved !== null) promoEls.trackerTc.value = saved;
     } catch (e) { /* ignore */ }
 
-    [promoEls.game, promoEls.denom, promoEls.cap, promoEls.mult,
+    [promoEls.game, promoEls.denom, promoEls.lines, promoEls.bankroll,
+     promoEls.cap, promoEls.mult,
      promoEls.rate, promoEls.hph, promoEls.threshold, promoEls.trackerTc,
      promoEls.tripStart, promoEls.tripEnd, promoEls.tripReset,
      promoEls.tripPerDay].forEach(function (el) {

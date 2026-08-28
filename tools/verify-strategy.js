@@ -197,8 +197,11 @@ function main() {
   const pay = game.hands.map((x) => x.maxPay);
   const evaluate = gameKey.indexOf("bp-") === 0 ? Poker.evaluateBonusPoker : Poker.evaluateHand;
 
-  let seed = Number(process.env.SEED || 987654321);
-  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  // Math.imul keeps the multiply in 32 bits. A plain `seed * 1103515245`
+  // overflows double precision, and masking the low 31 bits then keeps exactly
+  // the corrupted ones — that generator repeated after ~16k distinct values.
+  let seed = Number(process.env.SEED || 987654321) >>> 0;
+  const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
 
   let totalCost = 0, worst = [], mismatches = 0;
   const byLine = SIMPLE_CARD.map(([name]) => ({ name, hits: 0, cost: 0, misplays: 0 }));
@@ -257,4 +260,6 @@ function main() {
     w.hand.map(nm).join(" ") + "   (line " + (w.line + 1) + ": " + SIMPLE_CARD[w.line][0] + ")"));
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { SIMPLE_CARD, setSF3Span: (v) => { SF3_SPAN = v; }, rank, suit };

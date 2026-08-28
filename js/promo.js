@@ -90,11 +90,12 @@ var Promo = (function () {
     var game = opts.game;
     var denom = opts.denom;
     var coins = opts.coins || MAX_COINS;
+    var lines = Math.max(1, opts.lines || 1);
     var st = stats(game);
 
     var baseTc = opts.tcCap / opts.multiplier;
     var coinIn = baseTc * opts.coinInPerTc;
-    var bet = coins * denom;
+    var bet = coins * denom * lines;
     var hands = coinIn / bet;
     var hours = hands / opts.handsPerHour;
 
@@ -110,17 +111,26 @@ var Promo = (function () {
       ? null
       : coinIn * (1 - (st.ret - royalFreq * royal.maxPay));
 
-    // Swing over the full run, in dollars.
-    var swing = st.sd === null ? null : st.sd * Math.sqrt(hands) * bet;
+    // Swing over the full run, in dollars, at this line count.
+    var lv = linesVariance(game, lines);
+    var swing = lv.known ? lv.sd * Math.sqrt(hands) * bet : null;
 
     var w2g = w2gAnalysis(game, denom, coins, opts.threshold);
     var expectedW2g = w2g.rate === null ? null : hands * w2g.rate;
     var w2gChance = expectedW2g === null ? null : 1 - Math.exp(-expectedW2g);
 
+    var ruin = lv.known
+      ? riskOfRuin(opts.bankroll || 0, bet, hands, st.ret, lv.variance) : null;
+
     return {
       baseTc: baseTc,
       coinIn: coinIn,
       bet: bet,
+      lines: lines,
+      linesVariance: lv,
+      ruin: ruin,
+      bankrollFor5: lv.known ? bankrollFor(0.05, bet, hands, st.ret, lv.variance) : null,
+      bankrollFor1: lv.known ? bankrollFor(0.01, bet, hands, st.ret, lv.variance) : null,
       hands: hands,
       hours: hours,
       ret: st.ret,
@@ -283,6 +293,79 @@ var Promo = (function () {
     };
   }
 
+  /**
+   * Variance per unit wagered on an n-play machine.
+   *
+   * One hand is dealt, the hold is copied to every line, and each line draws
+   * from its own deck — so given the hold the lines are independent, and the
+   * shared hold is the only thing correlating them:
+   *
+   *   Var(mean of n lines) = Var(X)/n + (n-1)/n * Cov(line_i, line_j)
+   *
+   * with Cov equal to the between-hand variance. Note this is variance per
+   * unit *wagered*: an n-play hand also wagers n times as much, so the swing
+   * in dollars per hand still grows with n — it just grows slower than n.
+   */
+  function linesVariance(game, lines) {
+    var st = stats(game);
+    if (!st.known) return { known: false, variance: null, sd: null, estimated: false };
+    var measured = typeof VAR_BETWEEN[game.key] === "number";
+    var between = measured ? VAR_BETWEEN[game.key] : VAR_BETWEEN_RATIO * st.variance;
+    var n = Math.max(1, lines || 1);
+    var v = st.variance / n + ((n - 1) / n) * between;
+    return { known: true, variance: v, sd: Math.sqrt(v), between: between, estimated: !measured };
+  }
+
+  /** Standard normal CDF (Zelen & Severo); accurate to about 7.5e-8. */
+  function normalCdf(z) {
+    var t = 1 / (1 + 0.2316419 * Math.abs(z));
+    var d = 0.3989422804014327 * Math.exp(-z * z / 2);
+    var p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 +
+            t * (-1.821255978 + t * 1.330274429))));
+    return z > 0 ? 1 - p : p;
+  }
+
+  /**
+   * Probability of going broke at some point during a finite session.
+   *
+   * Not the textbook risk of ruin, which assumes unlimited play — at a
+   * negative edge that answer is always 1, which tells you nothing. This is
+   * the first-passage probability for a random walk with drift over a fixed
+   * number of hands: the chance the bankroll touches zero at any point before
+   * the session ends, not merely that it finishes down.
+   *
+   * @param {number} bankroll - dollars available
+   * @param {number} bet      - dollars per hand
+   * @param {number} hands    - hands to be played
+   * @param {number} ret      - return per unit wagered (0.9954 etc.)
+   * @param {number} variance - variance per unit wagered
+   */
+  function riskOfRuin(bankroll, bet, hands, ret, variance) {
+    if (!(bankroll > 0) || !(bet > 0) || !(hands > 0) || !(variance > 0)) return null;
+    var B = bankroll / bet;              // bankroll in bet units
+    var mu = ret - 1;                    // drift per hand, negative at a house edge
+    var sd = Math.sqrt(variance);
+    var root = sd * Math.sqrt(hands);
+    var first = normalCdf((-B - mu * hands) / root);
+    // exp() can overflow for a deep bankroll at a steep edge; it is a
+    // probability either way, so clamp rather than return Infinity.
+    var expTerm = Math.exp(-2 * mu * B / variance);
+    var second = normalCdf((-B + mu * hands) / root);
+    var p = first + (isFinite(expTerm) ? expTerm * second : 0);
+    return Math.max(0, Math.min(1, p));
+  }
+
+  /** Bankroll needed to hold ruin probability at or under `target`. */
+  function bankrollFor(target, bet, hands, ret, variance) {
+    if (!(bet > 0) || !(hands > 0) || !(variance > 0)) return null;
+    var lo = 0, hi = bet * Math.sqrt(variance * hands) * 12;
+    for (var i = 0; i < 60; i++) {
+      var mid = (lo + hi) / 2;
+      if (riskOfRuin(mid, bet, hands, ret, variance) > target) lo = mid; else hi = mid;
+    }
+    return hi;
+  }
+
   /** Progress through a promo given tier credits earned so far. */
   function progress(plan, tcEarned, tcCap) {
     var pct = Math.min(1, tcEarned / tcCap);
@@ -302,6 +385,9 @@ var Promo = (function () {
     handPayout: handPayout,
     hasFrequencies: hasFrequencies,
     stats: stats,
+    linesVariance: linesVariance,
+    riskOfRuin: riskOfRuin,
+    bankrollFor: bankrollFor,
     w2gAnalysis: w2gAnalysis,
     denomCeiling: denomCeiling,
     w2gForPayouts: w2gForPayouts,
