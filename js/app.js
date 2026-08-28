@@ -258,6 +258,19 @@
     };
   }
 
+  /**
+   * Banks of a game that carry a given denomination, cheapest earn rate first.
+   * A bank with no stated rate is treated as the standard rate, not as unknown.
+   */
+  function banksAt(game, denom) {
+    var std = parseFloat(promoEls.rate.value) || 10;
+    return (game.banks || []).filter(function (b) {
+      return b.denoms.indexOf(denom) !== -1;
+    }).sort(function (a, b) {
+      return (a.perPoint || std) - (b.perPoint || std);
+    });
+  }
+
   /** Short description of what triggers a handpay, for compact rows. */
   function w2gSummary(w2g) {
     var nonRoyal = w2g.triggers.filter(function (t) {
@@ -553,16 +566,31 @@
         row.appendChild(chips);
 
         if (has) {
-          // Earn rates are per machine bank; a $20/point bank needs twice the
-          // coin-in for the same tier credits.
-          var rate = g.perPoint || promoOpts.coinInPerTc;
+          // A game spans several banks and the earn rate is a property of the
+          // bank, not the game — at Eldorado the same 9/6 JoB is $20/point in
+          // the high limit room and $10/point elsewhere. Pick the cheapest
+          // bank that actually offers this denomination.
+          var candidates = banksAt(g, denom);
+          var best = candidates[0];
+          var rate = (best && best.perPoint) || promoOpts.coinInPerTc;
           var coinIn = (promoOpts.tcCap / promoOpts.multiplier) * rate;
           var hrs = coinIn / (denom * MAX_COINS) / promoOpts.handsPerHour;
+
           var earn = document.createElement("p");
-          earn.className = "casino-earn" + (g.perPoint && g.perPoint > promoOpts.coinInPerTc ? " slow" : "");
-          earn.textContent = (g.perPoint ? fmtMoney(g.perPoint) + "/point" : fmtMoney(promoOpts.coinInPerTc) + "/point (assumed)") +
+          earn.className = "casino-earn" + (rate > promoOpts.coinInPerTc ? " slow" : "");
+          earn.textContent = (best && best.perPoint ? fmtMoney(rate) + "/point"
+                                                    : fmtMoney(rate) + "/point (assumed)") +
             " — " + fmtMoney(coinIn) + " coin-in, " + hrs.toFixed(1) + " hr to cap";
           row.appendChild(earn);
+
+          if (best && best.location) {
+            var loc = document.createElement("p");
+            loc.className = "casino-loc";
+            loc.textContent = best.location +
+              (candidates.length > 1 ? "  (+" + (candidates.length - 1) + " other bank" +
+                (candidates.length > 2 ? "s" : "") + " at " + fmtDenom(denom) + ")" : "");
+            row.appendChild(loc);
+          }
 
           var w2 = Promo.w2gForPayouts(g.payouts, g.hands, denom, MAX_COINS, threshold);
           var note = document.createElement("p");
@@ -574,12 +602,6 @@
               w2.triggers.map(function (t) { return t.name; }).join(", ");
           }
           row.appendChild(note);
-          if (g.location) {
-            var loc = document.createElement("p");
-            loc.className = "casino-loc";
-            loc.textContent = g.location;
-            row.appendChild(loc);
-          }
         }
 
         card.appendChild(row);

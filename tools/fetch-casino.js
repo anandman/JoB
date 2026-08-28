@@ -62,12 +62,63 @@ function parseDenoms(text) {
   while ((m = re.exec(text)) !== null) {
     out.push(m[1] !== undefined ? Number(m[1]) / 100 : Number(m[2]));
   }
-  // "$1–$25" and "$1-$25" denote a range across standard denominations.
+  // "$1–$25" denotes a range across standard denominations.
   if (/[–-]/.test(text) && out.length === 2 && out[1] > out[0]) {
     const ladder = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 100];
     return ladder.filter((d) => d >= out[0] && d <= out[1]);
   }
   return [...new Set(out)].sort((a, b) => a - b);
+}
+
+/**
+ * Is this cell the denomination list, rather than prose that merely mentions
+ * a dollar figure? Locations like "near 4th/Virginia entrance ($10 per point)"
+ * contain a "$10" but are not denomination cells — the test is whether
+ * anything survives once denominations and separators are removed.
+ */
+function isDenomCell(text) {
+  if (!text) return false;
+  const rest = text
+    .replace(/(\d+(?:\.\d+)?)\s*¢/g, "")
+    .replace(/\$\s*(\d+(?:\.\d+)?)/g, "")
+    .replace(/[,\s–-]/g, "");
+  return rest === "" && parseDenoms(text).length > 0;
+}
+
+const RE_PLAY     = /^[\d\s-]*play$/i;
+const RE_MACHINES = /^\d+\s+(machine|slant|upright|bartop|round|carousel|game)/i;
+const RE_COINS    = /coins?$/i;
+
+/**
+ * One game can span several machine banks, each with its own denominations,
+ * location, and tier credit earn rate. The listing writes them as repeating
+ * groups after the payout schedule, with no marker other than a new
+ * denomination cell starting each group.
+ */
+function parseBanks(tokens) {
+  const banks = [];
+  let current = null;
+
+  for (const t of tokens) {
+    if (isDenomCell(t)) {
+      current = { denoms: parseDenoms(t), perPoint: null, location: "", play: "", machines: "" };
+      banks.push(current);
+      continue;
+    }
+    if (!current) continue;
+
+    const rate = /\$\s*(\d+(?:\.\d+)?)\s*per\s*point/i.exec(t);
+    if (rate) current.perPoint = Number(rate[1]);
+
+    if (RE_PLAY.test(t) || RE_COINS.test(t)) { current.play = current.play || t; continue; }
+    if (RE_MACHINES.test(t)) { current.machines = current.machines || t; continue; }
+
+    // Prose wins the location slot; short codes (MG, Prog, IGT) never do.
+    const words = t.split(/\s+/).length;
+    if ((rate || words >= 2) && t.length > current.location.length) current.location = t;
+  }
+
+  return banks.filter((b) => b.denoms.length);
 }
 
 function parseCasino(html, slug, promo) {
@@ -76,15 +127,22 @@ function parseCasino(html, slug, promo) {
     .map((t) => t.trim())
     .filter(Boolean);
 
-  const games = [];
+  // Index every payout-return marker so each game's block has a clear end.
+  const marks = [];
   for (let i = 0; i < tokens.length; i++) {
-    const pct = /^(\d{2,3}\.\d+)%/.exec(tokens[i]);
-    if (!pct) continue;
+    if (/^(\d{2,3}\.\d+)%/.test(tokens[i])) marks.push(i);
+  }
 
-    // Walk forward to the payout schedule, collecting name and variant.
+  const games = [];
+  for (let m = 0; m < marks.length; m++) {
+    const i = marks[m];
+    const stop = m + 1 < marks.length ? marks[m + 1] : tokens.length;
+    const pct = /^(\d{2,3}\.\d+)%/.exec(tokens[i]);
+
+    // Walk to the payout schedule, collecting name and variant on the way.
     let payouts = null, j = i + 1;
     const between = [];
-    for (; j < tokens.length && j < i + 6; j++) {
+    for (; j < stop && j < i + 6; j++) {
       if (/^\d+(-\d+)+$/.test(tokens[j])) {
         payouts = tokens[j].split("-").map(Number);
         break;
@@ -93,23 +151,8 @@ function parseCasino(html, slug, promo) {
     }
     if (!payouts) continue;
 
-    const denoms = parseDenoms(tokens[j + 1] || "");
-    if (!denoms.length) continue;
-
-    // The trailing columns (play count, manufacturer, location, machine count)
-    // vary in both presence and order, so scan the window rather than indexing
-    // a fixed offset. The location cell is the prose one, and it's where the
-    // earn rate lives when the listing states one.
-    const tail = tokens.slice(j + 2, j + 7);
-    let perPoint = null, location = "";
-    for (const t of tail) {
-      const rate = /\$\s*(\d+(?:\.\d+)?)\s*per\s*point/i.exec(t);
-      if (rate) perPoint = Number(rate[1]);
-      // Prose, not a code like "MG", "Prog", "1 Play", "4 Slant-tops".
-      if (t.split(/\s+/).length >= 3 && !/^\d+[\s-]/.test(t) && t.length > location.length) {
-        location = t;
-      }
-    }
+    const banks = parseBanks(tokens.slice(j + 1, stop));
+    if (!banks.length) continue;
 
     games.push({
       name: between[0] || "Unknown",
@@ -117,28 +160,25 @@ function parseCasino(html, slug, promo) {
       ret: Number(pct[1]),
       payouts: payouts,
       hands: FAMILIES[payouts.length] || null,
-      denoms: denoms,
-      perPoint: perPoint,
-      location: location,
+      denoms: [...new Set(banks.flatMap((b) => b.denoms))].sort((a, b) => a - b),
+      banks: banks,
     });
-    i = j;
   }
 
-  // Same game can appear once per machine bank; keep the widest denom set.
+  // The same game can be listed more than once; fold those together.
   const byKey = new Map();
   for (const g of games) {
     const key = g.name + "|" + g.payouts.join("-");
     const prev = byKey.get(key);
     if (!prev) { byKey.set(key, g); continue; }
+    prev.banks = prev.banks.concat(g.banks);
     prev.denoms = [...new Set([...prev.denoms, ...g.denoms])].sort((a, b) => a - b);
-    if (prev.perPoint === null) prev.perPoint = g.perPoint;
-    if (!prev.location) prev.location = g.location;
   }
 
   const merged = [...byKey.values()].sort((a, b) => b.ret - a.ret);
   return {
     key: slug,
-    name: null, // filled from <title>
+    name: null, // filled from og:title
     promo: promo,
     source: "https://www.vpfree2.com/casino/" + slug,
     games: merged,
@@ -191,9 +231,14 @@ async function main() {
     console.error(casino.games.length + " games");
     for (const g of casino.games) {
       console.error("    " + String(g.ret).padStart(6) + "%  " + g.name.slice(0, 28).padEnd(30) +
-        g.denoms.map((d) => (d < 1 ? Math.round(d * 100) + "c" : "$" + d)).join(",").padEnd(24) +
-        (g.perPoint ? "$" + g.perPoint + "/point" : "") +
+        g.banks.length + " bank" + (g.banks.length === 1 ? " " : "s") +
         (g.hands ? "" : "   [unrecognized family: " + g.payouts.length + " tiers]"));
+      for (const b of g.banks) {
+        console.error("             " +
+          b.denoms.map((d) => (d < 1 ? Math.round(d * 100) + "c" : "$" + d)).join(",").padEnd(22) +
+          (b.perPoint ? ("$" + b.perPoint + "/pt").padEnd(9) : "".padEnd(9)) +
+          b.location.slice(0, 46));
+      }
     }
     casinos.push(casino);
   }

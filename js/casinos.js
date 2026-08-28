@@ -44,8 +44,21 @@ const CASINOS = [
           2,
           5
         ],
-        "perPoint": 10,
-        "location": "near escalator from Circus Circus Reno ($10 per point)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1,
+              2,
+              5
+            ],
+            "perPoint": 10,
+            "location": "near escalator from Circus Circus Reno ($10 per point)",
+            "play": "1 Play",
+            "machines": "3 Machines"
+          }
+        ]
       },
       {
         "name": "Double Double Bonus Plus",
@@ -73,8 +86,28 @@ const CASINOS = [
           0.5,
           1
         ],
-        "perPoint": null,
-        "location": "just outside poker room (with prog. meter on top)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          },
+          {
+            "denoms": [
+              1
+            ],
+            "perPoint": null,
+            "location": "several throughout",
+            "play": "1 Play",
+            "machines": ""
+          }
+        ]
       },
       {
         "name": "1 Pair (Kings or Better) Joker Wild",
@@ -107,10 +140,32 @@ const CASINOS = [
           "Royal Flush"
         ],
         "denoms": [
-          0.25
+          0.25,
+          0.5,
+          1
         ],
-        "perPoint": null,
-        "location": "other side of escalator to Circus Circus"
+        "banks": [
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "other side of escalator to Circus Circus",
+            "play": "3 Play",
+            "machines": "10 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "near keno",
+            "play": "5-50 Coins",
+            "machines": "4 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Double Bonus Aces and Faces",
@@ -145,8 +200,17 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "perPoint": null,
-        "location": ""
+        "banks": [
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near keno",
+            "play": "1 Play",
+            "machines": "4 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Bonus Poker",
@@ -179,10 +243,52 @@ const CASINOS = [
           "Royal Flush"
         ],
         "denoms": [
-          0.25
+          0.25,
+          0.5,
+          1
         ],
-        "perPoint": null,
-        "location": ""
+        "banks": [
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near keno",
+            "play": "1 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near Drinx Bar",
+            "play": "1 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "several banks",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          }
+        ]
       },
       {
         "name": "Double Double Bonus",
@@ -219,10 +325,127 @@ const CASINOS = [
           "Royal Flush"
         ],
         "denoms": [
-          0.25
+          0.25,
+          0.5,
+          1,
+          2
         ],
-        "perPoint": null,
-        "location": "in the corner near Virginia & 5th streets"
+        "banks": [
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "in the corner near Virginia & 5th streets",
+            "play": "1 Play",
+            "machines": "4 Uprights"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near keno",
+            "play": "1 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near south escalator men&#39;s room",
+            "play": "1 Play",
+            "machines": "8 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "just west of north escalator",
+            "play": "1 Play",
+            "machines": "6 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "in SW corner",
+            "play": "1 Play",
+            "machines": "5 Uprights ("
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "along south wall in SW quadrant of main casino floor",
+            "play": "1 Play",
+            "machines": "12 Uprights"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "in NW corner of casino",
+            "play": "1 Play",
+            "machines": "10 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "several banks",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1,
+              2
+            ],
+            "perPoint": null,
+            "location": "near buffet",
+            "play": "",
+            "machines": "4 Slant-tops"
+          },
+          {
+            "denoms": [
+              1
+            ],
+            "perPoint": null,
+            "location": "in two banks near center bar on main floor",
+            "play": "1 Play",
+            "machines": "20 Slant-tops"
+          }
+        ]
       },
       {
         "name": "1 Pair (Kings or Better) Joker Wild",
@@ -259,8 +482,19 @@ const CASINOS = [
           0.5,
           1
         ],
-        "perPoint": null,
-        "location": "just outside poker room (with prog. meter on top)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          }
+        ]
       },
       {
         "name": "Deuces Wild 44",
@@ -295,8 +529,19 @@ const CASINOS = [
           0.5,
           1
         ],
-        "perPoint": null,
-        "location": "just outside poker room (with prog. meter on top)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          }
+        ]
       },
       {
         "name": "White Hot Aces",
@@ -333,8 +578,19 @@ const CASINOS = [
           0.5,
           1
         ],
-        "perPoint": null,
-        "location": "just outside poker room (with prog. meter on top)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          }
+        ]
       },
       {
         "name": "All American / USA",
@@ -367,8 +623,19 @@ const CASINOS = [
           0.5,
           1
         ],
-        "perPoint": null,
-        "location": "just outside poker room (with prog. meter on top)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "just outside poker room (with prog. meter on top)",
+            "play": "1 Play",
+            "machines": "1 Machine"
+          }
+        ]
       },
       {
         "name": "Jacks or Better",
@@ -398,10 +665,32 @@ const CASINOS = [
         ],
         "denoms": [
           0.05,
-          0.1
+          0.1,
+          0.25
         ],
-        "perPoint": null,
-        "location": "outside high limit room"
+        "banks": [
+          {
+            "denoms": [
+              0.05,
+              0.1
+            ],
+            "perPoint": null,
+            "location": "outside high limit room",
+            "play": "100 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "All rights Reserved 2026 vpFREE2",
+            "play": "50 Play",
+            "machines": "1 Slant-top"
+          }
+        ]
       }
     ]
   },
@@ -443,8 +732,18 @@ const CASINOS = [
           5,
           10
         ],
-        "perPoint": 20,
-        "location": "outside high limit room ($20 per point)"
+        "banks": [
+          {
+            "denoms": [
+              5,
+              10
+            ],
+            "perPoint": 20,
+            "location": "outside high limit room ($20 per point)",
+            "play": "1 Play",
+            "machines": "2 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Jacks or Better",
@@ -474,10 +773,57 @@ const CASINOS = [
         ],
         "denoms": [
           0.25,
-          0.5
+          0.5,
+          1,
+          2,
+          5,
+          10,
+          25
         ],
-        "perPoint": 20,
-        "location": "outside high limit room ($20 per point)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5
+            ],
+            "perPoint": 20,
+            "location": "outside high limit room ($20 per point)",
+            "play": "100 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": 10,
+            "location": "near 4th/Virginia entrance ($10 per point)",
+            "play": "1 Play",
+            "machines": "5 Machines"
+          },
+          {
+            "denoms": [
+              2,
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "several single-line and/or multiline banks throughout",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              5
+            ],
+            "perPoint": null,
+            "location": "in the Gold Room",
+            "play": "1 Play",
+            "machines": ""
+          }
+        ]
       },
       {
         "name": "Bonus Poker",
@@ -516,8 +862,32 @@ const CASINOS = [
           10,
           25
         ],
-        "perPoint": null,
-        "location": "several single-line and/or multiline banks throughout"
+        "banks": [
+          {
+            "denoms": [
+              1,
+              2,
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "several single-line and/or multiline banks throughout",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "high limit room (3) bartops and (4) uprights",
+            "play": "1 Play",
+            "machines": "7 Machines"
+          }
+        ]
       },
       {
         "name": "Double Double Bonus",
@@ -560,8 +930,32 @@ const CASINOS = [
           10,
           25
         ],
-        "perPoint": null,
-        "location": "several single-line and/or multiline banks throughout"
+        "banks": [
+          {
+            "denoms": [
+              1,
+              2,
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "several single-line and/or multiline banks throughout",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "high limit room (3) bartops and (4) uprights",
+            "play": "1 Play",
+            "machines": "7 Machines"
+          }
+        ]
       },
       {
         "name": "Deuces Wild 44",
@@ -593,10 +987,51 @@ const CASINOS = [
         ],
         "denoms": [
           0.25,
-          0.5
+          0.5,
+          1,
+          2,
+          5,
+          10,
+          25
         ],
-        "perPoint": 20,
-        "location": "outside high limit room ($20 per point)"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5
+            ],
+            "perPoint": 20,
+            "location": "outside high limit room ($20 per point)",
+            "play": "100 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "high limit room (3) bartops and (4) uprights",
+            "play": "1 Play",
+            "machines": "7 Machines"
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "several single-line and/or multiline banks throughout",
+            "play": "1 Play",
+            "machines": ""
+          }
+        ]
       }
     ]
   },
@@ -638,10 +1073,169 @@ const CASINOS = [
           0.05,
           0.1,
           0.25,
-          0.5
+          0.5,
+          1,
+          2,
+          5
         ],
-        "perPoint": null,
-        "location": "in front of Romanza"
+        "banks": [
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "in front of Romanza",
+            "play": "5-10 Coins",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "near Dino Dollars.",
+            "play": "5-10 Coins",
+            "machines": "3 Uprights"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near the Fireside Lounge and The Pub",
+            "play": "1 Play",
+            "machines": "8 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "on right near the semi-circular exit doors, between the bar with the giant screen and Oceano",
+            "play": "1 Play",
+            "machines": "6 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "on left near the semi-circular exit doors, between the bar with the giant screen and Oceano",
+            "play": "1-3 Coins",
+            "machines": "5 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between the buffet and the Coffee Shop",
+            "play": "5 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between the slot club desk and Chi",
+            "play": "50 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "on the wall across from the slot club ($1199 royal)",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "and uprights scattered around casino",
+            "play": "",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "just north of Buffet cashier",
+            "play": "10 Play",
+            "machines": "6 Uprights"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "near Romanza",
+            "play": "5-10 Coins",
+            "machines": "4 Slant-tops"
+          },
+          {
+            "denoms": [
+              1
+            ],
+            "perPoint": null,
+            "location": "in the Dino slots area against the wall",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              1
+            ],
+            "perPoint": null,
+            "location": "in the high-limit area",
+            "play": "5-10 Coins",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              1
+            ],
+            "perPoint": null,
+            "location": "in the high-limit area",
+            "play": "5-15 Coins",
+            "machines": "5 Slant-tops"
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5
+            ],
+            "perPoint": null,
+            "location": "in High Limit Slots area",
+            "play": "1 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              5
+            ],
+            "perPoint": null,
+            "location": "in the high-limit area",
+            "play": "1 Play",
+            "machines": "4 Uprights"
+          }
+        ]
       },
       {
         "name": "Double Deuces Wild",
@@ -676,8 +1270,19 @@ const CASINOS = [
           0.5,
           1
         ],
-        "perPoint": null,
-        "location": "near the Fireside Lounge and The Pub"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "near the Fireside Lounge and The Pub",
+            "play": "1 Play",
+            "machines": "8 Slant-tops"
+          }
+        ]
       },
       {
         "name": "All American / USA",
@@ -709,8 +1314,18 @@ const CASINOS = [
           0.25,
           1
         ],
-        "perPoint": null,
-        "location": "@ Tuscany Lounge Bar"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "@ Tuscany Lounge Bar",
+            "play": "1 Play",
+            "machines": ""
+          }
+        ]
       },
       {
         "name": "Triple Double Bonus",
@@ -748,10 +1363,44 @@ const CASINOS = [
         ],
         "denoms": [
           0.1,
-          0.25
+          0.25,
+          0.5,
+          1
         ],
-        "perPoint": null,
-        "location": "by the blue keno lounge near the Steak House"
+        "banks": [
+          {
+            "denoms": [
+              0.1,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "",
+            "play": "50 Play",
+            "machines": "2 Machines"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "by the blue keno lounge near the Steak House",
+            "play": "1 Play",
+            "machines": "6 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "near the Fireside Lounge and The Pub",
+            "play": "1 Play",
+            "machines": "8 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Jacks or Better",
@@ -783,10 +1432,258 @@ const CASINOS = [
           0.01,
           0.02,
           0.05,
-          0.25
+          0.1,
+          0.2,
+          0.25,
+          0.5,
+          1,
+          2,
+          5,
+          10,
+          25,
+          100
         ],
-        "perPoint": null,
-        "location": "in the hallway outside the coffee shop"
+        "banks": [
+          {
+            "denoms": [
+              0.01,
+              0.02,
+              0.05,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "in the hallway outside the coffee shop",
+            "play": "5-25 Coins",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near the change booth by the slot club.",
+            "play": "50 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "in the tunnel by the coffee shop.",
+            "play": "5-10 Coins",
+            "machines": "1 Upright"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "in front of Romanza",
+            "play": "5-10 Coins",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "near Dino Dollars.",
+            "play": "5-10 Coins",
+            "machines": "3 Uprights"
+          },
+          {
+            "denoms": [
+              0.1,
+              0.2,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "just outside the Sportsbook",
+            "play": "50 Play",
+            "machines": "1 Upright"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between the slot club desk and Chi",
+            "play": "50 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "and slant-tops scattered around casino",
+            "play": "",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between Oceano and the poker room",
+            "play": "5 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "on the wall across from the slot club ($1199 royal)",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "(2) between Chi and the bathrooms; (1) in non-smoking area near Cafe Milano",
+            "play": "",
+            "machines": "3 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "@ Qube Bar",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "between buffet and coffee shop",
+            "play": "1 Play",
+            "machines": "5 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "just north of Buffet cashier",
+            "play": "10 Play",
+            "machines": "6 Uprights"
+          },
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1
+            ],
+            "perPoint": null,
+            "location": "near Romanza",
+            "play": "5-10 Coins",
+            "machines": "4 Slant-tops"
+          },
+          {
+            "denoms": [
+              1
+            ],
+            "perPoint": null,
+            "location": "near secondary cashier near hotel tower elevators",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5
+            ],
+            "perPoint": null,
+            "location": "in High Limit Slots area",
+            "play": "1 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5,
+              10
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "in the the high-limit area",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              5
+            ],
+            "perPoint": null,
+            "location": "@ the high-limit bar",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              100
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "3 Coins",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              100
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "3 Coins",
+            "machines": "1 Upright"
+          }
+        ]
       },
       {
         "name": "Double Double Bonus Aces and Faces",
@@ -826,8 +1723,18 @@ const CASINOS = [
           0.25,
           1
         ],
-        "perPoint": null,
-        "location": ""
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "",
+            "play": "5-25 Coins",
+            "machines": ""
+          }
+        ]
       },
       {
         "name": "Bonus Aces and Faces",
@@ -862,8 +1769,17 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "perPoint": null,
-        "location": "Sports Book bar"
+        "banks": [
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "Sports Book bar",
+            "play": "1 Play",
+            "machines": ""
+          }
+        ]
       },
       {
         "name": "Bonus Poker",
@@ -898,10 +1814,151 @@ const CASINOS = [
         "denoms": [
           0.05,
           0.1,
-          0.25
+          0.2,
+          0.25,
+          0.5,
+          1,
+          2,
+          5,
+          10,
+          25,
+          100
         ],
-        "perPoint": null,
-        "location": "near the change booth by the slot club."
+        "banks": [
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near the change booth by the slot club.",
+            "play": "50 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.25,
+              1
+            ],
+            "perPoint": null,
+            "location": "in the tunnel by the coffee shop.",
+            "play": "5-10 Coins",
+            "machines": "1 Upright"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "in front of Romanza",
+            "play": "5-10 Coins",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.1,
+              0.25,
+              0.5
+            ],
+            "perPoint": null,
+            "location": "near Dino Dollars.",
+            "play": "5-10 Coins",
+            "machines": "3 Uprights"
+          },
+          {
+            "denoms": [
+              0.1,
+              0.2,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "just outside the Sportsbook",
+            "play": "50 Play",
+            "machines": "1 Upright"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between the slot club desk and Chi",
+            "play": "50 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between Oceano and the poker room",
+            "play": "5 Play",
+            "machines": "1 Slant-top"
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "bank near the Fireside Lounge and The Pub",
+            "play": "1 Play",
+            "machines": ""
+          },
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "in front of the slot club, one row back.",
+            "play": "50 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              1,
+              2,
+              5
+            ],
+            "perPoint": null,
+            "location": "in High Limit Slots area",
+            "play": "1 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              5,
+              10,
+              25
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              100
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "3 Coins",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              100
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "3 Coins",
+            "machines": "1 Upright"
+          }
+        ]
       },
       {
         "name": "Big Split Poker - Jacks or Better",
@@ -924,8 +1981,20 @@ const CASINOS = [
           1,
           2
         ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1,
+              2
+            ],
+            "perPoint": null,
+            "location": "just inside the high-limit slot area",
+            "play": "10-40 Coins",
+            "machines": "3 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Big Split Poker - Deuces Wild",
@@ -948,8 +2017,20 @@ const CASINOS = [
           1,
           2
         ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1,
+              2
+            ],
+            "perPoint": null,
+            "location": "just inside the high-limit slot area",
+            "play": "10-40 Coins",
+            "machines": "3 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Deuces Wild 44",
@@ -982,8 +2063,17 @@ const CASINOS = [
         "denoms": [
           100
         ],
-        "perPoint": null,
-        "location": "in the High Limit Slots area"
+        "banks": [
+          {
+            "denoms": [
+              100
+            ],
+            "perPoint": null,
+            "location": "in the High Limit Slots area",
+            "play": "3 Coins",
+            "machines": ""
+          }
+        ]
       },
       {
         "name": "Big Split Poker - Joker Joker",
@@ -1017,8 +2107,20 @@ const CASINOS = [
           1,
           2
         ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1,
+              2
+            ],
+            "perPoint": null,
+            "location": "just inside the high-limit slot area",
+            "play": "10-40 Coins",
+            "machines": "3 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Big Split Poker - Joker Poker",
@@ -1054,8 +2156,20 @@ const CASINOS = [
           1,
           2
         ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
+        "banks": [
+          {
+            "denoms": [
+              0.25,
+              0.5,
+              1,
+              2
+            ],
+            "perPoint": null,
+            "location": "just inside the high-limit slot area",
+            "play": "10-40 Coins",
+            "machines": "3 Slant-tops"
+          }
+        ]
       },
       {
         "name": "Super Double Bonus",
@@ -1080,8 +2194,38 @@ const CASINOS = [
           0.05,
           0.25
         ],
-        "perPoint": null,
-        "location": "at Cabaret Bar"
+        "banks": [
+          {
+            "denoms": [
+              0.05,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "at Cabaret Bar",
+            "play": "50 Play",
+            "machines": "4 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "between coffee shop and restrooms",
+            "play": "50 Play",
+            "machines": "2 Slant-tops"
+          },
+          {
+            "denoms": [
+              0.05,
+              0.25
+            ],
+            "perPoint": null,
+            "location": "near the Qube Bar",
+            "play": "100 Play",
+            "machines": "1 Slant-top"
+          }
+        ]
       },
       {
         "name": "Deuces Wild",
@@ -1114,8 +2258,17 @@ const CASINOS = [
         "denoms": [
           0.25
         ],
-        "perPoint": null,
-        "location": "Logos provided by Logo.dev"
+        "banks": [
+          {
+            "denoms": [
+              0.25
+            ],
+            "perPoint": null,
+            "location": "All rights Reserved 2026 vpFREE2",
+            "play": "1 Play",
+            "machines": ""
+          }
+        ]
       }
     ]
   }
