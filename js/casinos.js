@@ -686,7 +686,7 @@ const CASINOS = [
               0.25
             ],
             "perPoint": null,
-            "location": "All rights Reserved 2026 vpFREE2",
+            "location": "outside high limit room",
             "play": "50 Play",
             "machines": "1 Slant-top"
           }
@@ -2264,7 +2264,7 @@ const CASINOS = [
               0.25
             ],
             "perPoint": null,
-            "location": "All rights Reserved 2026 vpFREE2",
+            "location": "@ Qube Bar",
             "play": "1 Play",
             "machines": ""
           }

@@ -549,49 +549,9 @@
         title.appendChild(retSpan);
         row.appendChild(title);
 
-        var chips = document.createElement("div");
-        chips.className = "denom-chips";
-        g.denoms.forEach(function (d) {
-          var w = Promo.w2gForPayouts(g.payouts, g.hands, d, MAX_COINS, threshold);
-          var chip = document.createElement("span");
-          // Chips grade by how many payout tiers cross the line: a schedule
-          // where only the royal does is as clean as video poker gets.
-          var n = w.triggers.length;
-          chip.className = "chip " + (n === 0 ? "chip-ok" : n === 1 ? "chip-ok" : n <= 2 ? "chip-warn" : "chip-danger") +
-            (d === denom ? " chip-selected" : "");
-          chip.textContent = fmtDenom(d);
-          chip.title = n + " payout tier" + (n === 1 ? "" : "s") + " at or above " + fmtMoney(threshold);
-          chips.appendChild(chip);
-        });
-        row.appendChild(chips);
-
+        // Handpay exposure is a property of the pay table and denomination,
+        // so it belongs to the game, not to any one bank.
         if (has) {
-          // A game spans several banks and the earn rate is a property of the
-          // bank, not the game — at Eldorado the same 9/6 JoB is $20/point in
-          // the high limit room and $10/point elsewhere. Pick the cheapest
-          // bank that actually offers this denomination.
-          var candidates = banksAt(g, denom);
-          var best = candidates[0];
-          var rate = (best && best.perPoint) || promoOpts.coinInPerTc;
-          var coinIn = (promoOpts.tcCap / promoOpts.multiplier) * rate;
-          var hrs = coinIn / (denom * MAX_COINS) / promoOpts.handsPerHour;
-
-          var earn = document.createElement("p");
-          earn.className = "casino-earn" + (rate > promoOpts.coinInPerTc ? " slow" : "");
-          earn.textContent = (best && best.perPoint ? fmtMoney(rate) + "/point"
-                                                    : fmtMoney(rate) + "/point (assumed)") +
-            " — " + fmtMoney(coinIn) + " coin-in, " + hrs.toFixed(1) + " hr to cap";
-          row.appendChild(earn);
-
-          if (best && best.location) {
-            var loc = document.createElement("p");
-            loc.className = "casino-loc";
-            loc.textContent = best.location +
-              (candidates.length > 1 ? "  (+" + (candidates.length - 1) + " other bank" +
-                (candidates.length > 2 ? "s" : "") + " at " + fmtDenom(denom) + ")" : "");
-            row.appendChild(loc);
-          }
-
           var w2 = Promo.w2gForPayouts(g.payouts, g.hands, denom, MAX_COINS, threshold);
           var note = document.createElement("p");
           note.className = "casino-note";
@@ -603,6 +563,64 @@
           }
           row.appendChild(note);
         }
+
+        // Every bank listed separately — the locations are the point, and the
+        // game filter is what keeps the volume manageable.
+        var banks = (g.banks || []).slice().sort(function (a, b) {
+          var ah = a.denoms.indexOf(denom) !== -1, bh = b.denoms.indexOf(denom) !== -1;
+          if (ah !== bh) return ah ? -1 : 1;              // matching banks first
+          var std = promoOpts.coinInPerTc;
+          return (a.perPoint || std) - (b.perPoint || std);
+        });
+
+        banks.forEach(function (b) {
+          var bankHas = b.denoms.indexOf(denom) !== -1;
+          var bank = document.createElement("div");
+          bank.className = "casino-bank" + (bankHas ? " match" : "");
+
+          var chips = document.createElement("div");
+          chips.className = "denom-chips";
+          b.denoms.forEach(function (d) {
+            var w = Promo.w2gForPayouts(g.payouts, g.hands, d, MAX_COINS, threshold);
+            var n = w.triggers.length;
+            var chip = document.createElement("span");
+            // Chips grade by how many payout tiers cross the line: a schedule
+            // where only the royal does is as clean as video poker gets.
+            chip.className = "chip " + (n <= 1 ? "chip-ok" : n <= 2 ? "chip-warn" : "chip-danger") +
+              (d === denom ? " chip-selected" : "");
+            chip.textContent = fmtDenom(d);
+            chip.title = n + " payout tier" + (n === 1 ? "" : "s") + " at or above " + fmtMoney(threshold);
+            chips.appendChild(chip);
+          });
+          bank.appendChild(chips);
+
+          if (b.location) {
+            var loc = document.createElement("p");
+            loc.className = "casino-loc";
+            loc.textContent = b.location;
+            bank.appendChild(loc);
+          }
+
+          var bits = [];
+          bits.push(b.perPoint ? fmtMoney(b.perPoint) + "/point"
+                               : fmtMoney(promoOpts.coinInPerTc) + "/point (assumed)");
+          if (b.machines) bits.push(b.machines);
+          if (b.play) bits.push(b.play);
+          if (bankHas) {
+            var rate = b.perPoint || promoOpts.coinInPerTc;
+            var coinIn = (promoOpts.tcCap / promoOpts.multiplier) * rate;
+            var hrs = coinIn / (denom * MAX_COINS) / promoOpts.handsPerHour;
+            bits.push(fmtMoney(coinIn) + " coin-in");
+            bits.push(hrs.toFixed(1) + " hr to cap");
+          }
+          var meta = document.createElement("p");
+          meta.className = "casino-earn" +
+            ((b.perPoint || promoOpts.coinInPerTc) > promoOpts.coinInPerTc ? " slow" : "");
+          meta.textContent = bits.join(" · ");
+          bank.appendChild(meta);
+
+          row.appendChild(bank);
+        });
 
         card.appendChild(row);
       });

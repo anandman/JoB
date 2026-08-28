@@ -121,11 +121,19 @@ function parseBanks(tokens) {
   return banks.filter((b) => b.denoms.length);
 }
 
+// Site chrome that follows the last game block. Without cutting here, the
+// final game absorbs footer text and renders "All rights Reserved (c) 2026
+// vpFREE2" as a machine location.
+const FOOTER = /all rights reserved|logos provided by|^contact us$|privacy policy|^terms\b/i;
+
 function parseCasino(html, slug, promo) {
-  const tokens = flatten(html)
+  let tokens = flatten(html)
     .split("|")
     .map((t) => t.trim())
     .filter(Boolean);
+
+  const cut = tokens.findIndex((t) => FOOTER.test(t));
+  if (cut !== -1) tokens = tokens.slice(0, cut);
 
   // Index every payout-return marker so each game's block has a clear end.
   const marks = [];

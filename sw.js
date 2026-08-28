@@ -9,19 +9,19 @@
  * itself in the background. Bumping VERSION purges everything.
  */
 
-const VERSION = "571fea5a";
+const VERSION = "a968fbeb";
 const CACHE = "job-" + VERSION;
 
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=571fea5a",
-  "./js/data.js?v=571fea5a",
-  "./js/poker.js?v=571fea5a",
-  "./js/strategy-engine.js?v=571fea5a",
-  "./js/casinos.js?v=571fea5a",
-  "./js/promo.js?v=571fea5a",
-  "./js/app.js?v=571fea5a",
+  "./css/style.css?v=a968fbeb",
+  "./js/data.js?v=a968fbeb",
+  "./js/poker.js?v=a968fbeb",
+  "./js/strategy-engine.js?v=a968fbeb",
+  "./js/casinos.js?v=a968fbeb",
+  "./js/promo.js?v=a968fbeb",
+  "./js/app.js?v=a968fbeb",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
