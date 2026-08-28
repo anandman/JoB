@@ -294,6 +294,59 @@ var Promo = (function () {
   }
 
   /**
+   * Expected handpays per deal on an n-play machine.
+   *
+   * Two mechanisms, partitioned so nothing is counted twice:
+   *
+   *  - a single line reaching the threshold on its own. Each line draws
+   *    independently, so this scales with the line count and uses final-hand
+   *    frequencies.
+   *  - the held cards already paying. They are copied to every line, so the
+   *    hand lands on all of them at once and the aggregate can reach the
+   *    threshold even when no single line comes close. This one uses *dealt*
+   *    probabilities, and applies only to hands that don't already qualify
+   *    on a single line.
+   *
+   * The second mechanism is why more lines is not automatically safer: at ten
+   * lines of 50c a royal pays $2,000 on any one line and you have ten shots at
+   * it, while at a hundred lines of a nickel no single line can reach $1,200
+   * at all.
+   */
+  function w2gLines(game, denom, lines, coins, threshold) {
+    coins = coins || MAX_COINS;
+    threshold = threshold || W2G_THRESHOLD;
+    lines = Math.max(1, lines || 1);
+
+    var perLine = 0, replicated = 0, known = true;
+    var perLineHands = [], replicatedHands = [];
+
+    for (var i = 0; i < game.hands.length; i++) {
+      var h = game.hands[i];
+      var one = handPayout(h, denom, coins);
+      if (one >= threshold) {
+        if (typeof h.freq !== "number") { known = false; continue; }
+        perLine += lines * h.freq;
+        perLineHands.push({ name: h.name, amount: one });
+      } else if (one * lines >= threshold) {
+        if (typeof h.dealt !== "number") { known = false; continue; }
+        replicated += h.dealt;
+        replicatedHands.push({ name: h.name, amount: one * lines });
+      }
+    }
+
+    var rate = perLine + replicated;
+    return {
+      known: known,
+      rate: rate,
+      oneIn: rate > 0 ? 1 / rate : null,
+      perLine: perLine,
+      replicated: replicated,
+      perLineHands: perLineHands,
+      replicatedHands: replicatedHands,
+    };
+  }
+
+  /**
    * Variance per unit wagered on an n-play machine.
    *
    * One hand is dealt, the hold is copied to every line, and each line draws
@@ -386,6 +439,7 @@ var Promo = (function () {
     hasFrequencies: hasFrequencies,
     stats: stats,
     linesVariance: linesVariance,
+    w2gLines: w2gLines,
     riskOfRuin: riskOfRuin,
     bankrollFor: bankrollFor,
     w2gAnalysis: w2gAnalysis,

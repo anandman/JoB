@@ -997,3 +997,12 @@ footer {
 #strategy-sections .strategy-list {
   margin-bottom: 0.5rem;
 }
+
+.ladder-table tr.unavailable td {
+  opacity: 0.4;
+}
+
+.ladder-table td.over {
+  color: var(--color-red);
+  font-weight: 600;
+}

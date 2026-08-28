@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
   <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
-  <link rel="stylesheet" href="css/style.css?v=5f4952e6">
+  <link rel="stylesheet" href="css/style.css?v=a420b880">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -209,6 +209,25 @@
         </table>
       </div>
 
+      <h3>Same total bet, spread across lines</h3>
+      <p class="note">Every row wagers the same amount per hand, so coin-in, time, and expected cost are identical. What changes is how the money is spread: more lines means lower variance, and each line pays a fraction of the size &mdash; though a hand already made when dealt still pays on every line at once.</p>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr>
+              <th>Lines</th>
+              <th>Denom</th>
+              <th>SD/hand</th>
+              <th>Swing</th>
+              <th>Ruin</th>
+              <th>Biggest 1 line</th>
+              <th>Handpay every</th>
+            </tr>
+          </thead>
+          <tbody id="promo-spread"></tbody>
+        </table>
+      </div>
+
       <h3>Trip window</h3>
       <p class="note">Gaming days roll over at the reset hour, not midnight &mdash; so a single overnight session can straddle two earning periods.</p>
       <div class="promo-controls">
@@ -278,12 +297,12 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/data.js?v=5f4952e6"></script>
-  <script src="js/poker.js?v=5f4952e6"></script>
-  <script src="js/strategy-engine.js?v=5f4952e6"></script>
-  <script src="js/casinos.js?v=5f4952e6"></script>
-  <script src="js/promo.js?v=5f4952e6"></script>
-  <script src="js/app.js?v=5f4952e6"></script>
+  <script src="js/data.js?v=a420b880"></script>
+  <script src="js/poker.js?v=a420b880"></script>
+  <script src="js/strategy-engine.js?v=a420b880"></script>
+  <script src="js/casinos.js?v=a420b880"></script>
+  <script src="js/promo.js?v=a420b880"></script>
+  <script src="js/app.js?v=a420b880"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

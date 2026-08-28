@@ -334,6 +334,21 @@ const MAX_COINS = 5;
  * 8/6 -> 98.397, 8/5 -> 97.296). Strategy shifts between JoB variants are
  * small enough that one frequency table covers the whole family.
  */
+/**
+ * Dealt-hand counts out of C(52,5) = 2,598,960, before any draw.
+ *
+ * Distinct from the frequency tables above, which describe *final* hands after
+ * drawing. Multi-line play needs these: the held cards are copied to every
+ * line, so whatever the hold already pays gets paid on all of them at once,
+ * and that aggregate is what reaches a reporting threshold. Counts verified
+ * exhaustively by the evaluator audits.
+ */
+const DEALT_COUNTS = 2598960;
+const JOB_DEALT = [4, 36, 624, 3744, 5108, 10200, 54912, 123552, 337920];
+const BP_DEALT  = [4, 36, 48, 144, 432, 3744, 5108, 10200, 54912, 123552, 337920];
+const DDB_DEALT = [4, 36, 12, 36, 36, 108, 432, 3744, 5108, 10200, 54912, 123552, 337920];
+const DW_DEALT  = [4, 48, 480, 624, 2068, 31552, 12672, 14472, 62232, 355080];
+
 const JOB_FREQUENCIES = [
   0.0000248, // Royal Flush
   0.0001093, // Straight Flush
@@ -370,6 +385,7 @@ function _jobGame(key, label, variantKey, ret) {
         pay: payouts[i],
         maxPay: i === 0 ? ROYAL_FLUSH_5COIN_PER : payouts[i],
         freq: JOB_FREQUENCIES[i],
+        dealt: JOB_DEALT[i] / DEALT_COUNTS,
       };
     }),
   };
@@ -410,17 +426,17 @@ const GAMES = {
     label: "8/5 Full Pay",
     ret: 99.166,
     hands: _withFreq([
-      { name: "Royal Flush", pay: 250, maxPay: 800, combos: 495443136 },
-      { name: "Straight Flush", pay: 50, maxPay: 50, combos: 2129604264 },
-      { name: "4 Aces", pay: 80, maxPay: 80, combos: 3903775812 },
-      { name: "4 2s–4s", pay: 40, maxPay: 40, combos: 10509866328 },
-      { name: "4 5s–Ks", pay: 25, maxPay: 25, combos: 32688417336 },
-      { name: "Full House", pay: 8, maxPay: 8, combos: 229516869924 },
-      { name: "Flush", pay: 5, maxPay: 5, combos: 216873645000 },
-      { name: "Straight", pay: 4, maxPay: 4, combos: 223676319912 },
-      { name: "3 of a Kind", pay: 3, maxPay: 3, combos: 1484391167856 },
-      { name: "Two Pair", pay: 2, maxPay: 2, combos: 2577523603752 },
-      { name: "Jacks or Better", pay: 1, maxPay: 1, combos: 4290810981444 },
+      { name: "Royal Flush", pay: 250, maxPay: 800, combos: 495443136, dealt: BP_DEALT[0] / DEALT_COUNTS },
+      { name: "Straight Flush", pay: 50, maxPay: 50, combos: 2129604264, dealt: BP_DEALT[1] / DEALT_COUNTS },
+      { name: "4 Aces", pay: 80, maxPay: 80, combos: 3903775812, dealt: BP_DEALT[2] / DEALT_COUNTS },
+      { name: "4 2s–4s", pay: 40, maxPay: 40, combos: 10509866328, dealt: BP_DEALT[3] / DEALT_COUNTS },
+      { name: "4 5s–Ks", pay: 25, maxPay: 25, combos: 32688417336, dealt: BP_DEALT[4] / DEALT_COUNTS },
+      { name: "Full House", pay: 8, maxPay: 8, combos: 229516869924, dealt: BP_DEALT[5] / DEALT_COUNTS },
+      { name: "Flush", pay: 5, maxPay: 5, combos: 216873645000, dealt: BP_DEALT[6] / DEALT_COUNTS },
+      { name: "Straight", pay: 4, maxPay: 4, combos: 223676319912, dealt: BP_DEALT[7] / DEALT_COUNTS },
+      { name: "3 of a Kind", pay: 3, maxPay: 3, combos: 1484391167856, dealt: BP_DEALT[8] / DEALT_COUNTS },
+      { name: "Two Pair", pay: 2, maxPay: 2, combos: 2577523603752, dealt: BP_DEALT[9] / DEALT_COUNTS },
+      { name: "Jacks or Better", pay: 1, maxPay: 1, combos: 4290810981444, dealt: BP_DEALT[10] / DEALT_COUNTS },
     ]),
   },
 
@@ -431,19 +447,19 @@ const GAMES = {
     label: "9/6 Full Pay",
     ret: 98.981,
     hands: _withFreq([
-      { name: "Royal Flush", pay: 250, maxPay: 800, combos: 488567700 },
-      { name: "Straight Flush", pay: 50, maxPay: 50, combos: 2184917880 },
-      { name: "4 Aces + 2/3/4", pay: 400, maxPay: 400, combos: 1227691500 },
-      { name: "4 2s–4s + A/2/3/4", pay: 160, maxPay: 160, combos: 2854370052 },
-      { name: "4 Aces", pay: 160, maxPay: 160, combos: 3460011120 },
-      { name: "4 2s–4s", pay: 80, maxPay: 80, combos: 7662444216 },
-      { name: "4 5s–Ks", pay: 50, maxPay: 50, combos: 32494582452 },
-      { name: "Full House", pay: 9, maxPay: 9, combos: 216474969996 },
-      { name: "Flush", pay: 6, maxPay: 6, combos: 226412247120 },
-      { name: "Straight", pay: 4, maxPay: 4, combos: 254472741540 },
-      { name: "3 of a Kind", pay: 3, maxPay: 3, combos: 1500277164324 },
-      { name: "Two Pair", pay: 1, maxPay: 1, combos: 2453055008724 },
-      { name: "Jacks or Better", pay: 1, maxPay: 1, combos: 4212339758244 },
+      { name: "Royal Flush", pay: 250, maxPay: 800, combos: 488567700, dealt: DDB_DEALT[0] / DEALT_COUNTS },
+      { name: "Straight Flush", pay: 50, maxPay: 50, combos: 2184917880, dealt: DDB_DEALT[1] / DEALT_COUNTS },
+      { name: "4 Aces + 2/3/4", pay: 400, maxPay: 400, combos: 1227691500, dealt: DDB_DEALT[2] / DEALT_COUNTS },
+      { name: "4 2s–4s + A/2/3/4", pay: 160, maxPay: 160, combos: 2854370052, dealt: DDB_DEALT[3] / DEALT_COUNTS },
+      { name: "4 Aces", pay: 160, maxPay: 160, combos: 3460011120, dealt: DDB_DEALT[4] / DEALT_COUNTS },
+      { name: "4 2s–4s", pay: 80, maxPay: 80, combos: 7662444216, dealt: DDB_DEALT[5] / DEALT_COUNTS },
+      { name: "4 5s–Ks", pay: 50, maxPay: 50, combos: 32494582452, dealt: DDB_DEALT[6] / DEALT_COUNTS },
+      { name: "Full House", pay: 9, maxPay: 9, combos: 216474969996, dealt: DDB_DEALT[7] / DEALT_COUNTS },
+      { name: "Flush", pay: 6, maxPay: 6, combos: 226412247120, dealt: DDB_DEALT[8] / DEALT_COUNTS },
+      { name: "Straight", pay: 4, maxPay: 4, combos: 254472741540, dealt: DDB_DEALT[9] / DEALT_COUNTS },
+      { name: "3 of a Kind", pay: 3, maxPay: 3, combos: 1500277164324, dealt: DDB_DEALT[10] / DEALT_COUNTS },
+      { name: "Two Pair", pay: 1, maxPay: 1, combos: 2453055008724, dealt: DDB_DEALT[11] / DEALT_COUNTS },
+      { name: "Jacks or Better", pay: 1, maxPay: 1, combos: 4212339758244, dealt: DDB_DEALT[12] / DEALT_COUNTS },
     ]),
   },
 
@@ -454,16 +470,16 @@ const GAMES = {
     label: "Not So Ugly Deuces",
     ret: 99.728,
     hands: _withFreq([
-      { name: "Natural Royal Flush", pay: 250, maxPay: 800, combos: 458696304 },
-      { name: "4 Deuces", pay: 200, maxPay: 200, combos: 3721737204 },
-      { name: "Wild Royal Flush", pay: 25, maxPay: 25, combos: 38006962464 },
-      { name: "5 of a Kind", pay: 16, maxPay: 16, combos: 61961233656 },
-      { name: "Straight Flush", pay: 10, maxPay: 10, combos: 102392435976 },
-      { name: "4 of a Kind", pay: 4, maxPay: 4, combos: 1216681289508 },
-      { name: "Full House", pay: 4, maxPay: 4, combos: 520566943104 },
-      { name: "Flush", pay: 3, maxPay: 3, combos: 413870908056 },
-      { name: "Straight", pay: 2, maxPay: 2, combos: 1142885476800 },
-      { name: "3 of a Kind", pay: 1, maxPay: 1, combos: 5325911611716 },
+      { name: "Natural Royal Flush", pay: 250, maxPay: 800, combos: 458696304, dealt: DW_DEALT[0] / DEALT_COUNTS },
+      { name: "4 Deuces", pay: 200, maxPay: 200, combos: 3721737204, dealt: DW_DEALT[1] / DEALT_COUNTS },
+      { name: "Wild Royal Flush", pay: 25, maxPay: 25, combos: 38006962464, dealt: DW_DEALT[2] / DEALT_COUNTS },
+      { name: "5 of a Kind", pay: 16, maxPay: 16, combos: 61961233656, dealt: DW_DEALT[3] / DEALT_COUNTS },
+      { name: "Straight Flush", pay: 10, maxPay: 10, combos: 102392435976, dealt: DW_DEALT[4] / DEALT_COUNTS },
+      { name: "4 of a Kind", pay: 4, maxPay: 4, combos: 1216681289508, dealt: DW_DEALT[5] / DEALT_COUNTS },
+      { name: "Full House", pay: 4, maxPay: 4, combos: 520566943104, dealt: DW_DEALT[6] / DEALT_COUNTS },
+      { name: "Flush", pay: 3, maxPay: 3, combos: 413870908056, dealt: DW_DEALT[7] / DEALT_COUNTS },
+      { name: "Straight", pay: 2, maxPay: 2, combos: 1142885476800, dealt: DW_DEALT[8] / DEALT_COUNTS },
+      { name: "3 of a Kind", pay: 1, maxPay: 1, combos: 5325911611716, dealt: DW_DEALT[9] / DEALT_COUNTS },
     ]),
   },
   // "LV Airport / Illinois Deuces" on vpfree2. Strategy computes from the pay
@@ -475,16 +491,16 @@ const GAMES = {
     label: "Illinois / LV Airport",
     ret: 98.913,
     hands: [
-      { name: "Natural Royal Flush", pay: 250, maxPay: 800 },
-      { name: "4 Deuces", pay: 200, maxPay: 200 },
-      { name: "Wild Royal Flush", pay: 25, maxPay: 25 },
-      { name: "5 of a Kind", pay: 15, maxPay: 15 },
-      { name: "Straight Flush", pay: 9, maxPay: 9 },
-      { name: "4 of a Kind", pay: 4, maxPay: 4 },
-      { name: "Full House", pay: 4, maxPay: 4 },
-      { name: "Flush", pay: 3, maxPay: 3 },
-      { name: "Straight", pay: 2, maxPay: 2 },
-      { name: "3 of a Kind", pay: 1, maxPay: 1 },
+      { name: "Natural Royal Flush", pay: 250, maxPay: 800, dealt: DW_DEALT[0] / DEALT_COUNTS },
+      { name: "4 Deuces", pay: 200, maxPay: 200, dealt: DW_DEALT[1] / DEALT_COUNTS },
+      { name: "Wild Royal Flush", pay: 25, maxPay: 25, dealt: DW_DEALT[2] / DEALT_COUNTS },
+      { name: "5 of a Kind", pay: 15, maxPay: 15, dealt: DW_DEALT[3] / DEALT_COUNTS },
+      { name: "Straight Flush", pay: 9, maxPay: 9, dealt: DW_DEALT[4] / DEALT_COUNTS },
+      { name: "4 of a Kind", pay: 4, maxPay: 4, dealt: DW_DEALT[5] / DEALT_COUNTS },
+      { name: "Full House", pay: 4, maxPay: 4, dealt: DW_DEALT[6] / DEALT_COUNTS },
+      { name: "Flush", pay: 3, maxPay: 3, dealt: DW_DEALT[7] / DEALT_COUNTS },
+      { name: "Straight", pay: 2, maxPay: 2, dealt: DW_DEALT[8] / DEALT_COUNTS },
+      { name: "3 of a Kind", pay: 1, maxPay: 1, dealt: DW_DEALT[9] / DEALT_COUNTS },
     ],
   },
 };

@@ -655,9 +655,71 @@
       promoEls.ladder.appendChild(tr);
     });
 
+    renderSpread(plan, opts);
     renderCeiling(opts);
     renderTrip(plan, opts);
     renderTracker(plan, opts);
+  }
+
+  /**
+   * Hold the total bet fixed and vary how it is spread across lines.
+   *
+   * This is how the same stake actually gets played differently: 100 lines of
+   * a nickel is the same $25 as one line of $5. Coin-in, time and expected
+   * cost are identical down the column, so the only things that move are
+   * variance and the size of any one line's win — which is what decides
+   * whether a hand gets paid at the machine or by hand.
+   */
+  function renderSpread(plan, opts) {
+    var body = document.getElementById("promo-spread");
+    body.innerHTML = "";
+    var totalBet = plan.bet;
+
+    LINE_COUNTS.forEach(function (n) {
+      var denom = totalBet / (MAX_COINS * n);
+      // Only offer spreads that land on a denomination a machine actually has.
+      var real = DENOMS.some(function (d) { return Math.abs(d - denom) < 1e-9; });
+
+      var p = Promo.plan({
+        game: opts.game, denom: denom, coins: MAX_COINS, lines: n,
+        tcCap: opts.tcCap, multiplier: opts.multiplier,
+        coinInPerTc: opts.coinInPerTc, handsPerHour: opts.handsPerHour,
+        threshold: opts.threshold, bankroll: opts.bankroll,
+      });
+
+      var tr = document.createElement("tr");
+      if (n === opts.lines && real) tr.className = "current";
+      else if (!real) tr.className = "unavailable";
+      function td(text) {
+        var c = document.createElement("td");
+        c.textContent = text;
+        return c;
+      }
+      tr.appendChild(td(n === 1 ? "single" : n + "-play"));
+      tr.appendChild(td(real ? fmtDenom(denom) : fmtMoney(denom, 3) + " —"));
+      tr.appendChild(td(p.linesVariance.known ? p.linesVariance.sd.toFixed(2) : "—"));
+      tr.appendChild(td(p.swing === null ? "—" : fmtMoney(p.swing)));
+      tr.appendChild(td(p.ruin === null ? "—" : fmtPct(p.ruin)));
+
+      // Biggest a single line can pay, then how often a handpay lands from
+      // either mechanism — one line reaching the threshold alone, or the held
+      // cards paying on every line at once.
+      var biggest = 0;
+      opts.game.hands.forEach(function (hand) {
+        var one = Promo.handPayout(hand, denom, MAX_COINS);
+        if (one > biggest) biggest = one;
+      });
+      var tdOne = td(fmtMoney(biggest));
+      if (biggest >= opts.threshold) tdOne.className = "over";
+      tr.appendChild(tdOne);
+
+      var w = Promo.w2gLines(opts.game, denom, n, MAX_COINS, opts.threshold);
+      var tdW = td(!w.known ? "—" : w.oneIn === null ? "never" : fmtInt(w.oneIn) + " hands");
+      if (w.oneIn !== null && w.oneIn < 10000) tdW.className = "over";
+      tr.appendChild(tdW);
+
+      body.appendChild(tr);
+    });
   }
 
   function renderCeiling(opts) {
