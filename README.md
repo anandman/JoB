@@ -51,6 +51,20 @@ Pay table payouts and expected return percentages are standard values from video
 | 8/6 | 98.39% | 1.61% |
 | 8/5 | 97.30% | 2.70% |
 
+## Development
+
+No build step, no dependencies. Edit the files and reload.
+
+```sh
+python3 -m http.server 8000   # or just open index.html
+```
+
+Scripts load in order: `data.js` → `poker.js` → `strategy-engine.js` → `app.js`.
+Each exposes one global; load order matters.
+
+There are no tests, no linter, and no CI. Verify by opening the page, switching
+variants, and toggling Simple/Optimal.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE).

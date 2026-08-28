@@ -1,0 +1,13 @@
+# Agent config (local only — generated from docs/DEVELOPMENT.md)
+AGENTS.md
+docs/DEVELOPMENT.md
+CLAUDE.md
+GEMINI.md
+.cursorrules
+HANDOFF.md
+.claude/
+.gemini/
+
+# OS / editor cruft
+.DS_Store
+*.swp
