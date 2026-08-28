@@ -1,0 +1,58 @@
+name: Refresh casino data
+
+# Pay tables and machine banks change as casinos rotate stock. This re-scrapes
+# vpfree2 on a schedule and commits any diff; Pages redeploys from main on push.
+on:
+  schedule:
+    - cron: "17 11 * * 1"   # Mondays, 11:17 UTC
+  workflow_dispatch:         # and on demand, before a trip
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-casinos
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Scrape vpfree2
+        run: node tools/fetch-casino.js
+
+      - name: Sanity-check the result
+        # A parser break would otherwise commit an empty file and take the
+        # Casinos tab down with it.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const src = fs.readFileSync("js/casinos.js", "utf8");
+            const { CASINOS } = new Function(src + ";return {CASINOS};")();
+            if (!Array.isArray(CASINOS) || CASINOS.length === 0) throw new Error("no casinos parsed");
+            for (const c of CASINOS) {
+              if (!c.name || !c.games || !c.games.length) throw new Error("no games for " + c.key);
+              for (const g of c.games) {
+                if (!g.payouts.length || !g.denoms.length) throw new Error("bad game in " + c.key + ": " + g.name);
+              }
+            }
+            console.log(CASINOS.map(c => c.name + " (" + c.games.length + ")").join(", "));
+          '
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- js/casinos.js; then
+            echo "no change"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/casinos.js
+          git commit -m "Refresh casino data from vpfree2"
+          git push

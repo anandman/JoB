@@ -22,6 +22,7 @@ const fs = require("fs");
 const path = require("path");
 
 const OUT = path.join(__dirname, "..", "js", "casinos.js");
+const CONFIG = path.join(__dirname, "casinos.config.json");
 
 /**
  * Payout schedules on vpfree2 are listed low hand to high, royal last.
@@ -154,16 +155,25 @@ function titleOf(html) {
 
 async function main() {
   const argv = process.argv.slice(2);
-  if (!argv.length) {
-    console.error("usage: node tools/fetch-casino.js [--promo] <slug|url>...");
-    process.exit(1);
-  }
-
-  let promoMode = false;
   const targets = [];
-  for (const a of argv) {
-    if (a === "--promo") { promoMode = true; continue; }
-    targets.push({ slug: a.replace(/^https?:\/\/[^/]+\/casino\//, "").replace(/\/$/, ""), promo: promoMode });
+
+  if (argv.length) {
+    let promoMode = false;
+    for (const a of argv) {
+      if (a === "--promo") { promoMode = true; continue; }
+      targets.push({ slug: a.replace(/^https?:\/\/[^/]+\/casino\//, "").replace(/\/$/, ""), promo: promoMode });
+    }
+  } else {
+    // No arguments: refresh whatever the config lists. This is what CI runs.
+    if (!fs.existsSync(CONFIG)) {
+      console.error("usage: node tools/fetch-casino.js [--promo] <slug|url>...");
+      console.error("   or: add slugs to " + CONFIG + " and run with no arguments");
+      process.exit(1);
+    }
+    const cfg = JSON.parse(fs.readFileSync(CONFIG, "utf8"));
+    for (const slug of cfg.promo || []) targets.push({ slug, promo: true });
+    for (const slug of cfg.other || []) targets.push({ slug, promo: false });
+    console.error("using " + path.basename(CONFIG) + ": " + targets.length + " casinos");
   }
 
   const casinos = [];

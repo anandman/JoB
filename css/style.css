@@ -888,3 +888,32 @@ footer p {
 }
 
 .casino-earn.slow { color: var(--color-orange); }
+
+/* ===== Safe areas (notches, home indicator) ===== */
+
+/* iOS reserves the status bar itself with status-bar-style: black, so the top
+   inset is normally 0 — it's included so a translucent bar can't clip the
+   header. Left/right matter in landscape on notched phones; the bottom inset
+   keeps the footer clear of the home indicator. */
+header {
+  padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
+}
+
+body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+nav,
+main,
+footer {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Standalone PWA: no browser chrome to absorb overscroll, and a rubber-band
+   bounce over a sticky nav looks broken. */
+@media (display-mode: standalone) {
+  html, body {
+    overscroll-behavior-y: none;
+  }
+}

@@ -6,525 +6,6 @@
 
 const CASINOS = [
   {
-    "key": "peppermill-hotel-casino",
-    "name": "Peppermill Hotel Casino",
-    "promo": false,
-    "source": "https://www.vpfree2.com/casino/peppermill-hotel-casino",
-    "games": [
-      {
-        "name": "Deuces Wild 44",
-        "variant": "NSUD",
-        "ret": 99.73,
-        "payouts": [
-          1,
-          2,
-          3,
-          4,
-          4,
-          10,
-          16,
-          25,
-          200,
-          800
-        ],
-        "hands": [
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "5 of a Kind",
-          "Wild Royal Flush",
-          "4 Deuces",
-          "Natural Royal Flush"
-        ],
-        "denoms": [
-          0.05,
-          0.1,
-          0.25,
-          0.5
-        ],
-        "perPoint": null,
-        "location": "in front of Romanza"
-      },
-      {
-        "name": "Double Deuces Wild",
-        "variant": "DDW (FP)",
-        "ret": 99.62,
-        "payouts": [
-          1,
-          2,
-          2,
-          3,
-          4,
-          11,
-          16,
-          25,
-          400,
-          800
-        ],
-        "hands": [
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "5 of a Kind",
-          "Wild Royal Flush",
-          "4 Deuces",
-          "Natural Royal Flush"
-        ],
-        "denoms": [
-          0.25,
-          0.5,
-          1
-        ],
-        "perPoint": null,
-        "location": "near the Fireside Lounge and The Pub"
-      },
-      {
-        "name": "All American / USA",
-        "variant": "",
-        "ret": 99.6,
-        "payouts": [
-          1,
-          1,
-          3,
-          8,
-          8,
-          8,
-          35,
-          200,
-          800
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.25,
-          1
-        ],
-        "perPoint": null,
-        "location": "@ Tuscany Lounge Bar"
-      },
-      {
-        "name": "Triple Double Bonus",
-        "variant": "TDB (FP)",
-        "ret": 99.58,
-        "payouts": [
-          1,
-          1,
-          2,
-          4,
-          7,
-          9,
-          50,
-          80,
-          160,
-          400,
-          800,
-          50,
-          800
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 5s–Ks",
-          "4 2s–4s",
-          "4 Aces",
-          "4 2s–4s + A/2/3/4",
-          "4 Aces + 2/3/4",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.1,
-          0.25
-        ],
-        "perPoint": null,
-        "location": "by the blue keno lounge near the Steak House"
-      },
-      {
-        "name": "Jacks or Better",
-        "variant": "JoB (FP)",
-        "ret": 99.54,
-        "payouts": [
-          1,
-          2,
-          3,
-          4,
-          6,
-          9,
-          25,
-          50,
-          800
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.01,
-          0.02,
-          0.05,
-          0.25
-        ],
-        "perPoint": null,
-        "location": "in the hallway outside the coffee shop"
-      },
-      {
-        "name": "Double Double Bonus Aces and Faces",
-        "variant": "DDBAF (FP)",
-        "ret": 99.46,
-        "payouts": [
-          1,
-          1,
-          3,
-          4,
-          6,
-          9,
-          50,
-          80,
-          160,
-          160,
-          400,
-          50,
-          800
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 5s–Ks",
-          "4 2s–4s",
-          "4 Aces",
-          "4 2s–4s + A/2/3/4",
-          "4 Aces + 2/3/4",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.25,
-          1
-        ],
-        "perPoint": null,
-        "location": ""
-      },
-      {
-        "name": "Bonus Aces and Faces",
-        "variant": "BPAF (FP)",
-        "ret": 99.26,
-        "payouts": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          8,
-          25,
-          40,
-          80,
-          50,
-          800
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 5s–Ks",
-          "4 2s–4s",
-          "4 Aces",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.25
-        ],
-        "perPoint": null,
-        "location": "Sports Book bar"
-      },
-      {
-        "name": "Bonus Poker",
-        "variant": "BP (FP)",
-        "ret": 99.17,
-        "payouts": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          8,
-          25,
-          40,
-          80,
-          50,
-          800
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 5s–Ks",
-          "4 2s–4s",
-          "4 Aces",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.05,
-          0.1,
-          0.25
-        ],
-        "perPoint": null,
-        "location": "near the change booth by the slot club."
-      },
-      {
-        "name": "Big Split Poker - Jacks or Better",
-        "variant": "",
-        "ret": 99,
-        "payouts": [
-          1,
-          2,
-          2,
-          2,
-          5,
-          8,
-          16,
-          200
-        ],
-        "hands": null,
-        "denoms": [
-          0.25,
-          0.5,
-          1,
-          2
-        ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
-      },
-      {
-        "name": "Big Split Poker - Deuces Wild",
-        "variant": "",
-        "ret": 98.99,
-        "payouts": [
-          1,
-          2,
-          3,
-          5,
-          7,
-          10,
-          75,
-          200
-        ],
-        "hands": null,
-        "denoms": [
-          0.25,
-          0.5,
-          1,
-          2
-        ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
-      },
-      {
-        "name": "Deuces Wild 44",
-        "variant": "LV Airport/Illinois Deuces",
-        "ret": 98.91,
-        "payouts": [
-          1,
-          2,
-          3,
-          4,
-          4,
-          9,
-          15,
-          25,
-          200,
-          800
-        ],
-        "hands": [
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "5 of a Kind",
-          "Wild Royal Flush",
-          "4 Deuces",
-          "Natural Royal Flush"
-        ],
-        "denoms": [
-          100
-        ],
-        "perPoint": null,
-        "location": "in the High Limit Slots area"
-      },
-      {
-        "name": "Big Split Poker - Joker Joker",
-        "variant": "",
-        "ret": 98.9,
-        "payouts": [
-          1,
-          1,
-          1,
-          3,
-          5,
-          13,
-          19,
-          25,
-          200
-        ],
-        "hands": [
-          "Jacks or Better",
-          "Two Pair",
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "Royal Flush"
-        ],
-        "denoms": [
-          0.25,
-          0.5,
-          1,
-          2
-        ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
-      },
-      {
-        "name": "Big Split Poker - Joker Poker",
-        "variant": "",
-        "ret": 98.81,
-        "payouts": [
-          1,
-          1,
-          1,
-          2,
-          4,
-          6,
-          13,
-          30,
-          40,
-          200
-        ],
-        "hands": [
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "5 of a Kind",
-          "Wild Royal Flush",
-          "4 Deuces",
-          "Natural Royal Flush"
-        ],
-        "denoms": [
-          0.25,
-          0.5,
-          1,
-          2
-        ],
-        "perPoint": null,
-        "location": "just inside the high-limit slot area"
-      },
-      {
-        "name": "Super Double Bonus",
-        "variant": "",
-        "ret": 98.69,
-        "payouts": [
-          1,
-          1,
-          3,
-          4,
-          5,
-          8,
-          50,
-          80,
-          120,
-          160,
-          80,
-          800
-        ],
-        "hands": null,
-        "denoms": [
-          0.05,
-          0.25
-        ],
-        "perPoint": null,
-        "location": "at Cabaret Bar"
-      },
-      {
-        "name": "Deuces Wild",
-        "variant": "Colorado Deuces",
-        "ret": 96.77,
-        "payouts": [
-          1,
-          2,
-          2,
-          3,
-          4,
-          13,
-          16,
-          25,
-          200,
-          800
-        ],
-        "hands": [
-          "3 of a Kind",
-          "Straight",
-          "Flush",
-          "Full House",
-          "4 of a Kind",
-          "Straight Flush",
-          "5 of a Kind",
-          "Wild Royal Flush",
-          "4 Deuces",
-          "Natural Royal Flush"
-        ],
-        "denoms": [
-          0.25
-        ],
-        "perPoint": null,
-        "location": "Logos provided by Logo.dev"
-      }
-    ]
-  },
-  {
     "key": "silver-legacy",
     "name": "Silver Legacy",
     "promo": true,
@@ -1116,6 +597,525 @@ const CASINOS = [
         ],
         "perPoint": 20,
         "location": "outside high limit room ($20 per point)"
+      }
+    ]
+  },
+  {
+    "key": "peppermill-hotel-casino",
+    "name": "Peppermill Hotel Casino",
+    "promo": false,
+    "source": "https://www.vpfree2.com/casino/peppermill-hotel-casino",
+    "games": [
+      {
+        "name": "Deuces Wild 44",
+        "variant": "NSUD",
+        "ret": 99.73,
+        "payouts": [
+          1,
+          2,
+          3,
+          4,
+          4,
+          10,
+          16,
+          25,
+          200,
+          800
+        ],
+        "hands": [
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "5 of a Kind",
+          "Wild Royal Flush",
+          "4 Deuces",
+          "Natural Royal Flush"
+        ],
+        "denoms": [
+          0.05,
+          0.1,
+          0.25,
+          0.5
+        ],
+        "perPoint": null,
+        "location": "in front of Romanza"
+      },
+      {
+        "name": "Double Deuces Wild",
+        "variant": "DDW (FP)",
+        "ret": 99.62,
+        "payouts": [
+          1,
+          2,
+          2,
+          3,
+          4,
+          11,
+          16,
+          25,
+          400,
+          800
+        ],
+        "hands": [
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "5 of a Kind",
+          "Wild Royal Flush",
+          "4 Deuces",
+          "Natural Royal Flush"
+        ],
+        "denoms": [
+          0.25,
+          0.5,
+          1
+        ],
+        "perPoint": null,
+        "location": "near the Fireside Lounge and The Pub"
+      },
+      {
+        "name": "All American / USA",
+        "variant": "",
+        "ret": 99.6,
+        "payouts": [
+          1,
+          1,
+          3,
+          8,
+          8,
+          8,
+          35,
+          200,
+          800
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.25,
+          1
+        ],
+        "perPoint": null,
+        "location": "@ Tuscany Lounge Bar"
+      },
+      {
+        "name": "Triple Double Bonus",
+        "variant": "TDB (FP)",
+        "ret": 99.58,
+        "payouts": [
+          1,
+          1,
+          2,
+          4,
+          7,
+          9,
+          50,
+          80,
+          160,
+          400,
+          800,
+          50,
+          800
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 5s–Ks",
+          "4 2s–4s",
+          "4 Aces",
+          "4 2s–4s + A/2/3/4",
+          "4 Aces + 2/3/4",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.1,
+          0.25
+        ],
+        "perPoint": null,
+        "location": "by the blue keno lounge near the Steak House"
+      },
+      {
+        "name": "Jacks or Better",
+        "variant": "JoB (FP)",
+        "ret": 99.54,
+        "payouts": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          9,
+          25,
+          50,
+          800
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.01,
+          0.02,
+          0.05,
+          0.25
+        ],
+        "perPoint": null,
+        "location": "in the hallway outside the coffee shop"
+      },
+      {
+        "name": "Double Double Bonus Aces and Faces",
+        "variant": "DDBAF (FP)",
+        "ret": 99.46,
+        "payouts": [
+          1,
+          1,
+          3,
+          4,
+          6,
+          9,
+          50,
+          80,
+          160,
+          160,
+          400,
+          50,
+          800
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 5s–Ks",
+          "4 2s–4s",
+          "4 Aces",
+          "4 2s–4s + A/2/3/4",
+          "4 Aces + 2/3/4",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.25,
+          1
+        ],
+        "perPoint": null,
+        "location": ""
+      },
+      {
+        "name": "Bonus Aces and Faces",
+        "variant": "BPAF (FP)",
+        "ret": 99.26,
+        "payouts": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          8,
+          25,
+          40,
+          80,
+          50,
+          800
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 5s–Ks",
+          "4 2s–4s",
+          "4 Aces",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.25
+        ],
+        "perPoint": null,
+        "location": "Sports Book bar"
+      },
+      {
+        "name": "Bonus Poker",
+        "variant": "BP (FP)",
+        "ret": 99.17,
+        "payouts": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          8,
+          25,
+          40,
+          80,
+          50,
+          800
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 5s–Ks",
+          "4 2s–4s",
+          "4 Aces",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.05,
+          0.1,
+          0.25
+        ],
+        "perPoint": null,
+        "location": "near the change booth by the slot club."
+      },
+      {
+        "name": "Big Split Poker - Jacks or Better",
+        "variant": "",
+        "ret": 99,
+        "payouts": [
+          1,
+          2,
+          2,
+          2,
+          5,
+          8,
+          16,
+          200
+        ],
+        "hands": null,
+        "denoms": [
+          0.25,
+          0.5,
+          1,
+          2
+        ],
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
+      },
+      {
+        "name": "Big Split Poker - Deuces Wild",
+        "variant": "",
+        "ret": 98.99,
+        "payouts": [
+          1,
+          2,
+          3,
+          5,
+          7,
+          10,
+          75,
+          200
+        ],
+        "hands": null,
+        "denoms": [
+          0.25,
+          0.5,
+          1,
+          2
+        ],
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
+      },
+      {
+        "name": "Deuces Wild 44",
+        "variant": "LV Airport/Illinois Deuces",
+        "ret": 98.91,
+        "payouts": [
+          1,
+          2,
+          3,
+          4,
+          4,
+          9,
+          15,
+          25,
+          200,
+          800
+        ],
+        "hands": [
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "5 of a Kind",
+          "Wild Royal Flush",
+          "4 Deuces",
+          "Natural Royal Flush"
+        ],
+        "denoms": [
+          100
+        ],
+        "perPoint": null,
+        "location": "in the High Limit Slots area"
+      },
+      {
+        "name": "Big Split Poker - Joker Joker",
+        "variant": "",
+        "ret": 98.9,
+        "payouts": [
+          1,
+          1,
+          1,
+          3,
+          5,
+          13,
+          19,
+          25,
+          200
+        ],
+        "hands": [
+          "Jacks or Better",
+          "Two Pair",
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "Royal Flush"
+        ],
+        "denoms": [
+          0.25,
+          0.5,
+          1,
+          2
+        ],
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
+      },
+      {
+        "name": "Big Split Poker - Joker Poker",
+        "variant": "",
+        "ret": 98.81,
+        "payouts": [
+          1,
+          1,
+          1,
+          2,
+          4,
+          6,
+          13,
+          30,
+          40,
+          200
+        ],
+        "hands": [
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "5 of a Kind",
+          "Wild Royal Flush",
+          "4 Deuces",
+          "Natural Royal Flush"
+        ],
+        "denoms": [
+          0.25,
+          0.5,
+          1,
+          2
+        ],
+        "perPoint": null,
+        "location": "just inside the high-limit slot area"
+      },
+      {
+        "name": "Super Double Bonus",
+        "variant": "",
+        "ret": 98.69,
+        "payouts": [
+          1,
+          1,
+          3,
+          4,
+          5,
+          8,
+          50,
+          80,
+          120,
+          160,
+          80,
+          800
+        ],
+        "hands": null,
+        "denoms": [
+          0.05,
+          0.25
+        ],
+        "perPoint": null,
+        "location": "at Cabaret Bar"
+      },
+      {
+        "name": "Deuces Wild",
+        "variant": "Colorado Deuces",
+        "ret": 96.77,
+        "payouts": [
+          1,
+          2,
+          2,
+          3,
+          4,
+          13,
+          16,
+          25,
+          200,
+          800
+        ],
+        "hands": [
+          "3 of a Kind",
+          "Straight",
+          "Flush",
+          "Full House",
+          "4 of a Kind",
+          "Straight Flush",
+          "5 of a Kind",
+          "Wild Royal Flush",
+          "4 Deuces",
+          "Natural Royal Flush"
+        ],
+        "denoms": [
+          0.25
+        ],
+        "perPoint": null,
+        "location": "Logos provided by Logo.dev"
       }
     ]
   }

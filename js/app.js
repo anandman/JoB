@@ -21,16 +21,31 @@
   var currentMode = "simple";
 
   // --- Tab navigation ---
+  function showTab(tab) {
+    var target = document.getElementById(tab);
+    if (!target) return false;
+    navLinks.forEach(function (l) {
+      l.classList.toggle("active", l.getAttribute("data-tab") === tab);
+    });
+    tabContents.forEach(function (t) { t.classList.remove("active"); });
+    target.classList.add("active");
+    return true;
+  }
+
   navLinks.forEach(function (link) {
     link.addEventListener("click", function (e) {
       e.preventDefault();
       var tab = this.getAttribute("data-tab");
-      navLinks.forEach(function (l) { l.classList.remove("active"); });
-      tabContents.forEach(function (t) { t.classList.remove("active"); });
-      this.classList.add("active");
-      document.getElementById(tab).classList.add("active");
+      if (showTab(tab)) history.replaceState(null, "", "#" + tab);
     });
   });
+
+  // Deep links: manifest shortcuts and bookmarks land on a specific tab.
+  function tabFromHash() {
+    var tab = (location.hash || "").replace(/^#/, "");
+    if (tab) showTab(tab);
+  }
+  window.addEventListener("hashchange", tabFromHash);
 
   // --- Pay table rendering ---
   function renderPayTable(variantKey) {
@@ -632,4 +647,5 @@
   initPromoControls();
   renderPromo();
   renderCasinos();
+  tabFromHash();
 })();

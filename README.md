@@ -12,6 +12,14 @@ Video poker strategy and odds reference app. Mobile-first, static site — no bu
 
 **Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
 
+## Install it
+
+The site is a PWA: open it on your phone and use Add to Home Screen (iOS) or
+Install app (Android). It runs standalone, respects notches and the home
+indicator, and works fully offline — useful on a casino floor with no signal.
+
+Live at **https://anandman.github.io/JoB/**
+
 ## Running locally
 
 Open `index.html` in a browser. That's it.
@@ -25,7 +33,10 @@ python3 -m http.server 8000
 
 ## Deploying
 
-This is a static site. Push to GitHub and enable GitHub Pages on the `main` branch, or drop the files on any static host.
+Push to `main` — GitHub Pages rebuilds automatically. No build step.
+
+A weekly GitHub Actions workflow re-scrapes vpfree2 and commits any changes,
+which redeploys the site. Casinos to track live in `tools/casinos.config.json`.
 
 ## Project structure
 
@@ -38,7 +49,11 @@ js/strategy-engine.js     # EV calculator + strategy generator
 js/casinos.js             # GENERATED casino floor data
 js/promo.js               # Promo coin-in, W-2G, variance, gaming days
 js/app.js                 # Tab navigation, rendering, toggle logic
+manifest.webmanifest      # PWA manifest
+sw.js                     # Service worker (offline support)
+icons/                    # GENERATED app icons
 tools/fetch-casino.js     # Scrapes vpfree2.com -> js/casinos.js
+tools/make-icons.py       # Regenerates icons/
 ```
 
 ## How strategy computation works

@@ -1,0 +1,5 @@
+{
+  "_comment": "Casinos to scrape from vpfree2.com. Slugs are the last path segment of the casino's vpfree2 URL. Entries under `promo` are flagged as running the current promotion.",
+  "promo": ["silver-legacy", "eldorado-hotel-casino"],
+  "other": ["peppermill-hotel-casino"]
+}
