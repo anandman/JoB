@@ -321,7 +321,10 @@ const STATIC_NOTES = {
 
 // IRS reporting threshold for a single slot/video-poker hand payout.
 // Long-standing value; verify if you've heard of a change.
-const W2G_THRESHOLD = 1200; // default; user-editable in the Promo tab
+// Raised from the long-standing $1,200 to $2,000 for 2026 and indexed for
+// inflation after that. Default only — user-editable in the Promo tab, so an
+// older or newer figure can be dialled in.
+const W2G_THRESHOLD = 2000;
 
 const MAX_COINS = 5;
 

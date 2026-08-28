@@ -548,6 +548,11 @@
       promoEls.stats.appendChild(statCard("Risk of ruin", fmtPct(plan.ruin),
         "going broke on " + fmtMoney(opts.bankroll) + " before finishing", ruinCls));
     }
+    if (plan.bankroll !== null) {
+      // Covers the downswing; ruin below asks whether you survive the path there.
+      promoEls.stats.appendChild(statCard("Bankroll (2σ)", fmtMoney(plan.bankroll),
+        "expected cost plus two standard deviations"));
+    }
     if (plan.bankrollFor5 !== null) {
       promoEls.stats.appendChild(statCard("Bankroll for 5%", fmtMoney(plan.bankrollFor5),
         fmtMoney(plan.bankrollFor1) + " to hold it at 1%"));
