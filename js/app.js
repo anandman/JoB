@@ -209,6 +209,7 @@
     tripSummary: document.getElementById("trip-summary"),
     tripDays: document.getElementById("trip-days"),
     casinoDenom: document.getElementById("casino-denom"),
+    casinoGame: document.getElementById("casino-game-filter"),
     casinoList: document.getElementById("casino-list"),
   };
 
@@ -467,9 +468,22 @@
   function renderCasinos() {
     var denom = parseFloat(promoEls.casinoDenom.value);
     var threshold = Math.max(1, parseFloat(promoEls.threshold.value) || W2G_THRESHOLD);
+    var gameFilter = promoEls.casinoGame.value;
     promoEls.casinoList.innerHTML = "";
 
+    try {
+      localStorage.setItem("job-casino-filter", gameFilter);
+    } catch (e) { /* private mode — the filter just won't persist */ }
+
+    var shown = 0;
+
     CASINOS.forEach(function (casino) {
+      var games = gameFilter === "*"
+        ? casino.games
+        : casino.games.filter(function (g) { return g.name === gameFilter; });
+      // A property with nothing matching is noise when you're hunting one game.
+      if (!games.length) return;
+      shown++;
       var card = document.createElement("div");
       card.className = "casino-card" + (casino.promo ? " promo" : "");
 
@@ -483,8 +497,9 @@
       }
       card.appendChild(h);
 
-      // Best game actually playable at the selected denomination.
-      var atDenom = casino.games.filter(function (g) {
+      // Best game actually playable at the selected denomination, within
+      // whatever the filter has narrowed us to.
+      var atDenom = games.filter(function (g) {
         return g.denoms.indexOf(denom) !== -1;
       });
       var promoOpts = currentPromoOpts();
@@ -500,7 +515,7 @@
       }
       card.appendChild(best);
 
-      casino.games.forEach(function (g) {
+      games.forEach(function (g) {
         var has = g.denoms.indexOf(denom) !== -1;
         var row = document.createElement("div");
         row.className = "casino-game" + (has ? "" : " unavailable");
@@ -580,6 +595,13 @@
 
       promoEls.casinoList.appendChild(card);
     });
+
+    if (!shown) {
+      var empty = document.createElement("p");
+      empty.className = "note";
+      empty.textContent = "No listed machine matches that game.";
+      promoEls.casinoList.appendChild(empty);
+    }
   }
 
   function initPromoControls() {
@@ -601,6 +623,35 @@
       });
       sel.value = "5";
     });
+
+    // Built from the scraped data so it stays correct as listings change.
+    // Commonest games first — that's what you're most likely reaching for.
+    var gameCounts = {};
+    CASINOS.forEach(function (c) {
+      c.games.forEach(function (g) {
+        gameCounts[g.name] = (gameCounts[g.name] || 0) + 1;
+      });
+    });
+    var allOpt = document.createElement("option");
+    allOpt.value = "*";
+    allOpt.textContent = "All games";
+    promoEls.casinoGame.appendChild(allOpt);
+    Object.keys(gameCounts)
+      .sort(function (a, b) { return gameCounts[b] - gameCounts[a] || a.localeCompare(b); })
+      .forEach(function (name) {
+        var o = document.createElement("option");
+        o.value = name;
+        o.textContent = name;
+        promoEls.casinoGame.appendChild(o);
+      });
+    promoEls.casinoGame.value = "*";
+    try {
+      var savedFilter = localStorage.getItem("job-casino-filter");
+      // Ignore a saved game that no longer appears in the refreshed listings.
+      if (savedFilter && (savedFilter === "*" || gameCounts[savedFilter])) {
+        promoEls.casinoGame.value = savedFilter;
+      }
+    } catch (e) { /* ignore */ }
 
     for (var hr = 0; hr < 24; hr++) {
       var o = document.createElement("option");
@@ -639,6 +690,7 @@
     // The threshold drives both tabs.
     promoEls.threshold.addEventListener("input", renderCasinos);
     promoEls.casinoDenom.addEventListener("change", renderCasinos);
+    promoEls.casinoGame.addEventListener("change", renderCasinos);
   }
 
   // --- Init ---

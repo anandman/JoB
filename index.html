@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
   <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
-  <link rel="stylesheet" href="css/style.css?v=eeed4be6">
+  <link rel="stylesheet" href="css/style.css?v=d923ce21">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -238,10 +238,16 @@
     </section>
 
     <section id="casinos" class="tab-content">
-      <p class="note">Reno floor data from <a href="https://www.vpfree2.com" target="_blank" rel="noopener">vpfree2.com</a>. Only games this app models are listed &mdash; each property carries more. Verify at the machine.</p>
-      <div class="field inline">
-        <label for="casino-denom">Show W-2G risk at</label>
-        <select id="casino-denom"></select>
+      <p class="note">Reno floor data from <a href="https://www.vpfree2.com" target="_blank" rel="noopener">vpfree2.com</a>, refreshed weekly. Verify at the machine before you sit down.</p>
+      <div class="casino-filters">
+        <div class="field">
+          <label for="casino-game-filter">Game</label>
+          <select id="casino-game-filter"></select>
+        </div>
+        <div class="field">
+          <label for="casino-denom">W-2G risk at</label>
+          <select id="casino-denom"></select>
+        </div>
       </div>
       <div id="casino-list"></div>
     </section>
@@ -252,12 +258,12 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/data.js?v=eeed4be6"></script>
-  <script src="js/poker.js?v=eeed4be6"></script>
-  <script src="js/strategy-engine.js?v=eeed4be6"></script>
-  <script src="js/casinos.js?v=eeed4be6"></script>
-  <script src="js/promo.js?v=eeed4be6"></script>
-  <script src="js/app.js?v=eeed4be6"></script>
+  <script src="js/data.js?v=d923ce21"></script>
+  <script src="js/poker.js?v=d923ce21"></script>
+  <script src="js/strategy-engine.js?v=d923ce21"></script>
+  <script src="js/casinos.js?v=d923ce21"></script>
+  <script src="js/promo.js?v=d923ce21"></script>
+  <script src="js/app.js?v=d923ce21"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

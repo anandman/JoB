@@ -917,3 +917,16 @@ footer {
     overscroll-behavior-y: none;
   }
 }
+
+.casino-filters {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+@media (max-width: 360px) {
+  .casino-filters {
+    grid-template-columns: 1fr;
+  }
+}

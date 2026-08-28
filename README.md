@@ -8,7 +8,7 @@ Video poker strategy and odds reference app. Mobile-first, static site — no bu
 
 **Promo Planner** — Work out the coin-in a capped tier-credit multiplier needs, what it costs, how long it takes, and how much of your bankroll it puts at risk. Includes a configurable handpay threshold (the IRS W-2G line defaults to $1,200) that reports which hands cross it, how often, and the highest denomination that keeps handpays rare. Trip windows are split into gaming days on the property's reset hour, not midnight.
 
-**Casinos** — Per-property game lists with returns, denominations, and handpay exposure, scraped from vpfree2.com.
+**Casinos** — Per-property game lists with returns, denominations, per-machine tier credit earn rates, and handpay exposure, scraped from vpfree2.com. Filter by game to cut a 15-game floor listing down to the one you actually play; the choice persists.
 
 **Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
 
