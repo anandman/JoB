@@ -296,6 +296,64 @@ var StrategyEngine = (function () {
   }
 
   /**
+   * EV for every category in a set, keyed by category id.
+   */
+  function categoryEVs(categories, payouts, evaluate) {
+    var out = {};
+    for (var i = 0; i < categories.length; i++) {
+      var cat = categories[i];
+      var inHand = {};
+      for (var j = 0; j < 5; j++) inHand[cat.cards[j]] = true;
+      var remaining = [];
+      for (var c = 0; c < 52; c++) if (!inHand[c]) remaining.push(c);
+      var held = [];
+      for (j = 0; j < cat.holdMask.length; j++) held.push(cat.cards[cat.holdMask[j]]);
+      out[cat.id] = computeHoldEV(held, remaining, payouts, evaluate);
+    }
+    return out;
+  }
+
+  /**
+   * One EV-sorted list. Bonus Poker uses the Jacks or Better category set —
+   * the hold shapes are identical, only the quad payouts differ — so sorting
+   * the same categories under Bonus Poker payouts derives its strategy, and
+   * it adapts to any Bonus Poker pay table rather than being hardcoded.
+   */
+  function generateSortedStrategy(cacheKey, categories, payouts, evaluate) {
+    if (cache[cacheKey]) return cache[cacheKey];
+    var evById = categoryEVs(categories, payouts, evaluate);
+    var entries = categories.map(function (cat) {
+      return { hold: cat.hold, tier: cat.tier, ev: evById[cat.id], note: null };
+    });
+    entries.sort(function (a, b) { return b.ev - a.ev; });
+    var result = { optimal: entries };
+    cache[cacheKey] = result;
+    return result;
+  }
+
+  /**
+   * One list in definition order, EVs computed but not sorted.
+   *
+   * Double Double Bonus uses this rather than an EV sort. Its published order
+   * interleaves "pair of Kings" between the JQK and TJQ royal draws, because a
+   * pair of Jacks or Queens overlaps the royal draw itself — a penalty-card
+   * interaction that representative hands cannot see, and one a player
+   * following "first match from the top" would act on. Definition order keeps
+   * the published sequence; the computed EVs sit alongside it.
+   */
+  function generateListedStrategy(cacheKey, categories, payouts, evaluate) {
+    if (cache[cacheKey]) return cache[cacheKey];
+    var evById = categoryEVs(categories, payouts, evaluate);
+    var result = {
+      optimal: categories.map(function (cat) {
+        return { hold: cat.hold, tier: cat.tier, ev: evById[cat.id], note: null };
+      }),
+    };
+    cache[cacheKey] = result;
+    return result;
+  }
+
+  /**
    * Deuces Wild strategy, grouped by how many deuces are held.
    *
    * Unlike Jacks or Better this is not one ordered list — a two-deuce hand can
@@ -347,5 +405,8 @@ var StrategyEngine = (function () {
     computeHoldEV: computeHoldEV,
     generateStrategy: generateStrategy,
     generateDeucesStrategy: generateDeucesStrategy,
+    generateSortedStrategy: generateSortedStrategy,
+    generateListedStrategy: generateListedStrategy,
+    categoryEVs: categoryEVs,
   };
 })();

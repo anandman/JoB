@@ -138,6 +138,8 @@
   function strategyKindOf(gameKey) {
     if (JOB_VARIANT_OF[gameKey]) return "job";
     if (DW_GAMES.indexOf(gameKey) !== -1) return "dw";
+    if (gameKey.indexOf("bp-") === 0) return "bp";
+    if (gameKey.indexOf("ddb-") === 0) return "ddb";
     return null;
   }
 
@@ -182,6 +184,7 @@
     strategyList.innerHTML = "";
     strategySections.innerHTML = "";
     if (kind === "dw") return renderDeucesStrategy(gameKey);
+    if (kind === "bp" || kind === "ddb") return renderBonusStrategy(gameKey, kind);
 
     // Jacks or Better: one ordered list, Simple/Optimal toggle applies.
     document.querySelector(".strategy-toggle").style.display = "";
@@ -223,6 +226,44 @@
         ol.appendChild(li);
       });
       strategySections.appendChild(ol);
+    });
+  }
+
+  /**
+   * Bonus Poker and Double Double Bonus. Bonus Poker reuses the Jacks or
+   * Better categories under its own payouts and sorts by EV, so it adapts to
+   * any Bonus Poker pay table. Double Double Bonus keeps its published order.
+   */
+  function renderBonusStrategy(gameKey, kind) {
+    var game = GAMES[gameKey];
+    var payouts = game.hands.map(function (h) { return h.maxPay; });
+    document.querySelector(".strategy-toggle").style.display = "none";
+    strategyIntro.innerHTML = "Hold the <strong>first</strong> match from the top. Discard the rest.";
+
+    var strat;
+    if (kind === "bp") {
+      strategyMeta.textContent = "Derived by expected value from this pay table — penalty cards not included";
+      strat = StrategyEngine.generateSortedStrategy(
+        "bp:" + gameKey, STRATEGY_CATEGORIES, payouts, Poker.evaluateBonusPoker);
+    } else {
+      strategyMeta.textContent = "Published order, EVs computed from this pay table";
+      strat = StrategyEngine.generateListedStrategy(
+        "ddb:" + gameKey, DDB_STRATEGY_CATEGORIES, payouts, Poker.evaluateDoubleDoubleBonus);
+    }
+
+    strat.optimal.forEach(function (entry) {
+      var li = document.createElement("li");
+      var hold = document.createElement("span");
+      hold.className = "strategy-hold";
+      hold.textContent = entry.hold;
+      li.appendChild(hold);
+      var ev = document.createElement("span");
+      ev.className = "strategy-ev";
+      ev.textContent = formatEV(entry.ev);
+      li.appendChild(ev);
+      li.classList.add({ pat: "tier-pat-high", made: "tier-strong", draw: "tier-draw",
+                         spec: "tier-speculative" }[entry.tier] || "tier-speculative");
+      strategyList.appendChild(li);
     });
   }
 

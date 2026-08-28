@@ -609,3 +609,87 @@ const DW_STRATEGY_CATEGORIES = [
 
 /** Deuces Wild pay tables at or above the useful-return threshold. */
 const DW_GAMES = ["nsud", "dw-illinois"];
+
+/* ============================================================
+ * Double Double Bonus strategy
+ * ============================================================ */
+
+/**
+ * Double Double Bonus needs its own category set rather than reusing the Jacks
+ * or Better one. Two pair pays 1 instead of 2, and quad aces with a low kicker
+ * pay 400, so aces get split out of the generic pair and trips categories and
+ * the high pairs separate by rank — all of which the JoB shapes cannot express.
+ *
+ * Bonus Poker needs no such set: its hold shapes are identical to Jacks or
+ * Better, so it reuses STRATEGY_CATEGORIES under Bonus Poker payouts.
+ */
+const DDB_STRATEGY_CATEGORIES = [
+  { id: "ddb_pat_royal", hold: "Pat Royal Flush", tier: "pat",
+    cards: [_mc(8,3), _mc(9,3), _mc(10,3), _mc(11,3), _mc(12,3)], holdMask: [0,1,2,3,4] },
+  { id: "ddb_quad_kicker", hold: "4 Aces with 2/3/4 Kicker", tier: "pat",
+    cards: [_mc(12,0), _mc(12,1), _mc(12,2), _mc(12,3), _mc(1,1)], holdMask: [0,1,2,3,4] },
+  { id: "ddb_quad_aces", hold: "4 Aces (draw for kicker)", tier: "pat",
+    cards: [_mc(12,0), _mc(12,1), _mc(12,2), _mc(12,3), _mc(11,1)], holdMask: [0,1,2,3] },
+  { id: "ddb_pat_quad", hold: "Pat 4 of a Kind", tier: "pat",
+    cards: [_mc(6,0), _mc(6,1), _mc(6,2), _mc(6,3), _mc(11,1)], holdMask: [0,1,2,3] },
+  { id: "ddb_pat_sf", hold: "Pat Straight Flush", tier: "pat",
+    cards: [_mc(4,2), _mc(5,2), _mc(6,2), _mc(7,2), _mc(8,2)], holdMask: [0,1,2,3,4] },
+  { id: "ddb_4_royal", hold: "4 to a Royal Flush", tier: "made",
+    cards: [_mc(8,0), _mc(9,0), _mc(10,0), _mc(12,0), _mc(3,2)], holdMask: [0,1,2,3] },
+  { id: "ddb_3_aces", hold: "3 Aces", tier: "made",
+    cards: [_mc(12,0), _mc(12,1), _mc(12,2), _mc(3,3), _mc(6,1)], holdMask: [0,1,2] },
+  { id: "ddb_pat_fh", hold: "Pat Full House", tier: "made",
+    cards: [_mc(9,0), _mc(9,1), _mc(9,2), _mc(4,0), _mc(4,1)], holdMask: [0,1,2,3,4] },
+  { id: "ddb_pat_flush", hold: "Pat Flush", tier: "made",
+    cards: [_mc(1,3), _mc(4,3), _mc(6,3), _mc(9,3), _mc(12,3)], holdMask: [0,1,2,3,4] },
+  { id: "ddb_pat_straight", hold: "Pat Straight", tier: "made",
+    cards: [_mc(4,0), _mc(5,1), _mc(6,2), _mc(7,3), _mc(8,0)], holdMask: [0,1,2,3,4] },
+  { id: "ddb_3_kind", hold: "3 of a Kind (2s–Ks)", tier: "made",
+    cards: [_mc(5,0), _mc(5,1), _mc(5,2), _mc(1,3), _mc(10,1)], holdMask: [0,1,2] },
+  { id: "ddb_4_sf_open", hold: "4 to a Straight Flush (open)", tier: "made",
+    cards: [_mc(4,2), _mc(5,2), _mc(6,2), _mc(7,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_4_sf_inside", hold: "4 to a Straight Flush (inside)", tier: "made",
+    cards: [_mc(4,2), _mc(5,2), _mc(6,2), _mc(8,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_pair_aces", hold: "Pair of Aces", tier: "made",
+    cards: [_mc(12,0), _mc(12,1), _mc(3,2), _mc(6,3), _mc(1,0)], holdMask: [0,1] },
+  { id: "ddb_two_pair", hold: "Two Pair", tier: "draw",
+    cards: [_mc(5,0), _mc(5,1), _mc(9,2), _mc(9,3), _mc(2,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_3_royal_jqk", hold: "3 to a Royal Flush (JQK)", tier: "draw",
+    cards: [_mc(9,0), _mc(10,0), _mc(11,0), _mc(3,2), _mc(1,3)], holdMask: [0,1,2] },
+  { id: "ddb_pair_kings", hold: "Pair of Kings", tier: "draw",
+    cards: [_mc(11,0), _mc(11,1), _mc(3,2), _mc(6,3), _mc(1,0)], holdMask: [0,1] },
+  { id: "ddb_3_royal_tjq", hold: "3 to a Royal Flush (TJQ)", tier: "draw",
+    cards: [_mc(8,0), _mc(9,0), _mc(10,0), _mc(3,2), _mc(1,3)], holdMask: [0,1,2] },
+  { id: "ddb_pair_jq", hold: "Pair of Jacks or Queens", tier: "draw",
+    cards: [_mc(10,0), _mc(10,1), _mc(3,2), _mc(6,3), _mc(1,0)], holdMask: [0,1] },
+  { id: "ddb_4_flush", hold: "4 to a Flush", tier: "draw",
+    cards: [_mc(1,2), _mc(4,2), _mc(6,2), _mc(9,2), _mc(3,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_3_royal_other", hold: "3 to a Royal Flush (other)", tier: "draw",
+    cards: [_mc(8,0), _mc(9,0), _mc(11,0), _mc(3,2), _mc(1,3)], holdMask: [0,1,2] },
+  { id: "ddb_4_str_high", hold: "4 to a Straight (9TJQ, TJQK)", tier: "spec",
+    cards: [_mc(7,0), _mc(8,1), _mc(9,2), _mc(10,3), _mc(1,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_low_pair", hold: "Low Pair (2s–10s)", tier: "draw",
+    cards: [_mc(5,0), _mc(5,1), _mc(2,2), _mc(8,3), _mc(11,0)], holdMask: [0,1] },
+  { id: "ddb_4_str_low", hold: "4 to a Straight (low, 0 gaps)", tier: "spec",
+    cards: [_mc(3,0), _mc(4,1), _mc(5,2), _mc(6,3), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_3_sf_1", hold: "3 to a Straight Flush (0 gaps)", tier: "spec",
+    cards: [_mc(3,2), _mc(4,2), _mc(5,2), _mc(11,0), _mc(0,1)], holdMask: [0,1,2] },
+  { id: "ddb_4_str_jqka", hold: "4 to a Straight (JQKA)", tier: "spec",
+    cards: [_mc(9,0), _mc(10,1), _mc(11,2), _mc(12,3), _mc(3,0)], holdMask: [0,1,2,3] },
+  { id: "ddb_2_royal_jq", hold: "2 to a Royal Flush (JQ, JK, QK)", tier: "spec",
+    cards: [_mc(9,0), _mc(10,0), _mc(3,2), _mc(1,3), _mc(6,1)], holdMask: [0,1] },
+  { id: "ddb_3_sf_2", hold: "3 to a Straight Flush (1 gap)", tier: "spec",
+    cards: [_mc(3,2), _mc(5,2), _mc(6,2), _mc(11,0), _mc(0,1)], holdMask: [0,1,2] },
+  { id: "ddb_3_str_jqk", hold: "3 to a Straight (JQK)", tier: "spec",
+    cards: [_mc(9,0), _mc(10,1), _mc(11,2), _mc(3,3), _mc(1,0)], holdMask: [0,1,2] },
+  { id: "ddb_2_str_jq", hold: "2 Unsuited High Cards (JQ)", tier: "spec",
+    cards: [_mc(9,0), _mc(10,1), _mc(3,2), _mc(1,3), _mc(6,0)], holdMask: [0,1] },
+  { id: "ddb_high_ace", hold: "Single Ace", tier: "spec",
+    cards: [_mc(12,0), _mc(3,2), _mc(1,3), _mc(6,1), _mc(0,2)], holdMask: [0] },
+  { id: "ddb_2_royal_tj", hold: "2 to a Royal Flush (TJ)", tier: "spec",
+    cards: [_mc(8,0), _mc(9,0), _mc(3,2), _mc(1,3), _mc(6,1)], holdMask: [0,1] },
+  { id: "ddb_high_jqk", hold: "Single J, Q or K", tier: "spec",
+    cards: [_mc(11,0), _mc(3,2), _mc(1,3), _mc(6,1), _mc(0,2)], holdMask: [0] },
+  { id: "ddb_discard", hold: "Discard Everything", tier: "spec",
+    cards: [_mc(0,0), _mc(2,1), _mc(4,2), _mc(6,3), _mc(8,0)], holdMask: [] },
+];
