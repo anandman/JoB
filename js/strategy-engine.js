@@ -95,18 +95,20 @@ var StrategyEngine = (function () {
    * @param {number[]} payouts - 9-element payout array
    * @returns {{ optimal: Array, simple: Array }}
    */
-  function generateStrategy(payouts) {
-    var key = payouts.join(",");
+  /**
+   * Jacks or Better family: one EV-sorted list plus the merged simple card.
+   *
+   * Bonus Poker shares this path. Its hold shapes are identical, so the same
+   * categories and the same simpleGroup merge produce its simple card too —
+   * only the payouts and the evaluator differ.
+   */
+  function generateFamilyStrategy(key, categories, maxBetPayouts, evaluate) {
     if (cache[key]) return cache[key];
-
-    // Strategy assumes max bet (5 coins), where Royal Flush pays 800/coin
-    var maxBetPayouts = payouts.slice();
-    maxBetPayouts[0] = ROYAL_FLUSH_5COIN_PER;
 
     // Build a set of dealt cards for each category, compute EV
     var entries = [];
-    for (var i = 0; i < STRATEGY_CATEGORIES.length; i++) {
-      var cat = STRATEGY_CATEGORIES[i];
+    for (var i = 0; i < categories.length; i++) {
+      var cat = categories[i];
       var cards = cat.cards;
 
       // Build remaining deck: 52 cards minus the 5 dealt
@@ -123,7 +125,7 @@ var StrategyEngine = (function () {
         held.push(cards[cat.holdMask[j]]);
       }
 
-      var ev = computeHoldEV(held, remaining, maxBetPayouts);
+      var ev = computeHoldEV(held, remaining, maxBetPayouts, evaluate);
 
       entries.push({
         id: cat.id,
@@ -184,9 +186,9 @@ var StrategyEngine = (function () {
     // Simple strategy: group by simpleGroup in definition order (A, B, C, ...)
     // The simpleGroup letters encode the canonical simple-strategy ordering.
     var groupMap = {};  // simpleGroup → { group, tier, ids[], evs[] }
-    var groupOrder = []; // first-seen order from STRATEGY_CATEGORIES (alphabetical)
-    for (var i = 0; i < STRATEGY_CATEGORIES.length; i++) {
-      var cat = STRATEGY_CATEGORIES[i];
+    var groupOrder = []; // first-seen order from categories (alphabetical)
+    for (var i = 0; i < categories.length; i++) {
+      var cat = categories[i];
       var g = cat.simpleGroup;
       var catEV = evById[cat.id] || 0;
       if (!groupMap[g]) {
@@ -213,8 +215,8 @@ var StrategyEngine = (function () {
     for (var i = 0; i < NOTE_RULES.length; i++) {
       var rule = NOTE_RULES[i];
       var targetGroup = null;
-      for (var j = 0; j < STRATEGY_CATEGORIES.length; j++) {
-        if (STRATEGY_CATEGORIES[j].id === rule.target) { targetGroup = STRATEGY_CATEGORIES[j].simpleGroup; break; }
+      for (var j = 0; j < categories.length; j++) {
+        if (categories[j].id === rule.target) { targetGroup = categories[j].simpleGroup; break; }
       }
       if (!targetGroup || !groupMap[targetGroup]) continue;
       var targetIdx = groupOrder.indexOf(targetGroup);
@@ -222,8 +224,8 @@ var StrategyEngine = (function () {
       var allAbove = true;
       for (var k = 0; k < rule.above.length; k++) {
         var aboveGroup = null;
-        for (var j = 0; j < STRATEGY_CATEGORIES.length; j++) {
-          if (STRATEGY_CATEGORIES[j].id === rule.above[k]) { aboveGroup = STRATEGY_CATEGORIES[j].simpleGroup; break; }
+        for (var j = 0; j < categories.length; j++) {
+          if (categories[j].id === rule.above[k]) { aboveGroup = categories[j].simpleGroup; break; }
         }
         if (!aboveGroup) continue;
         var aboveIdx = groupOrder.indexOf(aboveGroup);
@@ -259,6 +261,15 @@ var StrategyEngine = (function () {
     cache[key] = result;
     return result;
   }
+
+  function generateStrategy(payouts) {
+    // Strategy assumes max bet (5 coins), where the Royal Flush pays 800/coin.
+    var maxBetPayouts = payouts.slice();
+    maxBetPayouts[0] = ROYAL_FLUSH_5COIN_PER;
+    return generateFamilyStrategy(
+      payouts.join(","), STRATEGY_CATEGORIES, maxBetPayouts, Poker.evaluateHand);
+  }
+
 
   /**
    * Get display label for a simpleGroup. If the group has only one member,
@@ -404,6 +415,7 @@ var StrategyEngine = (function () {
   return {
     computeHoldEV: computeHoldEV,
     generateStrategy: generateStrategy,
+    generateFamilyStrategy: generateFamilyStrategy,
     generateDeucesStrategy: generateDeucesStrategy,
     generateSortedStrategy: generateSortedStrategy,
     generateListedStrategy: generateListedStrategy,

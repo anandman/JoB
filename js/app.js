@@ -184,7 +184,7 @@
     strategyList.innerHTML = "";
     strategySections.innerHTML = "";
     if (kind === "dw") return renderDeucesStrategy(gameKey);
-    if (kind === "bp" || kind === "ddb") return renderBonusStrategy(gameKey, kind);
+    if (kind === "bp" || kind === "ddb") return renderBonusStrategy(gameKey, kind, mode);
 
     // Jacks or Better: one ordered list, Simple/Optimal toggle applies.
     document.querySelector(".strategy-toggle").style.display = "";
@@ -234,7 +234,7 @@
    * Better categories under its own payouts and sorts by EV, so it adapts to
    * any Bonus Poker pay table. Double Double Bonus keeps its published order.
    */
-  function renderBonusStrategy(gameKey, kind) {
+  function renderBonusStrategy(gameKey, kind, mode) {
     var game = GAMES[gameKey];
     var payouts = game.hands.map(function (h) { return h.maxPay; });
     document.querySelector(".strategy-toggle").style.display = "none";
@@ -242,9 +242,15 @@
 
     var strat;
     if (kind === "bp") {
-      strategyMeta.textContent = "Derived by expected value from this pay table — penalty cards not included";
-      strat = StrategyEngine.generateSortedStrategy(
+      // Same hold shapes as Jacks or Better, so the same simpleGroup merge
+      // yields a simple card here too — only the payouts and evaluator differ.
+      document.querySelector(".strategy-toggle").style.display = "";
+      strategyMeta.textContent = mode === "simple"
+        ? "Merged from the full list — EV ranges show the spread inside each line"
+        : "Derived by expected value from this pay table — penalty cards not included";
+      var family = StrategyEngine.generateFamilyStrategy(
         "bp:" + gameKey, STRATEGY_CATEGORIES, payouts, Poker.evaluateBonusPoker);
+      strat = { optimal: mode === "simple" ? family.simple : family.optimal };
     } else {
       strategyMeta.textContent = "Published order, EVs computed from this pay table";
       strat = StrategyEngine.generateListedStrategy(
@@ -257,9 +263,21 @@
       hold.className = "strategy-hold";
       hold.textContent = entry.hold;
       li.appendChild(hold);
+      if (entry.note) {
+        var noteSpan = document.createElement("span");
+        noteSpan.className = "strategy-note-inline";
+        noteSpan.textContent = entry.note;
+        li.appendChild(noteSpan);
+      }
       var ev = document.createElement("span");
       ev.className = "strategy-ev";
-      ev.textContent = formatEV(entry.ev);
+      if (entry.evs) {
+        var lo = entry.evs[entry.evs.length - 1], hi = entry.evs[0];
+        ev.textContent = formatEV(lo) === formatEV(hi)
+          ? formatEV(hi) : formatEV(lo) + "\u2013" + formatEV(hi);
+      } else {
+        ev.textContent = formatEV(entry.ev);
+      }
       li.appendChild(ev);
       li.classList.add({ pat: "tier-pat-high", made: "tier-strong", draw: "tier-draw",
                          spec: "tier-speculative" }[entry.tier] || "tier-speculative");
