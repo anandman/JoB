@@ -291,7 +291,7 @@
 
     // Update meta text
     if (mode === "simple") {
-      strategyMeta.textContent = "~0.08% cost vs. optimal play";
+      strategyMeta.textContent = "0.05\u20130.08% cost vs. optimal play (measured)";
     } else {
       strategyMeta.textContent = "Penalty cards not included (~0.01% effect)";
     }
