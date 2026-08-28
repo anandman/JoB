@@ -16,6 +16,8 @@
   <nav>
     <a href="#pay-tables" class="nav-link active" data-tab="pay-tables">Pay Tables</a>
     <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
+    <a href="#promo" class="nav-link" data-tab="promo">Promo</a>
+    <a href="#casinos" class="nav-link" data-tab="casinos">Casinos</a>
   </nav>
 
   <main>
@@ -120,6 +122,117 @@
         </dl>
       </details>
     </section>
+
+    <section id="promo" class="tab-content">
+      <div class="promo-controls">
+        <div class="field">
+          <label for="promo-game">Game</label>
+          <select id="promo-game"></select>
+        </div>
+        <div class="field">
+          <label for="promo-denom">Denomination</label>
+          <select id="promo-denom"></select>
+        </div>
+        <div class="field">
+          <label for="promo-cap">Tier credit cap</label>
+          <input id="promo-cap" type="number" inputmode="numeric" value="40000" min="1" step="1000">
+        </div>
+        <div class="field">
+          <label for="promo-mult">Multiplier</label>
+          <input id="promo-mult" type="number" inputmode="numeric" value="10" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="promo-rate">Coin-in per base TC</label>
+          <input id="promo-rate" type="number" inputmode="numeric" value="10" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="promo-hph">Hands per hour</label>
+          <input id="promo-hph" type="number" inputmode="numeric" value="700" min="1" step="50">
+        </div>
+        <div class="field">
+          <label for="promo-threshold">Handpay threshold</label>
+          <input id="promo-threshold" type="number" inputmode="numeric" value="1200" min="1" step="100">
+        </div>
+      </div>
+
+      <div class="ceiling-callout" id="promo-ceiling"></div>
+
+      <p class="note warn" id="promo-verify">Confirm the earn rate at the players club: video poker often earns tier credits slower than slots, and some multipliers exclude it entirely.</p>
+
+      <div class="stat-grid" id="promo-stats"></div>
+
+      <h3>W-2G exposure at this denomination</h3>
+      <div id="promo-w2g"></div>
+
+      <h3>Denomination ladder</h3>
+      <p class="note">Expected cost is the same at every denomination &mdash; the house edge applies to coin-in, not bet size. Denomination only trades time against variance and handpays.</p>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr>
+              <th>Denom</th>
+              <th>Bet</th>
+              <th>Hands</th>
+              <th>Hours</th>
+              <th>W-2G every</th>
+              <th>Expected</th>
+            </tr>
+          </thead>
+          <tbody id="promo-ladder"></tbody>
+        </table>
+      </div>
+
+      <h3>Trip window</h3>
+      <p class="note">Gaming days roll over at the reset hour, not midnight &mdash; so a single overnight session can straddle two earning periods.</p>
+      <div class="promo-controls">
+        <div class="field">
+          <label for="trip-start">Arrive</label>
+          <input id="trip-start" type="datetime-local">
+        </div>
+        <div class="field">
+          <label for="trip-end">Leave</label>
+          <input id="trip-end" type="datetime-local">
+        </div>
+        <div class="field">
+          <label for="trip-reset">Gaming day resets at</label>
+          <select id="trip-reset"></select>
+        </div>
+        <div class="field checkbox">
+          <label for="trip-perday">
+            <input id="trip-perday" type="checkbox">
+            Cap resets each gaming day
+          </label>
+        </div>
+      </div>
+      <div id="trip-summary"></div>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr><th>Gaming day</th><th>Window</th><th>Available</th><th>Play</th><th></th></tr>
+          </thead>
+          <tbody id="trip-days"></tbody>
+        </table>
+      </div>
+
+      <h3>Session progress</h3>
+      <div class="tracker">
+        <div class="field">
+          <label for="tracker-tc">Tier credits earned so far</label>
+          <input id="tracker-tc" type="number" inputmode="numeric" value="0" min="0" step="500">
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="tracker-fill"></div></div>
+        <div class="stat-grid compact" id="tracker-stats"></div>
+      </div>
+    </section>
+
+    <section id="casinos" class="tab-content">
+      <p class="note">Reno floor data from <a href="https://www.vpfree2.com" target="_blank" rel="noopener">vpfree2.com</a>. Only games this app models are listed &mdash; each property carries more. Verify at the machine.</p>
+      <div class="field inline">
+        <label for="casino-denom">Show W-2G risk at</label>
+        <select id="casino-denom"></select>
+      </div>
+      <div id="casino-list"></div>
+    </section>
   </main>
 
   <footer>
@@ -130,6 +243,8 @@
   <script src="js/data.js"></script>
   <script src="js/poker.js"></script>
   <script src="js/strategy-engine.js"></script>
+  <script src="js/casinos.js"></script>
+  <script src="js/promo.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

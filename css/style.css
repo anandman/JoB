@@ -518,3 +518,365 @@ footer p {
     max-width: 720px;
   }
 }
+
+/* ===== Promo / trip / casinos ===== */
+
+/* Four tabs have to survive a 320px phone. */
+@media (max-width: 400px) {
+  .nav-link {
+    padding: 0.75rem 0.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+.promo-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.field.inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.field label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.field.checkbox {
+  justify-content: flex-end;
+}
+
+.field.checkbox label {
+  flex-direction: row;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.8rem;
+  color: var(--color-text);
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.field.checkbox input {
+  width: auto;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* --- Stat cards --- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-grid.compact {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.7rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 6px;
+}
+
+.stat-card.warn { border-left-color: var(--color-orange); }
+.stat-card.danger { border-left-color: var(--color-red); }
+.stat-card.done { border-left-color: var(--color-green); }
+
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* --- Bet ceiling callout --- */
+
+.ceiling-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem;
+  margin-bottom: 1.25rem;
+  background: rgba(63, 185, 80, 0.08);
+  border: 1px solid var(--color-green);
+  border-radius: 6px;
+}
+
+.ceiling-callout strong {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  color: var(--color-green);
+}
+
+.ceiling-callout span {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.ceiling-callout.muted {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+/* --- W-2G box --- */
+
+.w2g-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin-bottom: 1.25rem;
+}
+
+.w2g-head {
+  font-size: 0.88rem;
+  margin-bottom: 0.6rem;
+}
+
+.w2g-head.danger { color: var(--color-red); font-weight: 600; }
+.w2g-head.ok { color: var(--color-green); }
+
+.w2g-list { list-style: none; }
+
+.w2g-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.85rem;
+}
+
+.w2g-list li span:last-child { font-family: var(--font-mono); }
+.w2g-list li.trigger span:last-child { color: var(--color-red); font-weight: 600; }
+.w2g-list li.safe { color: var(--color-text-muted); }
+.w2g-list li.safe span:last-child { color: var(--color-green); }
+
+/* --- Ladder / schedule tables --- */
+
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+}
+
+.ladder-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ladder-table th {
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.ladder-table td {
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.ladder-table tr.current td {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.ladder-table tr.danger td { color: var(--color-red); }
+
+/* --- Progress tracker --- */
+
+.progress-bar {
+  height: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.7rem 0;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--color-accent);
+  transition: width 0.25s;
+}
+
+.progress-fill.done { background: var(--color-green); }
+
+/* --- Casino cards --- */
+
+.casino-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.casino-card.promo { border-color: var(--color-gold); }
+
+.casino-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.promo-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.12rem 0.4rem;
+  border-radius: 3px;
+  background: var(--color-gold);
+  color: #0d1117;
+}
+
+.casino-best {
+  font-size: 0.82rem;
+  color: var(--color-green);
+  margin-bottom: 0.6rem;
+}
+
+.casino-best.muted { color: var(--color-text-muted); }
+
+.casino-game {
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.casino-game.unavailable { opacity: 0.45; }
+
+.casino-game-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.casino-game-title em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.casino-game-title .ret {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.denom-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.4rem 0;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 3px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.chip-ok { border-color: var(--color-green); color: var(--color-green); }
+.chip-warn { border-color: var(--color-orange); color: var(--color-orange); }
+.chip-danger { border-color: var(--color-red); color: var(--color-red); }
+
+.chip-selected {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #0d1117;
+  font-weight: 700;
+}
+
+.casino-note,
+.casino-loc {
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+}
+
+.casino-loc { font-style: italic; opacity: 0.8; }
+
+.casino-source {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--color-accent);
+}
+
+.note.warn {
+  color: var(--color-orange);
+  border-left: 3px solid var(--color-orange);
+  padding-left: 0.6rem;
+}

@@ -6,6 +6,10 @@ Video poker strategy and odds reference app. Mobile-first, static site — no bu
 
 **Pay Tables** — View and compare pay tables for Jacks or Better variants (9/6, 9/5, 8/6, 8/5). See per-coin payouts, expected returns, and house edge at a glance.
 
+**Promo Planner** — Work out the coin-in a capped tier-credit multiplier needs, what it costs, how long it takes, and how much of your bankroll it puts at risk. Includes a configurable handpay threshold (the IRS W-2G line defaults to $1,200) that reports which hands cross it, how often, and the highest denomination that keeps handpays rare. Trip windows are split into gaming days on the property's reset hour, not midnight.
+
+**Casinos** — Per-property game lists with returns, denominations, and handpay exposure, scraped from vpfree2.com.
+
 **Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
 
 ## Running locally
@@ -31,7 +35,10 @@ css/style.css             # Mobile-first dark theme
 js/data.js                # Pay tables, strategy categories, note rules
 js/poker.js               # Card encoding + hand evaluator
 js/strategy-engine.js     # EV calculator + strategy generator
+js/casinos.js             # GENERATED casino floor data
+js/promo.js               # Promo coin-in, W-2G, variance, gaming days
 js/app.js                 # Tab navigation, rendering, toggle logic
+tools/fetch-casino.js     # Scrapes vpfree2.com -> js/casinos.js
 ```
 
 ## How strategy computation works
@@ -59,8 +66,14 @@ No build step, no dependencies. Edit the files and reload.
 python3 -m http.server 8000   # or just open index.html
 ```
 
-Scripts load in order: `data.js` → `poker.js` → `strategy-engine.js` → `app.js`.
-Each exposes one global; load order matters.
+Scripts load in order: `data.js` → `poker.js` → `strategy-engine.js` →
+`casinos.js` → `promo.js` → `app.js`. Each exposes one global; load order matters.
+
+`js/casinos.js` is generated — refresh it with:
+
+```sh
+node tools/fetch-casino.js --promo silver-legacy eldorado-hotel-casino
+```
 
 There are no tests, no linter, and no CI. Verify by opening the page, switching
 variants, and toggling Simple/Optimal.

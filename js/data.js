@@ -314,3 +314,133 @@ const NOTE_RULES = [
 const STATIC_NOTES = {
   "L": "Lowest 2 if 3+.",
 };
+
+/* ============================================================
+ * Promo / W-2G / multi-game data
+ * ============================================================ */
+
+// IRS reporting threshold for a single slot/video-poker hand payout.
+// Long-standing value; verify if you've heard of a change.
+const W2G_THRESHOLD = 1200; // default; user-editable in the Promo tab
+
+const MAX_COINS = 5;
+
+/**
+ * Hand frequencies for Jacks or Better under optimal play.
+ * Index matches HAND_NAMES.
+ *
+ * Verified: dotted with each variant's max-bet payouts these reproduce the
+ * published returns to within 0.01% (9/6 -> 99.548, 9/5 -> 98.447,
+ * 8/6 -> 98.397, 8/5 -> 97.296). Strategy shifts between JoB variants are
+ * small enough that one frequency table covers the whole family.
+ */
+const JOB_FREQUENCIES = [
+  0.0000248, // Royal Flush
+  0.0001093, // Straight Flush
+  0.0023630, // 4 of a Kind
+  0.0115120, // Full House
+  0.0110150, // Flush
+  0.0112290, // Straight
+  0.0744490, // 3 of a Kind
+  0.1292790, // Two Pair
+  0.2145850, // Jacks or Better
+];
+
+/**
+ * Games as flat hand lists, so games with split quad categories (Bonus Poker,
+ * Double Double Bonus) fit the same shape as Jacks or Better.
+ *
+ *   pay    - per-coin payout at 1-4 coins
+ *   maxPay - per-coin payout at 5 coins (only the royal differs)
+ *   freq   - probability under optimal play; omitted where not verified
+ *
+ * Games without freq still support exact W-2G threshold analysis (that needs
+ * only the pay table); they just can't report how *often* a handpay lands.
+ */
+function _jobGame(key, label, variantKey, ret) {
+  var payouts = PAY_TABLES[variantKey].payouts;
+  return {
+    key: key,
+    name: "Jacks or Better",
+    label: label,
+    ret: ret,
+    hands: HAND_NAMES.map(function (name, i) {
+      return {
+        name: name,
+        pay: payouts[i],
+        maxPay: i === 0 ? ROYAL_FLUSH_5COIN_PER : payouts[i],
+        freq: JOB_FREQUENCIES[i],
+      };
+    }),
+  };
+}
+
+const GAMES = {
+  "job-9-6": _jobGame("job-9-6", "9/6 Full Pay", "9-6", 99.5439),
+  "job-9-5": _jobGame("job-9-5", "9/5", "9-5", 98.4498),
+  "job-8-6": _jobGame("job-8-6", "8/6", "8-6", 98.3927),
+  "job-8-5": _jobGame("job-8-5", "8/5", "8-5", 97.2984),
+
+  "bp-8-5": {
+    key: "bp-8-5",
+    name: "Bonus Poker",
+    label: "8/5 Full Pay",
+    ret: 99.166,
+    hands: [
+      { name: "Royal Flush", pay: 250, maxPay: 800 },
+      { name: "Straight Flush", pay: 50, maxPay: 50 },
+      { name: "4 Aces", pay: 80, maxPay: 80 },
+      { name: "4 2s–4s", pay: 40, maxPay: 40 },
+      { name: "4 5s–Ks", pay: 25, maxPay: 25 },
+      { name: "Full House", pay: 8, maxPay: 8 },
+      { name: "Flush", pay: 5, maxPay: 5 },
+      { name: "Straight", pay: 4, maxPay: 4 },
+      { name: "3 of a Kind", pay: 3, maxPay: 3 },
+      { name: "Two Pair", pay: 2, maxPay: 2 },
+      { name: "Jacks or Better", pay: 1, maxPay: 1 },
+    ],
+  },
+
+  "ddb-9-6": {
+    key: "ddb-9-6",
+    name: "Double Double Bonus",
+    label: "9/6 Full Pay",
+    ret: 98.981,
+    hands: [
+      { name: "Royal Flush", pay: 250, maxPay: 800 },
+      { name: "Straight Flush", pay: 50, maxPay: 50 },
+      { name: "4 Aces + 2/3/4", pay: 400, maxPay: 400 },
+      { name: "4 2s–4s + A/2/3/4", pay: 160, maxPay: 160 },
+      { name: "4 Aces", pay: 160, maxPay: 160 },
+      { name: "4 2s–4s", pay: 80, maxPay: 80 },
+      { name: "4 5s–Ks", pay: 50, maxPay: 50 },
+      { name: "Full House", pay: 9, maxPay: 9 },
+      { name: "Flush", pay: 6, maxPay: 6 },
+      { name: "Straight", pay: 4, maxPay: 4 },
+      { name: "3 of a Kind", pay: 3, maxPay: 3 },
+      { name: "Two Pair", pay: 1, maxPay: 1 },
+      { name: "Jacks or Better", pay: 1, maxPay: 1 },
+    ],
+  },
+
+  "nsud": {
+    key: "nsud",
+    name: "Deuces Wild",
+    label: "Not So Ugly Deuces",
+    ret: 99.728,
+    hands: [
+      { name: "Natural Royal Flush", pay: 250, maxPay: 800 },
+      { name: "4 Deuces", pay: 200, maxPay: 200 },
+      { name: "Wild Royal Flush", pay: 25, maxPay: 25 },
+      { name: "5 of a Kind", pay: 16, maxPay: 16 },
+      { name: "Straight Flush", pay: 10, maxPay: 10 },
+      { name: "4 of a Kind", pay: 4, maxPay: 4 },
+      { name: "Full House", pay: 4, maxPay: 4 },
+      { name: "Flush", pay: 3, maxPay: 3 },
+      { name: "Straight", pay: 2, maxPay: 2 },
+      { name: "3 of a Kind", pay: 1, maxPay: 1 },
+    ],
+  },
+};
+
+const DENOMS = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 100];
