@@ -45,14 +45,19 @@ jobs:
             console.log(CASINOS.map(c => c.name + " (" + c.games.length + ")").join(", "));
           '
 
+      - name: Re-stamp asset versions
+        # casinos.js is part of the hash, so a data change must re-stamp or
+        # browsers will pair new JS with a cached old index.html.
+        run: node tools/stamp-assets.js
+
       - name: Commit if changed
         run: |
-          if git diff --quiet -- js/casinos.js; then
+          if git diff --quiet -- js/casinos.js index.html sw.js; then
             echo "no change"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/casinos.js
+          git add js/casinos.js index.html sw.js
           git commit -m "Refresh casino data from vpfree2"
           git push

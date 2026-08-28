@@ -9,19 +9,19 @@
  * itself in the background. Bumping VERSION purges everything.
  */
 
-const VERSION = "v1";
+const VERSION = "eeed4be6";
 const CACHE = "job-" + VERSION;
 
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css",
-  "./js/data.js",
-  "./js/poker.js",
-  "./js/strategy-engine.js",
-  "./js/casinos.js",
-  "./js/promo.js",
-  "./js/app.js",
+  "./css/style.css?v=eeed4be6",
+  "./js/data.js?v=eeed4be6",
+  "./js/poker.js?v=eeed4be6",
+  "./js/strategy-engine.js?v=eeed4be6",
+  "./js/casinos.js?v=eeed4be6",
+  "./js/promo.js?v=eeed4be6",
+  "./js/app.js?v=eeed4be6",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
@@ -31,8 +31,11 @@ const SHELL = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      // Don't let one 404 abort the whole precache.
-      .then((c) => Promise.allSettled(SHELL.map((u) => c.add(u))))
+      // cache: "reload" bypasses the HTTP cache so a precache can't inherit a
+      // stale copy. allSettled so one 404 doesn't abort the whole install.
+      .then((c) => Promise.allSettled(
+        SHELL.map((u) => c.add(new Request(u, { cache: "reload" })))
+      ))
       .then(() => self.skipWaiting())
   );
 });
