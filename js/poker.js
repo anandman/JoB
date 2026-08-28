@@ -20,6 +20,7 @@ var Poker = (function () {
   var RANK_J = 9;
   var RANK_A = 12;
   var RANK_10 = 8;
+  var RANK_2 = 0; // wild in Deuces Wild
 
   /**
    * Evaluate a 5-card hand. Returns hand type index matching HAND_NAMES:
@@ -112,11 +113,96 @@ var Poker = (function () {
   // Pre-allocated array for evaluateHand — avoids GC in hot loop
   var evalCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
+  /**
+   * Can these distinct natural ranks all sit inside one five-rank window,
+   * with wilds filling the gaps? Deuces are wild so a natural 2 never appears,
+   * and the wheel is A-3-4-5 plus a wild standing in for the 2 — which is why
+   * the ace is retried as rank -1.
+   */
+  function fitsStraightWindow(ranks) {
+    var i, lo = 99, hi = -99, hasAce = false;
+    if (ranks.length === 0) return true;
+    for (i = 0; i < ranks.length; i++) {
+      if (ranks[i] < lo) lo = ranks[i];
+      if (ranks[i] > hi) hi = ranks[i];
+      if (ranks[i] === RANK_A) hasAce = true;
+    }
+    if (hi - lo <= 4) return true;
+    if (!hasAce) return false;
+    lo = 99; hi = -99;
+    for (i = 0; i < ranks.length; i++) {
+      var r = ranks[i] === RANK_A ? -1 : ranks[i];
+      if (r < lo) lo = r;
+      if (r > hi) hi = r;
+    }
+    return hi - lo <= 4;
+  }
+
+  /**
+   * Evaluate a 5-card hand with deuces wild. Returns the hand index matching
+   * the Deuces Wild payout order:
+   *   0 = Natural Royal, 1 = 4 Deuces, 2 = Wild Royal, 3 = 5 of a Kind,
+   *   4 = Straight Flush, 5 = 4 of a Kind, 6 = Full House, 7 = Flush,
+   *   8 = Straight, 9 = 3 of a Kind
+   * Returns -1 for nothing. Note a pair pays nothing here — three of a kind
+   * is the minimum paying hand.
+   *
+   * Checks run in payout order, not poker order, so a hand that could be read
+   * two ways takes the better one (three wilds plus two suited royal cards is
+   * a wild royal at 25, not five of a kind at 16).
+   */
+  function evaluateDeucesWild(a, b, c, d, e) {
+    var cards = [a, b, c, d, e];
+    var wilds = 0, i, r;
+    var rc = [0,0,0,0,0,0,0,0,0,0,0,0,0];
+    var sc = [0, 0, 0, 0];
+    var natRanks = [];
+
+    for (i = 0; i < 5; i++) {
+      r = cards[i] >> 2;
+      if (r === RANK_2) { wilds++; continue; }
+      rc[r]++;
+      sc[cards[i] & 3]++;
+      if (rc[r] === 1) natRanks.push(r);
+    }
+
+    if (wilds === 4) return 1;
+
+    var n = 5 - wilds;
+    var maxOfRank = 0;
+    for (i = 0; i < 13; i++) if (rc[i] > maxOfRank) maxOfRank = rc[i];
+
+    var distinct = natRanks.length;
+    var flush = false;
+    for (i = 0; i < 4; i++) if (sc[i] === n) { flush = true; break; }
+
+    // A straight needs every natural rank distinct; a pair rules it out.
+    var straight = distinct === n && fitsStraightWindow(natRanks);
+
+    if (flush && straight) {
+      var royal = true;
+      for (i = 0; i < distinct; i++) if (natRanks[i] < RANK_10) { royal = false; break; }
+      if (royal) return wilds === 0 ? 0 : 2;
+    }
+
+    if (maxOfRank + wilds >= 5) return 3;
+    if (flush && straight) return 4;
+    if (maxOfRank + wilds >= 4) return 5;
+    // Exactly two natural ranks always makes a full house once four of a kind
+    // has been ruled out above.
+    if (distinct === 2) return 6;
+    if (flush) return 7;
+    if (straight) return 8;
+    if (maxOfRank + wilds >= 3) return 9;
+    return -1;
+  }
+
   return {
     cardRank: cardRank,
     cardSuit: cardSuit,
     makeCard: makeCard,
     evaluateHand: evaluateHand,
+    evaluateDeucesWild: evaluateDeucesWild,
     DECK: DECK,
     RANK_J: RANK_J,
     RANK_A: RANK_A,

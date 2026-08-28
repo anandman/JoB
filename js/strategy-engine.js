@@ -7,8 +7,6 @@
 var StrategyEngine = (function () {
   "use strict";
 
-  var evaluateHand = Poker.evaluateHand;
-
   // Cache: payouts key → { optimal: [...], simple: [...] }
   var cache = {};
 
@@ -19,7 +17,8 @@ var StrategyEngine = (function () {
    * @param {number[]} payouts - 9-element payout array (index matches HAND_NAMES)
    * @returns {number} average payout per coin wagered
    */
-  function computeHoldEV(held, deck, payouts) {
+  function computeHoldEV(held, deck, payouts, evaluate) {
+    var evaluateHand = evaluate || Poker.evaluateHand;
     var numDraw = 5 - held.length;
     var n = deck.length;
     var totalPayout = 0;
@@ -296,8 +295,57 @@ var StrategyEngine = (function () {
     return names.join(" / ");
   }
 
+  /**
+   * Deuces Wild strategy, grouped by how many deuces are held.
+   *
+   * Unlike Jacks or Better this is not one ordered list — a two-deuce hand can
+   * never match a no-deuce line, so each section is its own priority list, and
+   * lines stay in the published order rather than being sorted by EV (the
+   * published categories have overlapping EV ranges that a sort of single
+   * representative hands cannot reproduce).
+   *
+   * @param {number[]} payouts - max-bet per-coin payouts in DW hand order
+   */
+  function generateDeucesStrategy(payouts) {
+    var key = "dw:" + payouts.join(",");
+    if (cache[key]) return cache[key];
+
+    var evById = {};
+    for (var i = 0; i < DW_STRATEGY_CATEGORIES.length; i++) {
+      var cat = DW_STRATEGY_CATEGORIES[i];
+      var inHand = {};
+      for (var j = 0; j < 5; j++) inHand[cat.cards[j]] = true;
+      var remaining = [];
+      for (var c = 0; c < 52; c++) if (!inHand[c]) remaining.push(c);
+
+      var held = [];
+      for (j = 0; j < cat.holdMask.length; j++) held.push(cat.cards[cat.holdMask[j]]);
+
+      evById[cat.id] = held.length === 0
+        ? computeHoldEV([], remaining, payouts, Poker.evaluateDeucesWild)
+        : computeHoldEV(held, remaining, payouts, Poker.evaluateDeucesWild);
+    }
+
+    var sections = [];
+    for (i = 0; i < DW_SECTIONS.length; i++) {
+      var sec = DW_SECTIONS[i];
+      var lines = [];
+      for (j = 0; j < DW_STRATEGY_CATEGORIES.length; j++) {
+        var k = DW_STRATEGY_CATEGORIES[j];
+        if (k.section !== sec.key) continue;
+        lines.push({ hold: k.hold, tier: k.tier, ev: evById[k.id], note: null });
+      }
+      sections.push({ key: sec.key, label: sec.label, lines: lines });
+    }
+
+    var result = { sections: sections };
+    cache[key] = result;
+    return result;
+  }
+
   return {
     computeHoldEV: computeHoldEV,
     generateStrategy: generateStrategy,
+    generateDeucesStrategy: generateDeucesStrategy,
   };
 })();

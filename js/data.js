@@ -466,6 +466,146 @@ const GAMES = {
       { name: "3 of a Kind", pay: 1, maxPay: 1, combos: 5325911611716 },
     ]),
   },
+  // "LV Airport / Illinois Deuces" on vpfree2. Strategy computes from the pay
+  // table; no verified frequency table, so variance and handpay rates are
+  // unavailable for this one.
+  "dw-illinois": {
+    key: "dw-illinois",
+    name: "Deuces Wild",
+    label: "Illinois / LV Airport",
+    ret: 98.913,
+    hands: [
+      { name: "Natural Royal Flush", pay: 250, maxPay: 800 },
+      { name: "4 Deuces", pay: 200, maxPay: 200 },
+      { name: "Wild Royal Flush", pay: 25, maxPay: 25 },
+      { name: "5 of a Kind", pay: 15, maxPay: 15 },
+      { name: "Straight Flush", pay: 9, maxPay: 9 },
+      { name: "4 of a Kind", pay: 4, maxPay: 4 },
+      { name: "Full House", pay: 4, maxPay: 4 },
+      { name: "Flush", pay: 3, maxPay: 3 },
+      { name: "Straight", pay: 2, maxPay: 2 },
+      { name: "3 of a Kind", pay: 1, maxPay: 1 },
+    ],
+  },
 };
 
 const DENOMS = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 100];
+
+/* ============================================================
+ * Deuces Wild strategy
+ * ============================================================ */
+
+/**
+ * Deuces Wild strategy is organised by how many deuces you hold, not as one
+ * ordered list — a hand with two deuces can never match a no-deuce line. Each
+ * section is its own priority list.
+ *
+ * Order here is the published Wizard of Odds NSUD ordering rather than a
+ * computed EV sort. The published categories have deliberately overlapping EV
+ * ranges ("3 of a kind through straight flush" spans 1.888 to 10, straddling
+ * "4 to a straight flush"), so sorting single representative hands by EV
+ * cannot reproduce it. Computed EVs are shown alongside each line.
+ *
+ * Every EV below was checked against the published range. Representative hands
+ * discard neutral cards, so each EV is the no-penalty case — the top of the
+ * published range. Adding one suited penalty card reproduces the published
+ * minimum exactly (verified for 3-to-a-royal A-high: 1.060130).
+ */
+const DW_SECTIONS = [
+  { key: "4d", label: "Four Deuces" },
+  { key: "3d", label: "Three Deuces" },
+  { key: "2d", label: "Two Deuces" },
+  { key: "1d", label: "One Deuce" },
+  { key: "0d", label: "No Deuces" },
+];
+
+const DW_STRATEGY_CATEGORIES = [
+  // --- 4 deuces ---
+  { id: "dw_4d", section: "4d", hold: "Four Deuces", tier: "pat",
+    cards: [_mc(0,0), _mc(0,1), _mc(0,2), _mc(0,3), _mc(6,1)], holdMask: [0,1,2,3] },
+
+  // --- 3 deuces ---
+  { id: "dw_3d_wroyal", section: "3d", hold: "Wild Royal Flush", tier: "pat",
+    cards: [_mc(0,0), _mc(0,1), _mc(0,2), _mc(10,3), _mc(11,3)], holdMask: [0,1,2,3,4] },
+  { id: "dw_3d_5kind", section: "3d", hold: "Five of a Kind", tier: "pat",
+    cards: [_mc(0,0), _mc(0,1), _mc(0,2), _mc(5,0), _mc(5,1)], holdMask: [0,1,2,3,4] },
+  { id: "dw_3d_only", section: "3d", hold: "Three Deuces", tier: "made",
+    cards: [_mc(0,0), _mc(0,1), _mc(0,2), _mc(6,1), _mc(9,2)], holdMask: [0,1,2] },
+
+  // --- 2 deuces ---
+  { id: "dw_2d_pat", section: "2d", hold: "Pat 4 of a Kind or better", tier: "pat",
+    cards: [_mc(0,0), _mc(0,1), _mc(5,0), _mc(5,1), _mc(9,3)], holdMask: [0,1,2,3] },
+  { id: "dw_2d_4royal", section: "2d", hold: "4 to a Royal Flush", tier: "made",
+    cards: [_mc(0,0), _mc(0,1), _mc(10,3), _mc(11,3), _mc(3,0)], holdMask: [0,1,2,3] },
+  { id: "dw_2d_4sf", section: "2d", hold: "4 to a Straight Flush (0–1 gap)", tier: "made",
+    cards: [_mc(0,0), _mc(0,1), _mc(5,2), _mc(6,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "dw_2d_only", section: "2d", hold: "Two Deuces", tier: "draw",
+    cards: [_mc(0,0), _mc(0,1), _mc(6,1), _mc(9,2), _mc(3,3)], holdMask: [0,1] },
+
+  // --- 1 deuce ---
+  { id: "dw_1d_sf", section: "1d", hold: "Straight Flush to Wild Royal", tier: "pat",
+    cards: [_mc(0,0), _mc(4,2), _mc(5,2), _mc(6,2), _mc(7,2)], holdMask: [0,1,2,3,4] },
+  { id: "dw_1d_4royal", section: "1d", hold: "4 to a Royal Flush", tier: "made",
+    cards: [_mc(0,0), _mc(10,3), _mc(11,3), _mc(12,3), _mc(3,0)], holdMask: [0,1,2,3] },
+  { id: "dw_1d_flush4k", section: "1d", hold: "Flush through 4 of a Kind", tier: "made",
+    cards: [_mc(0,0), _mc(1,3), _mc(4,3), _mc(7,3), _mc(9,3)], holdMask: [0,1,2,3,4] },
+  { id: "dw_1d_4sf01", section: "1d", hold: "4 to a Straight Flush (0–1 gap)", tier: "made",
+    cards: [_mc(0,0), _mc(5,2), _mc(6,2), _mc(7,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "dw_1d_straight", section: "1d", hold: "Straight", tier: "made",
+    cards: [_mc(0,0), _mc(4,0), _mc(5,1), _mc(6,2), _mc(7,3)], holdMask: [0,1,2,3,4] },
+  { id: "dw_1d_4sf2", section: "1d", hold: "4 to a Straight Flush (2 gaps)", tier: "draw",
+    cards: [_mc(0,0), _mc(3,2), _mc(6,2), _mc(7,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "dw_1d_3kind", section: "1d", hold: "Three of a Kind", tier: "draw",
+    cards: [_mc(0,0), _mc(5,0), _mc(5,1), _mc(3,2), _mc(11,3)], holdMask: [0,1,2] },
+  { id: "dw_1d_4sfa", section: "1d", hold: "4 to a Straight Flush (ace low)", tier: "draw",
+    cards: [_mc(0,0), _mc(12,2), _mc(1,2), _mc(2,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "dw_1d_3rjk", section: "1d", hold: "3 to a Royal Flush (J–K high)", tier: "draw",
+    cards: [_mc(0,0), _mc(10,3), _mc(11,3), _mc(3,0), _mc(6,1)], holdMask: [0,1,2] },
+  { id: "dw_1d_3sf0", section: "1d", hold: "3 to a Straight Flush (0 gaps)", tier: "spec",
+    cards: [_mc(0,0), _mc(6,2), _mc(7,2), _mc(3,0), _mc(11,1)], holdMask: [0,1,2] },
+  { id: "dw_1d_3ra", section: "1d", hold: "3 to a Royal Flush (ace high)", tier: "spec",
+    cards: [_mc(0,0), _mc(12,3), _mc(10,3), _mc(3,0), _mc(6,1)], holdMask: [0,1,2] },
+  { id: "dw_1d_3sf1", section: "1d", hold: "3 to a Straight Flush (1 gap)", tier: "spec",
+    cards: [_mc(0,0), _mc(5,2), _mc(7,2), _mc(3,0), _mc(11,1)], holdMask: [0,1,2] },
+  { id: "dw_1d_4str", section: "1d", hold: "4 to a Straight (0 gaps)", tier: "spec",
+    cards: [_mc(0,0), _mc(5,0), _mc(6,1), _mc(7,2), _mc(11,3)], holdMask: [0,1,2,3] },
+  { id: "dw_1d_only", section: "1d", hold: "One Deuce", tier: "spec",
+    cards: [_mc(0,0), _mc(6,1), _mc(9,2), _mc(3,3), _mc(11,0)], holdMask: [0] },
+
+  // --- 0 deuces ---
+  { id: "dw_0d_royal", section: "0d", hold: "Royal Flush", tier: "pat",
+    cards: [_mc(8,3), _mc(9,3), _mc(10,3), _mc(11,3), _mc(12,3)], holdMask: [0,1,2,3,4] },
+  { id: "dw_0d_4royal", section: "0d", hold: "4 to a Royal Flush", tier: "pat",
+    cards: [_mc(8,3), _mc(9,3), _mc(10,3), _mc(11,3), _mc(4,0)], holdMask: [0,1,2,3] },
+  { id: "dw_0d_made", section: "0d", hold: "3 of a Kind through Straight Flush", tier: "made",
+    cards: [_mc(5,0), _mc(5,1), _mc(5,2), _mc(3,3), _mc(11,1)], holdMask: [0,1,2] },
+  { id: "dw_0d_4sf", section: "0d", hold: "4 to a Straight Flush", tier: "made",
+    cards: [_mc(4,2), _mc(5,2), _mc(6,2), _mc(7,2), _mc(11,0)], holdMask: [0,1,2,3] },
+  { id: "dw_0d_3royal", section: "0d", hold: "3 to a Royal Flush", tier: "draw",
+    cards: [_mc(10,3), _mc(11,3), _mc(12,3), _mc(3,0), _mc(6,1)], holdMask: [0,1,2] },
+  { id: "dw_0d_4flush", section: "0d", hold: "4 to a Flush", tier: "draw",
+    cards: [_mc(1,3), _mc(4,3), _mc(7,3), _mc(9,3), _mc(3,0)], holdMask: [0,1,2,3] },
+  { id: "dw_0d_2pair", section: "0d", hold: "Two Pair", tier: "draw",
+    cards: [_mc(5,0), _mc(5,1), _mc(9,2), _mc(9,3), _mc(2,0)], holdMask: [0,1,2,3] },
+  { id: "dw_0d_3sf0", section: "0d", hold: "3 to a Straight Flush (0 gaps)", tier: "spec",
+    cards: [_mc(4,2), _mc(5,2), _mc(6,2), _mc(11,0), _mc(2,1)], holdMask: [0,1,2] },
+  { id: "dw_0d_pair", section: "0d", hold: "One Pair", tier: "draw",
+    cards: [_mc(5,0), _mc(5,1), _mc(2,2), _mc(8,3), _mc(11,0)], holdMask: [0,1] },
+  { id: "dw_0d_4str", section: "0d", hold: "4 to a Straight (0 gaps)", tier: "spec",
+    cards: [_mc(5,0), _mc(6,1), _mc(7,2), _mc(8,3), _mc(1,0)], holdMask: [0,1,2,3] },
+  { id: "dw_0d_3sf12", section: "0d", hold: "3 to a Straight Flush (1–2 gaps)", tier: "spec",
+    cards: [_mc(3,2), _mc(4,2), _mc(6,2), _mc(11,0), _mc(1,1)], holdMask: [0,1,2] },
+  { id: "dw_0d_2rjq", section: "0d", hold: "2 to a Royal Flush (J or Q high)", tier: "spec",
+    cards: [_mc(9,3), _mc(10,3), _mc(3,2), _mc(1,1), _mc(6,0)], holdMask: [0,1] },
+  { id: "dw_0d_3sfa", section: "0d", hold: "3 to a Straight Flush (ace low)", tier: "spec",
+    cards: [_mc(12,2), _mc(1,2), _mc(2,2), _mc(11,0), _mc(6,1)], holdMask: [0,1,2] },
+  { id: "dw_0d_4str1", section: "0d", hold: "4 to a Straight (1 gap)", tier: "spec",
+    cards: [_mc(5,0), _mc(6,1), _mc(7,2), _mc(9,3), _mc(1,0)], holdMask: [0,1,2,3] },
+  { id: "dw_0d_2rk", section: "0d", hold: "2 to a Royal Flush (K high)", tier: "spec",
+    cards: [_mc(11,3), _mc(9,3), _mc(3,2), _mc(1,1), _mc(6,0)], holdMask: [0,1] },
+  { id: "dw_0d_toss", section: "0d", hold: "Toss Everything", tier: "spec",
+    cards: [_mc(1,0), _mc(4,1), _mc(6,2), _mc(11,3), _mc(7,0)], holdMask: [] },
+];
+
+/** Deuces Wild pay tables at or above the useful-return threshold. */
+const DW_GAMES = ["nsud", "dw-illinois"];

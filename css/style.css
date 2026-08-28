@@ -983,3 +983,17 @@ footer {
 .chip-legend .chip {
   font-size: 0.65rem;
 }
+
+.dw-section-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gold);
+  margin: 1.1rem 0 0.4rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+#strategy-sections .strategy-list {
+  margin-bottom: 0.5rem;
+}

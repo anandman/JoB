@@ -11,6 +11,8 @@
   var payTableBody = document.getElementById("pay-table-body");
   var returnValue = document.getElementById("return-value");
   var strategyList = document.getElementById("strategy-list");
+  var strategySections = document.getElementById("strategy-sections");
+  var strategyIntro = document.getElementById("strategy-intro");
   var strategyMeta = document.getElementById("strategy-meta");
   var navLinks = document.querySelectorAll(".nav-link");
   var tabContents = document.querySelectorAll(".tab-content");
@@ -133,16 +135,20 @@
   // The pay table tab covers every game; the strategy tab still only covers
   // the Jacks or Better family, so the two only sync when they overlap.
   var JOB_VARIANT_OF = { "job-9-6": "9-6", "job-9-5": "9-5", "job-8-6": "8-6", "job-8-5": "8-5" };
+  function strategyKindOf(gameKey) {
+    if (JOB_VARIANT_OF[gameKey]) return "job";
+    if (DW_GAMES.indexOf(gameKey) !== -1) return "dw";
+    return null;
+  }
 
   function setVariant(gameKey) {
     currentVariant = gameKey;
     variantSelect.value = gameKey;
     renderPayTable(currentVariant);
     renderGameCompare();
-    var jobKey = JOB_VARIANT_OF[gameKey];
-    if (jobKey) {
-      strategyVariantSelect.value = jobKey;
-      renderStrategy(jobKey, currentMode);
+    if (strategyKindOf(gameKey)) {
+      strategyVariantSelect.value = gameKey;
+      renderStrategy(gameKey, currentMode);
     }
   }
 
@@ -151,14 +157,7 @@
   });
 
   strategyVariantSelect.addEventListener("change", function () {
-    renderStrategy(this.value, currentMode);
-    var gameKey = "job-" + this.value;
-    if (GAMES[gameKey]) {
-      currentVariant = gameKey;
-      variantSelect.value = gameKey;
-      renderPayTable(gameKey);
-      renderGameCompare();
-    }
+    setVariant(this.value);
   });
 
   // --- Strategy toggle ---
@@ -178,7 +177,56 @@
   }
 
   // --- Strategy rendering ---
-  function renderStrategy(variantKey, mode) {
+  function renderStrategy(gameKey, mode) {
+    var kind = strategyKindOf(gameKey);
+    strategyList.innerHTML = "";
+    strategySections.innerHTML = "";
+    if (kind === "dw") return renderDeucesStrategy(gameKey);
+
+    // Jacks or Better: one ordered list, Simple/Optimal toggle applies.
+    document.querySelector(".strategy-toggle").style.display = "";
+    strategyIntro.innerHTML = "Hold the <strong>first</strong> match from the top. Discard the rest.";
+    return renderJobStrategy(JOB_VARIANT_OF[gameKey], mode);
+  }
+
+  /**
+   * Deuces Wild: five independent lists, one per deuce count. Lines stay in
+   * published order rather than EV order — the published categories overlap.
+   */
+  function renderDeucesStrategy(gameKey) {
+    var game = GAMES[gameKey];
+    document.querySelector(".strategy-toggle").style.display = "none";
+    strategyIntro.innerHTML = "Count your deuces first, then hold the <strong>first</strong> match in that section.";
+    strategyMeta.textContent = "Representative hands, no penalty cards — EVs are per coin at max bet";
+
+    var strat = StrategyEngine.generateDeucesStrategy(game.hands.map(function (h) { return h.maxPay; }));
+    strat.sections.forEach(function (sec) {
+      var h = document.createElement("h4");
+      h.className = "dw-section-title";
+      h.textContent = sec.label;
+      strategySections.appendChild(h);
+
+      var ol = document.createElement("ol");
+      ol.className = "strategy-list";
+      sec.lines.forEach(function (line) {
+        var li = document.createElement("li");
+        var hold = document.createElement("span");
+        hold.className = "strategy-hold";
+        hold.textContent = line.hold;
+        li.appendChild(hold);
+        var ev = document.createElement("span");
+        ev.className = "strategy-ev";
+        ev.textContent = formatEV(line.ev);
+        li.appendChild(ev);
+        li.classList.add({ pat: "tier-pat-high", made: "tier-strong", draw: "tier-draw",
+                           spec: "tier-speculative" }[line.tier] || "tier-speculative");
+        ol.appendChild(li);
+      });
+      strategySections.appendChild(ol);
+    });
+  }
+
+  function renderJobStrategy(variantKey, mode) {
     var variant = PAY_TABLES[variantKey];
     if (!variant) return;
 
@@ -193,7 +241,6 @@
     var strat = StrategyEngine.generateStrategy(variant.payouts);
     var entries = mode === "simple" ? strat.simple : strat.optimal;
 
-    strategyList.innerHTML = "";
     for (var i = 0; i < entries.length; i++) {
       var entry = entries[i];
       var li = document.createElement("li");
@@ -854,9 +901,19 @@
   });
   variantSelect.value = "job-9-6";
 
+  Object.keys(GAMES).forEach(function (k) {
+    if (!strategyKindOf(k)) return;
+    var g = GAMES[k];
+    var opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = g.name + " — " + g.label;
+    strategyVariantSelect.appendChild(opt);
+  });
+  strategyVariantSelect.value = "job-9-6";
+
   renderPayTable("job-9-6");
   renderGameCompare();
-  renderStrategy("9-6", "simple");
+  renderStrategy("job-9-6", "simple");
   initPromoControls();
   renderPromo();
   renderCasinos();
