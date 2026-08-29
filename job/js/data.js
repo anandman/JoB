@@ -244,12 +244,35 @@ const STRATEGY_CATEGORIES = [
     simpleGroup: "L",
   },
   {
+  // Three lines, for the same reason the suited 10s are three: as one line this
+  // spanned J-Q at 0.512 down to K-A at 0.479, and its middle representative
+  // made J-Q look worse than a suited J-10 and the ace pairs look better than a
+  // suited Q-10. An ace is a dead end for straights, which is most of the gap.
+    id: "unsuited_jq",
+    hold: "Unsuited J-Q",
+    cards: [_mc(9, 0), _mc(10, 1), _mc(3, 2), _mc(1, 3), _mc(6, 0)], // Jc Qd 5h 3s 8c
+    holdMask: [0, 1],
+    tier: "spec",
+    simpleGroup: "L",
+  },
+  {
     id: "2_unsuited_high",
-    hold: "2 Unsuited High Cards",
+    hold: "2 Unsuited High Cards (no ace)",
     cards: [_mc(10, 0), _mc(11, 1), _mc(3, 2), _mc(1, 3), _mc(6, 0)], // Qc Kd 5h 3s 8c
     holdMask: [0, 1],
     tier: "spec",
     simpleGroup: "L",
+  },
+  {
+    id: "2_unsuited_high_ace",
+    hold: "2 Unsuited High Cards (with an ace)",
+    // Represented by J-A, the BEST member. This line has to outrank a suited
+    // 10-K and a lone high card, so it is the strong member that has to speak
+    // for it — the mirror of Single High Card, where the weak member does.
+    cards: [_mc(9, 0), _mc(12, 1), _mc(3, 2), _mc(1, 3), _mc(6, 0)], // Jc Ad 5h 3s 8c
+    holdMask: [0, 1],
+    tier: "spec",
+    simpleGroup: "M",
   },
   {
     id: "4_inside_str_2hc",
@@ -303,8 +326,25 @@ const STRATEGY_CATEGORIES = [
     simpleGroup: "M",
   },
   {
+  // The ace is its own line. It is the WORST single high card in Jacks or
+  // Better (an ace is a dead end for straights) and the BEST in Bonus Poker
+  // (quad aces pay 80). One representative cannot be both, and using the ace
+  // for all four made Bonus Poker tell you to keep one high card when keeping
+  // two was worth 0.02 more.
     id: "single_high",
-    hold: "Single High Card",
+    hold: "Single High Card (J/Q/K)",
+    // Represented by the KING, the weakest of the three. A line is compared to
+    // its neighbours through this one hand, so the safe representative is the
+    // worst member: it makes the line rank low, and a line ranked too low only
+    // costs you when nothing above it matches.
+    cards: [_mc(11, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1), _mc(0, 2)], // Kc 5h 3s 8d 2h
+    holdMask: [0],
+    tier: "spec",
+    simpleGroup: "M",
+  },
+  {
+    id: "single_ace",
+    hold: "Single Ace",
     cards: [_mc(12, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1), _mc(0, 2)], // Ac 5h 3s 8d 2h
     holdMask: [0],
     tier: "spec",

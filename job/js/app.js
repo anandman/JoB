@@ -143,6 +143,15 @@
     return null;
   }
 
+  /**
+   * The single game selection, shared by every tab.
+   *
+   * Each tab still shows a selector so you can switch without going hunting,
+   * but they are mirrors of one value rather than four independent ones. They
+   * used to disagree, which meant the Strategy tab and the Analyzer could be
+   * describing different pay tables while looking like they contradicted each
+   * other.
+   */
   function setVariant(gameKey) {
     currentVariant = gameKey;
     variantSelect.value = gameKey;
@@ -151,6 +160,14 @@
     if (strategyKindOf(gameKey)) {
       strategyVariantSelect.value = gameKey;
       renderStrategy(gameKey, currentMode);
+    }
+    if (anEls && anEls.game && anEls.game.value !== gameKey) {
+      anEls.game.value = gameKey;
+      renderAnalyze();
+    }
+    if (promoEls && promoEls.game && promoEls.game.value !== gameKey) {
+      promoEls.game.value = gameKey;
+      renderPromo();
     }
   }
 
@@ -1182,7 +1199,7 @@
       anEls.game.appendChild(opt);
     });
     anEls.game.value = "job-9-6";
-    anEls.game.addEventListener("change", renderAnalyze);
+    anEls.game.addEventListener("change", function () { setVariant(anEls.game.value); });
 
     anEls.clear.addEventListener("click", function () {
       anHand = []; anPendingRank = -1; renderAnalyze();
@@ -1413,12 +1430,14 @@
     promoEls.lines.value = "1";
 
 
-    [promoEls.game, promoEls.denom, promoEls.lines, promoEls.coins, promoEls.bankroll,
+    [promoEls.denom, promoEls.lines, promoEls.coins, promoEls.bankroll,
      promoEls.cap, promoEls.mult,
      promoEls.rate, promoEls.hph, promoEls.threshold].forEach(function (el) {
       el.addEventListener("input", renderPromo);
       el.addEventListener("change", renderPromo);
     });
+    // The game goes through setVariant so every tab follows it.
+    promoEls.game.addEventListener("change", function () { setVariant(promoEls.game.value); });
     // The threshold drives both tabs.
     promoEls.threshold.addEventListener("input", renderCasinos);
     promoEls.casinoDenom.addEventListener("change", renderCasinos);
@@ -1450,6 +1469,9 @@
   renderStrategy("job-9-6", "simple");
   initPromoControls();
   initAnalyzer();
+  // After the controls exist, push the one game through so Analyze and Risk
+  // start on it too rather than on their own defaults.
+  setVariant("job-9-6");
   renderPromo();
   renderCasinos();
   tabFromHash();

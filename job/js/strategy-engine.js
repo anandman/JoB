@@ -311,11 +311,12 @@ var StrategyEngine = (function () {
     "L": [
       { name: "4 to an Inside Straight (3 high)", ids: ["4_inside_str_3hc", "4_inside_str_2hc", "4_inside_str_1hc"] },
       { name: "Suited 10–J", ids: ["suited_10_j"] },
-      { name: "2 Unsuited High Cards", ids: ["2_unsuited_high"] },
+      { name: "2 Unsuited High Cards", ids: ["unsuited_jq", "2_unsuited_high"] },
     ],
     "M": [
       { name: "Suited 10–Q/K", ids: ["suited_10_q", "suited_10_k"] },
-      { name: "Single High Card", ids: ["single_high"] },
+      { name: "2 Unsuited High Cards with an Ace", ids: ["2_unsuited_high_ace"] },
+      { name: "Single High Card", ids: ["single_high", "single_ace"] },
     ],
   };
 
