@@ -728,7 +728,7 @@
   }
 
   function renderCeiling(opts) {
-    var c = Promo.denomCeiling(opts.game, DENOMS, opts.threshold, MAX_COINS);
+    var c = Promo.denomCeiling(opts.game, DENOMS, opts.threshold, MAX_COINS, null, opts.lines);
     promoEls.ceiling.innerHTML = "";
     if (!c.known) {
       promoEls.ceiling.className = "ceiling-callout muted";
@@ -739,9 +739,11 @@
     }
     promoEls.ceiling.className = "ceiling-callout";
     var big = document.createElement("strong");
+    var perHand = c.denom === null ? 0 : c.denom * MAX_COINS * opts.lines;
     big.textContent = c.denom === null
       ? "Every denomination triggers handpays at " + fmtMoney(opts.threshold) + "."
-      : "Bet ceiling: " + fmtDenom(c.denom) + " (" + fmtMoney(c.denom * MAX_COINS) + " per hand)";
+      : "Bet ceiling: " + fmtDenom(c.denom) + " (" + fmtMoney(perHand) + " per hand" +
+        (opts.lines > 1 ? " across " + opts.lines + " lines" : "") + ")";
     promoEls.ceiling.appendChild(big);
 
     var sub = document.createElement("span");
@@ -750,7 +752,8 @@
     } else {
       sub.textContent = "At " + fmtDenom(c.breaksAt) + ", " +
         (c.hand ? c.hand.name.toLowerCase() + " pays " + fmtMoney(c.hand.amount) : "a common hand") +
-        " and crosses the " + fmtMoney(opts.threshold) + " line.";
+        " and crosses the " + fmtMoney(opts.threshold) + " line" +
+        (opts.lines > 1 ? " across " + opts.lines + " lines." : ".");
     }
     promoEls.ceiling.appendChild(sub);
   }

@@ -154,14 +154,18 @@ var Promo = (function () {
    * move when the promo gets longer or shorter. Default is one handpay per
    * 2000 hands — roughly once every three hours at normal speed.
    */
-  function denomCeiling(game, denoms, threshold, coins, rareRate) {
+  function denomCeiling(game, denoms, threshold, coins, rareRate, lines) {
     rareRate = rareRate || 1 / 2000;
     coins = coins || MAX_COINS;
+    lines = Math.max(1, lines || 1);
     var ceiling = null, breaks = null;
 
+    // Judged through w2gLines, so the line count counts: on a multi-play
+    // machine the held cards pay on every line at once, which reaches the
+    // threshold at a far lower denomination than a single line would.
     for (var i = 0; i < denoms.length; i++) {
-      var w = w2gAnalysis(game, denoms[i], coins, threshold);
-      if (w.rate === null) return { known: false, denom: null, breaksAt: null, hand: null };
+      var w = w2gLines(game, denoms[i], lines, coins, threshold);
+      if (!w.known) return { known: false, denom: null, breaksAt: null, hand: null, lines: lines };
       if (w.rate <= rareRate) {
         ceiling = denoms[i];
       } else {
@@ -170,14 +174,23 @@ var Promo = (function () {
       }
     }
 
-    // Which hand newly crossed the line at the breaking denomination.
+    // Which hand newly crossed at the breaking denomination.
     var hand = null;
-    if (breaks && ceiling !== null) {
-      var below = w2gAnalysis(game, ceiling, coins, threshold);
+    if (breaks) {
       var seen = {};
-      below.triggers.forEach(function (t) { seen[t.name] = true; });
-      breaks.w2g.triggers.forEach(function (t) {
-        if (!seen[t.name] && (hand === null || (t.freq || 0) > (hand.freq || 0))) hand = t;
+      if (ceiling !== null) {
+        var below = w2gLines(game, ceiling, lines, coins, threshold);
+        below.perLineHands.concat(below.replicatedHands)
+          .forEach(function (t) { seen[t.name] = true; });
+      }
+      var fresh = breaks.w2g.perLineHands.concat(breaks.w2g.replicatedHands)
+        .filter(function (t) { return !seen[t.name]; });
+      // Report the most frequent newcomer — the one that will actually bite.
+      fresh.forEach(function (t) {
+        var g = null;
+        for (var k = 0; k < game.hands.length; k++) if (game.hands[k].name === t.name) g = game.hands[k];
+        var f = g ? Math.max(g.freq || 0, g.dealt || 0) : 0;
+        if (hand === null || f > hand._f) hand = { name: t.name, amount: t.amount, _f: f };
       });
     }
 
@@ -187,6 +200,7 @@ var Promo = (function () {
       breaksAt: breaks ? breaks.denom : null,
       hand: hand,
       rareRate: rareRate,
+      lines: lines,
     };
   }
 
