@@ -269,10 +269,35 @@ const STRATEGY_CATEGORIES = [
   },
 
   // --- Suited 10+High / Single High Card (simpleGroup M) ---
+  //
+  // These are three separate lines, not one. A single "Suited 10-J/Q/K" entry
+  // has to be priced by ONE representative hand, and whichever you pick speaks
+  // for the other two: 10-J is worth about 0.03 more than 10-K, which is wide
+  // enough to straddle several categories. Priced as 10-J, the merged line
+  // claimed to beat two unsuited high cards on every pay table — true for 10-J
+  // against the weaker pairs, and wrong for 10-Q and 10-K everywhere.
   {
-    id: "suited_10_high",
-    hold: "Suited 10\u2013J/Q/K",
+    id: "suited_10_j",
+    hold: "Suited 10\u2013J",
     cards: [_mc(8, 0), _mc(9, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // 10c Jc 5h 3s 8d
+    holdMask: [0, 1],
+    tier: "spec",
+    // Groups with the unsuited high cards it actually competes against, not
+    // with the other suited 10s: it outranks them, 10-Q and 10-K do not.
+    simpleGroup: "L",
+  },
+  {
+    id: "suited_10_q",
+    hold: "Suited 10\u2013Q",
+    cards: [_mc(8, 0), _mc(10, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // 10c Qc 5h 3s 8d
+    holdMask: [0, 1],
+    tier: "spec",
+    simpleGroup: "M",
+  },
+  {
+    id: "suited_10_k",
+    hold: "Suited 10\u2013K",
+    cards: [_mc(8, 0), _mc(11, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // 10c Kc 5h 3s 8d
     holdMask: [0, 1],
     tier: "spec",
     simpleGroup: "M",
