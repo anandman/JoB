@@ -1,0 +1,391 @@
+/* ===== Bettor or Bust — Mobile-first styles ===== */
+
+:root {
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-raised: #1c2430;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-text-muted: #8b949e;
+  --color-accent: #58a6ff;
+  --color-gold: #f0c040;
+  --color-green: #3fb950;
+  --color-red: #f85149;
+  --color-orange: #d29922;
+  --color-purple: #bc8cff;
+  --font-mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Action colours, shared by the chart and the analyzer so a cell and a
+     button for the same action always read as the same thing. */
+  --act-stand: #c94f4f;
+  --act-hit: #2f6f4f;
+  --act-double: #b3801f;
+  --act-split: #4a6fb5;
+  --act-surrender: #6b7280;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { font-size: 15px; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ===== Header ===== */
+
+header {
+  text-align: center;
+  padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 1rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gold);
+  letter-spacing: -0.02em;
+}
+
+.subtitle { color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.15rem; }
+
+/* ===== Navigation ===== */
+
+nav {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.nav-link {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 0.4rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+
+main {
+  padding: 1rem;
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+h2 { font-size: 1.05rem; margin-bottom: 0.6rem; }
+h3 { font-size: 0.9rem; margin: 1.1rem 0 0.5rem; color: var(--color-text-muted);
+     text-transform: uppercase; letter-spacing: 0.06em; }
+
+.note { font-size: 0.78rem; color: var(--color-text-muted); margin-top: 0.6rem; }
+
+/* ===== Edge badge ===== */
+
+.edge-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.edge-label, .edge-sub { font-size: 0.75rem; color: var(--color-text-muted); }
+.edge-value { font-size: 1.9rem; font-weight: 700; color: var(--color-gold);
+              font-family: var(--font-mono); letter-spacing: -0.02em; }
+.edge-value.good { color: var(--color-green); }
+.edge-value.bad { color: var(--color-red); }
+
+/* ===== Rules form ===== */
+
+.rules-grid { display: grid; gap: 0.7rem; }
+
+.rule-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.55rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.rule-row label { font-size: 0.88rem; }
+
+/* The preset names are long enough to squeeze the label into a two-word
+   column, so this row stacks instead of sharing a line. */
+.preset-row {
+  grid-template-columns: 1fr;
+  margin-bottom: 0.9rem;
+}
+
+.preset-row select { min-width: 0; width: 100%; }
+.rule-row .hint { display: block; font-size: 0.72rem; color: var(--color-text-muted); }
+
+select, input[type="number"] {
+  background: var(--color-raised);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  min-width: 6rem;
+}
+
+input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--color-accent); }
+
+/* ===== Strategy chart ===== */
+
+.chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+table.chart { border-collapse: collapse; font-family: var(--font-mono); margin-bottom: 0.5rem; }
+
+table.chart th, table.chart td {
+  border: 1px solid var(--color-bg);
+  text-align: center;
+  font-size: 0.72rem;
+  padding: 0;
+  width: 1.72rem;
+  height: 1.6rem;
+}
+
+table.chart th { color: var(--color-text-muted); font-size: 0.7rem; font-weight: 700; }
+table.chart th.row-label { width: 2.6rem; text-align: right; padding-right: 0.35rem;
+                           color: var(--color-text); }
+
+td.act { color: #fff; font-weight: 700; cursor: pointer; }
+td.act-stand { background: var(--act-stand); }
+td.act-hit { background: var(--act-hit); }
+td.act-double { background: var(--act-double); }
+td.act-split { background: var(--act-split); }
+td.act-surrender { background: var(--act-surrender); }
+
+/* A cell whose runner-up is within a hundredth of a unit is a coin flip the
+   chart has to round. Marking them is the honest thing to do. */
+td.act.close { box-shadow: inset 0 0 0 2px var(--color-gold); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.7rem; }
+.legend span { display: inline-flex; align-items: center; gap: 0.3rem;
+               font-size: 0.75rem; color: var(--color-text-muted); }
+.legend i { width: 0.85rem; height: 0.85rem; border-radius: 3px; display: inline-block; }
+
+/* ===== Cards ===== */
+
+.hand { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+
+.card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.4rem;
+  padding: 0.6rem 0.3rem;
+  border: 1px solid #b6bec7;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #11161c;
+  font-family: var(--font-mono);
+  line-height: 1.1;
+}
+
+.card.red { color: #c8102e; }
+.card-rank { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+.card-suit { font-size: 1.35rem; }
+
+/* Face down: a real card back, not a dimmed face. */
+.card.down {
+  background: repeating-linear-gradient(45deg, #24405e, #24405e 4px, #1b3149 4px, #1b3149 8px);
+  border-color: #3c5c80;
+  color: transparent;
+}
+
+.card.small { min-width: 2.4rem; padding: 0.35rem 0.2rem; }
+.card.small .card-rank { font-size: 1rem; }
+.card.small .card-suit { font-size: 0.9rem; }
+
+@media (max-width: 360px) {
+  .card { min-width: 3rem; padding: 0.5rem 0.2rem; }
+  .card-rank { font-size: 1.25rem; }
+  .card-suit { font-size: 1.15rem; }
+  table.chart th, table.chart td { width: 1.55rem; height: 1.5rem; font-size: 0.68rem; }
+}
+
+/* ===== Hand panels ===== */
+
+.seat {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.seat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.seat-total { color: var(--color-text); font-family: var(--font-mono); font-size: 0.85rem; }
+.seat.active { border-color: var(--color-accent); }
+
+/* ===== Buttons ===== */
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0; }
+
+button {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background: var(--color-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 5rem;
+}
+
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { background: var(--color-accent); border-color: var(--color-accent); color: #06121f; }
+button.act-stand { background: var(--act-stand); border-color: var(--act-stand); color: #fff; }
+button.act-hit { background: var(--act-hit); border-color: var(--act-hit); color: #fff; }
+button.act-double { background: var(--act-double); border-color: var(--act-double); color: #fff; }
+button.act-split { background: var(--act-split); border-color: var(--act-split); color: #fff; }
+button.act-surrender { background: var(--act-surrender); border-color: var(--act-surrender); color: #fff; }
+
+/* Analyze / Play toggle: two equal halves of one control, not two loose
+   buttons. */
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.mode-toggle button {
+  border: 0;
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  flex: none;
+  min-width: 0;
+}
+
+.mode-toggle button.active { background: var(--color-accent); color: #06121f; }
+
+/* ===== Picker ===== */
+
+.picker { display: grid; grid-template-columns: repeat(10, 1fr); gap: 0.3rem; }
+
+.picker button {
+  min-width: 0;
+  padding: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  flex: none;
+}
+
+.picker button:disabled { opacity: 0.25; }
+
+/* ===== Results ===== */
+
+.actions-list { display: grid; gap: 0.4rem; margin-top: 0.6rem; }
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.88rem;
+}
+
+.action-row.is-best { border-color: var(--color-green); background: #14261a; }
+.action-row .rank-num { color: var(--color-text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
+.action-row .ev { font-family: var(--font-mono); font-size: 0.85rem; text-align: right; }
+.action-row .cost { color: var(--color-red); }
+.action-row.is-best .cost { color: var(--color-green); }
+
+.dealer-dist { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.3rem; margin-top: 0.5rem; }
+.dist-cell { background: var(--color-surface); border: 1px solid var(--color-border);
+             border-radius: 0.4rem; padding: 0.4rem 0.2rem; text-align: center; }
+.dist-cell .k { font-size: 0.7rem; color: var(--color-text-muted); }
+.dist-cell .v { font-family: var(--font-mono); font-size: 0.82rem; }
+.dist-cell.bust .v { color: var(--color-green); }
+
+.banner {
+  border-radius: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  margin: 0.8rem 0;
+  font-size: 0.88rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.banner.good { border-color: var(--color-green); background: #14261a; }
+.banner.bad { border-color: var(--color-red); background: #2a1517; }
+.banner.warn { border-color: var(--color-orange); background: #2a2312; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 1rem; }
+.stat { background: var(--color-surface); border: 1px solid var(--color-border);
+        border-radius: 0.5rem; padding: 0.6rem 0.4rem; text-align: center; }
+.stat .k { font-size: 0.68rem; color: var(--color-text-muted); text-transform: uppercase;
+           letter-spacing: 0.05em; }
+.stat .v { font-family: var(--font-mono); font-size: 1.05rem; margin-top: 0.15rem; }
+
+/* ===== Footer ===== */
+
+footer {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: 2rem;
+}
+
+footer p { font-size: 0.8rem; color: var(--color-text-muted); }
+.disclaimer { font-size: 0.7rem !important; margin-top: 0.25rem; opacity: 0.7; }
+
+.site-link { margin-top: 0.6rem; }
+.site-link a { color: var(--color-accent); text-decoration: none; font-size: 0.78rem; }
+.site-link a:hover { text-decoration: underline; }
+
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+}

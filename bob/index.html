@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Bettor or Bust — Blackjack Strategy &amp; Odds</title>
+  <meta name="description" content="Blackjack basic strategy, hand analyzer and house edge, derived from your table's exact rules rather than looked up.">
+  <link rel="stylesheet" href="css/style.css?v=93f70a32">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <!-- Opaque status bar: iOS reserves the space itself, so the layout never
+       renders under the clock. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="BoB">
+</head>
+<body>
+  <header>
+    <h1>Bettor or Bust</h1>
+    <p class="subtitle">Blackjack Strategy &amp; Odds</p>
+  </header>
+
+  <nav>
+    <a href="#rules" class="nav-link active" data-tab="rules">Rules</a>
+    <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
+    <a href="#analyze" class="nav-link" data-tab="analyze">Analyze</a>
+  </nav>
+
+  <main>
+    <section id="rules" class="tab-content active">
+      <div class="edge-badge">
+        <span class="edge-label">House Edge</span>
+        <span class="edge-value" id="edge-value">—</span>
+        <span class="edge-sub" id="edge-sub">with perfect basic strategy</span>
+      </div>
+
+      <div class="rule-row preset-row">
+        <label for="preset-select">Start from a table
+          <span class="hint">Then change anything below.</span>
+        </label>
+        <select id="preset-select"></select>
+      </div>
+
+      <div class="rules-grid" id="rules-grid"></div>
+
+      <p class="note">Every number in this app is computed from these rules, not
+        looked up — change one and the strategy chart and the edge both move.
+        Check the felt before you sit down; the rules are printed on it.</p>
+    </section>
+
+    <section id="strategy" class="tab-content">
+      <h2 id="strategy-title">Basic strategy</h2>
+      <p class="note" id="strategy-sub"></p>
+
+      <h3>Hard totals</h3>
+      <div class="chart-scroll"><table class="chart" id="chart-hard"></table></div>
+
+      <h3>Soft totals</h3>
+      <div class="chart-scroll"><table class="chart" id="chart-soft"></table></div>
+
+      <h3>Pairs</h3>
+      <div class="chart-scroll"><table class="chart" id="chart-pairs"></table></div>
+
+      <div class="legend" id="chart-legend"></div>
+
+      <p class="note">A gold outline marks a cell whose second-best action is
+        within 0.01 of a bet — a coin flip the chart has to round one way. Tap
+        any cell to open it in the analyzer.</p>
+    </section>
+
+    <section id="analyze" class="tab-content">
+      <div class="mode-toggle">
+        <button id="mode-analyze" class="active">Analyze</button>
+        <button id="mode-play">Play</button>
+      </div>
+
+      <div id="analyze-pane">
+        <div class="seat">
+          <div class="seat-label"><span>Dealer upcard</span></div>
+          <div class="hand" id="an-dealer"></div>
+        </div>
+        <div class="seat">
+          <div class="seat-label"><span>Your hand</span><span class="seat-total" id="an-total"></span></div>
+          <div class="hand" id="an-player"></div>
+        </div>
+
+        <div class="btn-row">
+          <button id="an-target-dealer">Set dealer card</button>
+          <button id="an-target-player" class="primary">Add to your hand</button>
+          <button id="an-clear">Clear</button>
+        </div>
+
+        <div class="picker" id="an-picker"></div>
+        <div id="an-result"></div>
+      </div>
+
+      <div id="play-pane" style="display:none">
+        <div id="play-table"></div>
+        <div class="btn-row" id="play-actions"></div>
+        <div id="play-feedback"></div>
+        <div class="stats" id="play-stats"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Bettor or Bust &mdash; Blackjack strategy reference.</p>
+    <p class="site-link"><a href="../">Part of Bettor Edge</a></p>
+    <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
+  </footer>
+
+  <script src="js/rules.js?v=93f70a32"></script>
+  <script src="js/engine.js?v=93f70a32"></script>
+  <script src="js/strategy.js?v=93f70a32"></script>
+  <script src="js/analyzer.js?v=93f70a32"></script>
+  <script src="js/game.js?v=93f70a32"></script>
+  <script src="js/app.js?v=93f70a32"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {
+          // Offline support is a bonus; the app works without it.
+        });
+      });
+    }
+  </script>
+</body>
+</html>

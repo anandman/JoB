@@ -39,6 +39,18 @@ var BJEngine = (function () {
 
   function cardValue(r) { return r === ACE ? 1 : r + 1; }
 
+  /**
+   * Rank index from the value printed on the card. Indices are off by one from
+   * values (index 6 is a 7), which is an easy and silent mistake to make from
+   * calling code — go through this rather than doing the arithmetic inline.
+   */
+  function rankOf(value) {
+    if (value === 1 || value === 11 || value === "A" || value === "a") return ACE;
+    var v = Number(value);
+    if (v >= 10) return TEN;
+    return v - 1;
+  }
+
   function freshShoe(decks) {
     var c = [], r;
     for (r = 0; r < RANKS; r++) c[r] = 4 * decks;
@@ -335,6 +347,7 @@ var BJEngine = (function () {
     RANK_LABELS: RANK_LABELS,
     BUST: BUST,
     cardValue: cardValue,
+    rankOf: rankOf,
     freshShoe: freshShoe,
     countCards: countCards,
     step: step,

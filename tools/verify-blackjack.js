@@ -176,6 +176,36 @@ console.log("\n3. Derived basic strategy vs published 6-deck S17 DAS");
   }
 }
 
+/* ---------- 3b. The close calls, by name ---------- */
+
+console.log("\n3b. Famous borderline hands");
+{
+  const rules = BJRules.make({ decks: 6, h17: false, das: true, surrender: "late" });
+  const k = E.rankOf;   // by printed value: index 6 is a 7, which is easy to get wrong
+  const CASES = [
+    [[10, 6], 10, "surrender", "16 vs 10"],
+    [[10, 6],  8, "hit",       "16 vs 8"],
+    [[8, 8],  10, "split",     "8,8 vs 10"],
+    [["A", 7], 9, "hit",       "soft 18 vs 9"],
+    [["A", 7], 2, "stand",     "soft 18 vs 2"],
+    [["A", 7], 3, "double",    "soft 18 vs 3"],
+    [[2, 9],  10, "double",    "11 vs 10"],
+    [[9, 9],   7, "stand",     "9,9 vs 7"],
+    [[9, 9],   8, "split",     "9,9 vs 8"],
+    [[5, 5],   6, "double",    "5,5 vs 6 (never split)"],
+    [[10, 10], 6, "stand",     "10,10 vs 6 (never split)"],
+    [[12, 12], 6, "stand",     "20 vs 6"],
+  ];
+  for (const [cards, up, want, label] of CASES) {
+    const hand = cards.map(k);
+    const counts = E.freshShoe(rules.decks);
+    for (const c of hand.concat([k(up)])) counts[c]--;
+    const res = E.actions(hand, k(up), counts, rules, { infinite: false });
+    if (res.best.action === want) ok(`${label.padEnd(26)} ${want}  (ev ${res.best.ev.toFixed(4)})`);
+    else fail(`${label.padEnd(26)} wanted ${want}, got ${res.best.action}`);
+  }
+}
+
 /* ---------- 4. House edge ---------- */
 
 console.log("\n4. House edge vs published figures");

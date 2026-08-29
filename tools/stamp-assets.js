@@ -41,7 +41,15 @@ const APPS = [
   },
   {
     dir: "bob",
-    assets: [],
+    assets: [
+      "css/style.css",
+      "js/rules.js",
+      "js/engine.js",
+      "js/strategy.js",
+      "js/analyzer.js",
+      "js/game.js",
+      "js/app.js",
+    ],
   },
 ];
 
