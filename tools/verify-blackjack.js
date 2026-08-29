@@ -208,5 +208,64 @@ console.log("\n4. House edge vs published figures");
   console.log(`    6:5 costs  ${((sixfive - base) * 100).toFixed(3)}%`);
 }
 
+/* ---------- 5. Play the game and see if the edge comes out ---------- */
+
+console.log("\n5. Simulated play vs the computed house edge");
+{
+  const G = new Function(src + fs.readFileSync(path.join(ROOT, "bob/js/game.js"), "utf8")
+                         + ";return BJGame;")();
+
+  let seed = 987654321 >>> 0;
+  const rnd = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+
+  const rules = BJRules.make({ decks: 6, h17: false, das: true, surrender: "late" });
+  const expected = S.houseEdge(rules);   // player EV per hand (negative)
+
+  // Decisions come from the engine in non-depleting mode so they can be cached
+  // by (hand, upcard, legal set). The loop is still closed: these are the
+  // engine's own choices, and what is under test is whether dealing, splitting,
+  // doubling and settlement add up to the edge the engine predicts.
+  const cache = new Map();
+  const decide = (cards, up, legal, rulesIn) => {
+    const key = cards.slice().sort().join(",") + "|" + up + "|" + legal.join(",");
+    let a = cache.get(key);
+    if (a === undefined) {
+      const counts = E.freshShoe(rulesIn.decks);
+      for (const c of cards.concat([up])) counts[c]--;
+      const res = E.actions(cards, up, counts, rulesIn, { infinite: true });
+      a = (res.actions.filter(x => legal.indexOf(x.action) >= 0)[0] || { action: "stand" }).action;
+      cache.set(key, a);
+    }
+    return a;
+  };
+
+  const HANDS = Number(process.env.HANDS || 2000000);
+  const st = G.create(rules);
+  let sum = 0, sumSq = 0;
+  const t0 = Date.now();
+  for (let i = 0; i < HANDS; i++) {
+    G.deal(st, rnd);
+    let guard = 0;
+    while (st.phase === "player" && guard++ < 40) {
+      const legal = G.legalActions(st);
+      if (!legal.length) { st.hands[st.active].done = true; G.act(st, "stand", rnd, { grade: false }); continue; }
+      G.act(st, decide(G.hand(st).cards, G.upcard(st), legal, rules), rnd, { grade: false });
+    }
+    const net = st.result ? st.result.net : 0;
+    sum += net; sumSq += net * net;
+  }
+  const ms = Date.now() - t0;
+  const mean = sum / HANDS;
+  const variance = sumSq / HANDS - mean * mean;
+  const se = Math.sqrt(variance / HANDS);
+  const z = Math.abs(mean - expected) / se;
+
+  console.log(`  simulated  ${(mean * 100).toFixed(3)}%  +/- ${(se * 100).toFixed(3)}%  (${HANDS/1e6}M hands, ${ms} ms)`);
+  console.log(`  computed   ${(expected * 100).toFixed(3)}%  (house edge ${(-expected * 100).toFixed(3)}%)`);
+  console.log(`  variance   ${variance.toFixed(4)} per hand (sd ${Math.sqrt(variance).toFixed(4)})`);
+  if (z < 4) ok(`agree within ${z.toFixed(2)} standard errors`);
+  else fail(`disagree by ${z.toFixed(1)} standard errors — a settlement or dealing bug`);
+}
+
 console.log(failures ? `\n${failures} check(s) FAILED\n` : "\nAll checks passed\n");
 process.exit(failures ? 1 : 0);

@@ -283,8 +283,11 @@ var BJEngine = (function () {
     return ev;
   }
 
+  // `resplitTo` counts HANDS, so the budget passed to the recursion is one less
+  // than the limit — the initial split already spent one. resplitTo 2 ("split
+  // once, no resplits") must therefore reach evSplitHand as 1.
   function evSplit(rank, dv, counts, rules, deplete) {
-    return 2 * evSplitHand(rank, dv, counts, rules, rules.resplitTo, deplete);
+    return 2 * evSplitHand(rank, dv, counts, rules, rules.resplitTo - 1, deplete);
   }
 
   /* ===== The decision ===== */
@@ -312,7 +315,9 @@ var BJEngine = (function () {
     if (canDouble(rules, state, cards.length)) {
       out.push({ action: "double", ev: evDouble(state, counts, rem, dv, deplete) });
     }
-    if (cards.length === 2 && cards[0] === cards[1]) {
+    // resplitTo counts hands, so fewer than 2 means splitting is not on offer
+    // at all. Without this the engine prices a hand the table will not deal.
+    if (cards.length === 2 && cards[0] === cards[1] && rules.resplitTo >= 2) {
       out.push({ action: "split", ev: evSplit(cards[0], dv, counts, rules, deplete) });
     }
     if (rules.surrender === "late" && cards.length === 2) {
