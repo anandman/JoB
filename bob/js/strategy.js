@@ -37,14 +37,18 @@ var BJStrategy = (function () {
     return c;
   }
 
-  function shoeFor(rules) { return E.freshShoe(rules.decks); }
+  // `opts.shoe` lets a caller price a DEPLETED composition rather than a fresh
+  // shoe — which is what a count is: a claim about what is left.
+  function shoeFor(rules, opts) {
+    return (opts && opts.shoe) ? opts.shoe.slice() : E.freshShoe(rules.decks);
+  }
 
   /**
    * Best action for one cell. `allow` filters the action list — the hard and
    * soft charts drop split, which only the pairs chart decides.
    */
   function cell(cards, up, rules, opts, allow) {
-    var counts = removeCards(shoeFor(rules), cards.concat([up]));
+    var counts = removeCards(shoeFor(rules, opts), cards.concat([up]));
     var res = E.actions(cards, up, counts, rules, opts);
     var list = res.actions;
     if (allow) {
@@ -101,7 +105,7 @@ var BJStrategy = (function () {
    */
   function houseEdge(rules, opts) {
     opts = opts || {};
-    var shoe = shoeFor(rules);
+    var shoe = shoeFor(rules, opts);
     var N = E.countCards(shoe);
     var ev = 0, a, b, u;
 
