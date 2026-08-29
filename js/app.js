@@ -927,10 +927,22 @@
   function anCardEl(card, opts) {
     var el = document.createElement("span");
     el.className = "card" + (Analyzer.isRed(card) ? " red" : "") +
-      (opts && opts.held ? " held" : "") + (opts && opts.faded ? " faded" : "");
+      (opts && opts.held ? " held" : "");
     el.innerHTML = "<span class=\"card-rank\">" + Analyzer.RANK_LABELS[Analyzer.cardRank(card)] +
       "</span><span class=\"card-suit\">" + Analyzer.SUIT_LABELS[Analyzer.cardSuit(card)] + "</span>";
     return el;
+  }
+
+  /** A card in the hand row, wrapped with its HOLD marker. */
+  function anCardSlot(card, held) {
+    var wrap = document.createElement("span");
+    wrap.className = "card-wrap" + (held ? " is-held" : "");
+    wrap.appendChild(anCardEl(card, { held: held }));
+    var tag = document.createElement("span");
+    tag.className = "hold-tag";
+    tag.textContent = "HOLD";
+    wrap.appendChild(tag);
+    return wrap;
   }
 
   function renderHandSlots(heldIndices) {
@@ -939,7 +951,7 @@
     for (var i = 0; i < 5; i++) {
       if (i < cards.length) {
         var held = heldIndices && heldIndices.indexOf(i) !== -1;
-        var el = anCardEl(cards[i], { held: held, faded: heldIndices && !held });
+        var el = anCardSlot(cards[i], held);
         if (sim.on) {
           // In play mode a tap is a hold, not a delete.
           if (sim.phase === "dealt") {
@@ -964,9 +976,16 @@
         })(i);
         anEls.slots.appendChild(el);
       } else {
+        var wrap = document.createElement("span");
+        wrap.className = "card-wrap";
         var slot = document.createElement("span");
         slot.className = "card empty";
-        anEls.slots.appendChild(slot);
+        wrap.appendChild(slot);
+        var tag = document.createElement("span");
+        tag.className = "hold-tag";
+        tag.textContent = "HOLD";
+        wrap.appendChild(tag);
+        anEls.slots.appendChild(wrap);
       }
     }
   }
@@ -1017,12 +1036,7 @@
     if (sim.on) {
       renderPicker();
       if (sim.phase === "idle") {
-        anEls.slots.innerHTML = "";
-        for (var k = 0; k < 5; k++) {
-          var slot = document.createElement("span");
-          slot.className = "card empty";
-          anEls.slots.appendChild(slot);
-        }
+        renderHandSlots(null);
         hint.textContent = "Deal a hand, tap the cards you want to keep, then draw.";
         anEls.deal.textContent = "Deal";
         anEls.result.innerHTML = "";

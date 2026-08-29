@@ -1011,9 +1011,15 @@ footer {
 
 .hand-slots {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.35rem;
   justify-content: center;
   margin: 0.9rem 0;
+}
+
+@media (max-width: 360px) {
+  .card { min-width: 3rem; padding: 0.5rem 0.2rem; }
+  .card-rank { font-size: 1.25rem; }
+  .card-suit { font-size: 1.15rem; }
 }
 
 .card {
@@ -1021,37 +1027,55 @@ footer {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 2.6rem;
-  padding: 0.45rem 0.2rem;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-text);
-  color: #0d1117;
+  min-width: 3.4rem;
+  padding: 0.6rem 0.3rem;
+  border: 1px solid #b6bec7;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #11161c;
   font-family: var(--font-mono);
-  line-height: 1.05;
+  line-height: 1.1;
   cursor: pointer;
 }
 
-.card.red { color: #c02020; }
+.card.red { color: #c8102e; }
 
-.card-rank { font-size: 1rem; font-weight: 700; }
-.card-suit { font-size: 0.95rem; }
+.card-rank { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+.card-suit { font-size: 1.35rem; }
 
-/* The winning hold is called out; everything else recedes. */
+/* Held cards are marked, not the other way round — an unheld card is still a
+   live card you are deciding about, so it stays fully legible. Dimming it
+   made the suits unreadable at this size. */
 .card.held {
-  outline: 2px solid var(--color-green);
-  outline-offset: 1px;
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 3px var(--color-green);
 }
-
-.card.faded { opacity: 0.35; }
 
 .card.empty {
   background: transparent;
-  border-style: dashed;
+  border: 1px dashed var(--color-border);
   color: transparent;
-  min-height: 2.6rem;
+  min-height: 3.4rem;
+  min-width: 3.4rem;
   cursor: default;
 }
+
+.card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hold-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-green);
+  visibility: hidden;
+}
+
+.card-wrap.is-held .hold-tag { visibility: visible; }
 
 .ladder-table .card {
   min-width: 0;
@@ -1138,8 +1162,16 @@ footer {
 
 .analyze-mode {
   display: flex;
-  gap: 0.4rem;
-  margin-bottom: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.9rem;
+}
+
+.analyze-mode .toggle-btn {
+  flex: 1;
+  padding: 0.6rem;
+  font-size: 0.85rem;
 }
 
 .play-hint {
