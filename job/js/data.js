@@ -1,5 +1,5 @@
 /**
- * Jacks or Bettorment — Data layer
+ * Jacks or Bettor — Data layer
  * Pay tables, expected returns, and strategy categories for Jacks or Better video poker.
  */
 

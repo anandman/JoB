@@ -6,7 +6,7 @@ Generate PWA icons for every app. Run after changing a mark:
     python3 tools/make-icons.py job        # just one
 
 Each app's mark is a playing card, because that is what both games are. The
-rank and pip name the game: J and a heart for Jacks or Bettorment, A and a
+rank and pip name the game: J and a heart for Jacks or Bettor, A and a
 spade for Bettor or Bust, whose blackjack is exactly that card plus a ten.
 
 Maskable icons keep their content inside the safe zone (a centre circle of

@@ -1,5 +1,5 @@
 /**
- * Jacks or Bettorment — App logic
+ * Jacks or Bettor — App logic
  */
 
 (function () {

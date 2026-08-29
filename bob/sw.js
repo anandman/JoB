@@ -2,7 +2,7 @@
  * Bettor or Bust — service worker
  *
  * Scoped to /bob/, so this app's cache is entirely its own: installing it
- * doesn't pull in Jacks or Bettorment, and a deploy of one doesn't invalidate
+ * doesn't pull in Jacks or Bettor, and a deploy of one doesn't invalidate
  * the other.
  *
  * Navigations are network-first so a deploy shows up as soon as there's signal;
@@ -10,19 +10,20 @@
  * itself in the background. Bumping VERSION purges everything.
  */
 
-const VERSION = "bbc41fe2";
+const VERSION = "c1fa6dae";
 const CACHE = "bob-" + VERSION;
 
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=bbc41fe2",
-  "./js/rules.js?v=bbc41fe2",
-  "./js/engine.js?v=bbc41fe2",
-  "./js/strategy.js?v=bbc41fe2",
-  "./js/analyzer.js?v=bbc41fe2",
-  "./js/game.js?v=bbc41fe2",
-  "./js/app.js?v=bbc41fe2",
+  "./css/style.css?v=c1fa6dae",
+  "./js/rules.js?v=c1fa6dae",
+  "./js/engine.js?v=c1fa6dae",
+  "./js/strategy.js?v=c1fa6dae",
+  "./js/analyzer.js?v=c1fa6dae",
+  "./js/game.js?v=c1fa6dae",
+  "./js/risk.js?v=c1fa6dae",
+  "./js/app.js?v=c1fa6dae",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

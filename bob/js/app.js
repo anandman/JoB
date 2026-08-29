@@ -84,6 +84,7 @@
       s.classList.toggle("active", s.id === tab);
     });
     if (tab === "strategy") renderChart();
+    if (tab === "risk") { renderRiskPrimer(); renderRiskControls(); }
     window.scrollTo(0, 0);
   }
 
@@ -186,6 +187,7 @@
     if (document.getElementById("strategy").classList.contains("active")) renderChart();
     resetAnalyzer();
     resetPlay();
+    rkStream = null;
   }
 
   function renderEdge() {
@@ -542,6 +544,317 @@
     });
   }
 
+  /* ===== Risk ===== */
+
+  var RK = BJRisk;
+  var rkStream = null, rkStreamKey = null, rkParams = {};
+  var RK_STREAM_HANDS = 400000;
+
+  var RK_FIELDS = {
+    step: { label: "Step size", hint: "How much each level adds.", def: 25, min: 5, stepBy: 5 },
+    cap: { label: "Maximum bet", hint: "The table limit, or your own.", def: 150, min: 10, stepBy: 25 },
+    threshold: { label: "Start raising at", hint: "The count at which you leave the minimum.",
+                 def: 1, min: -4, stepBy: 1 },
+    spread: { label: "Bet spread", hint: "Top bet as a multiple of the base.",
+              select: [[2, "1 to 2"], [4, "1 to 4"], [8, "1 to 8"], [12, "1 to 12"], [16, "1 to 16"]], def: 8 },
+    systemKey: { label: "Counting system", select: null, def: "ko" }
+  };
+
+  function rkNum(id, dflt) {
+    var el = document.getElementById(id);
+    var v = el ? Number(el.value) : dflt;
+    return isFinite(v) && v > 0 ? v : dflt;
+  }
+
+  function rkSession() {
+    return { bankroll: rkNum("rk-bankroll", 2000), hands: Math.round(rkNum("rk-hands", 300)),
+             base: rkNum("rk-base", 50) };
+  }
+
+  function rkParamsFor(key) {
+    var p = { base: rkSession().base };
+    RK.strategy(key).params.forEach(function (name) {
+      if (name === "base") return;
+      var f = RK_FIELDS[name];
+      p[name] = rkParams[name] !== undefined ? rkParams[name] : f.def;
+    });
+    // A cap below the base bet would build an empty ladder.
+    if (p.cap !== undefined && p.cap < p.base) p.cap = p.base;
+    return p;
+  }
+
+  function renderRiskPrimer() {
+    var b = document.getElementById("risk-primer");
+    b.className = "banner warn";
+    b.innerHTML = "";
+    b.appendChild(el("strong", null, "Only two of these move the house edge."));
+    b.appendChild(el("p", "note",
+      "Your table's rules move it, and counting moves it. A betting progression " +
+      "does not: expected loss is linear in what you wager, so no staking pattern " +
+      "touches it. At the same average bet a progression can only widen the swing, " +
+      "which is why every strategy below is shown beside a flat bet at its own " +
+      "average — the only comparison that means anything."));
+  }
+
+  function renderRiskControls() {
+    var sel = document.getElementById("rk-strategy");
+    if (!sel.options.length) {
+      RK.STRATEGIES.forEach(function (st) {
+        var o = el("option", null, st.name);
+        o.value = st.key;
+        sel.appendChild(o);
+      });
+      sel.value = "ladder";
+      sel.onchange = function () { rkParams = {}; renderRiskControls(); };
+      ["rk-bankroll", "rk-hands", "rk-base"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () {
+          renderRiskControls();
+          document.getElementById("rk-result").innerHTML = "";
+        });
+      });
+      document.getElementById("rk-run").onclick = runRisk;
+      document.getElementById("rk-compare").onclick = compareRisk;
+    }
+
+    var def = RK.strategy(sel.value);
+    var spell = document.getElementById("rk-spell");
+    spell.className = "banner";
+    spell.innerHTML = "";
+    spell.appendChild(el("p", null, def.spell));
+    spell.appendChild(el("p", "note", def.why));
+
+    var grid = document.getElementById("rk-params");
+    grid.innerHTML = "";
+    def.params.forEach(function (name) {
+      if (name === "base") return;
+      var f = RK_FIELDS[name];
+      var row = el("div", "rule-row");
+      var lab = el("label", null);
+      lab.appendChild(document.createTextNode(f.label));
+      if (f.hint) lab.appendChild(el("span", "hint", f.hint));
+      row.appendChild(lab);
+
+      var input, opts = f.select;
+      if (name === "systemKey") {
+        opts = RK.SYSTEMS.map(function (sy) { return [sy.key, sy.name]; });
+      }
+      if (opts) {
+        input = el("select");
+        opts.forEach(function (o) {
+          var opt = el("option", null, o[1]);
+          opt.value = String(o[0]);
+          input.appendChild(opt);
+        });
+        input.value = String(rkParams[name] !== undefined ? rkParams[name] : f.def);
+        input.onchange = function () {
+          rkParams[name] = name === "systemKey" ? input.value : Number(input.value);
+          renderRiskControls();
+        };
+      } else {
+        input = el("input");
+        input.type = "number";
+        input.min = f.min;
+        input.step = f.stepBy;
+        input.value = String(rkParams[name] !== undefined ? rkParams[name] : f.def);
+        input.onchange = function () { rkParams[name] = Number(input.value); renderRiskControls(); };
+      }
+      row.appendChild(input);
+      grid.appendChild(row);
+    });
+
+    // Spell the counting system out in full — a system you cannot read is a
+    // system you cannot check at the table.
+    if (def.kind === "counting") {
+      var sy = RK.system(rkParamsFor("count").systemKey);
+      var card = el("div", "banner");
+      card.appendChild(el("strong", null, sy.name));
+      card.appendChild(el("p", "note", sy.blurb));
+      var t = el("table", "chart");
+      var h = el("tr"), r2 = el("tr");
+      h.appendChild(el("th", "row-label", "card"));
+      r2.appendChild(el("th", "row-label", "count"));
+      [1, 2, 3, 4, 5, 6, 7, 8, 0, 9].forEach(function (rk) {
+        h.appendChild(el("th", null, E.RANK_LABELS[rk]));
+        var tag = sy.tags[rk];
+        var td = el("td", "act " + (tag > 0 ? "act-hit" : tag < 0 ? "act-stand" : "act-surrender"),
+                    tag === 0.5 ? "+½" : (tag > 0 ? "+" : "") + tag);
+        r2.appendChild(td);
+      });
+      t.appendChild(h); t.appendChild(r2);
+      var scroll = el("div", "chart-scroll");
+      scroll.appendChild(t);
+      card.appendChild(scroll);
+      card.appendChild(el("p", "note", "Betting correlation " + sy.bc.toFixed(3) +
+        " — how closely those tags track each card's real effect on the edge, " +
+        "derived from the engine rather than quoted." +
+        (sy.balanced
+          ? " Balanced: divide the running count by the decks left to get a true count."
+          : " Unbalanced: start the count at " + sy.irc(rules.decks) +
+            " for " + rules.decks + " deck" + (rules.decks > 1 ? "s" : "") +
+            " and bet straight off the running count — no division.")));
+      grid.appendChild(card);
+    }
+  }
+
+  /** Generating the stream is the expensive part, so it is cached per rule set. */
+  function withStream(then) {
+    var key = R.key(rules);
+    if (rkStream && rkStreamKey === key) { then(rkStream); return; }
+    var out = document.getElementById("rk-result");
+    out.innerHTML = "";
+    out.appendChild(banner("warn", "Dealing " + (RK_STREAM_HANDS / 1000) +
+      "k hands to measure against…"));
+    setTimeout(function () {
+      rkStream = RK.outcomeStream(rules, RK_STREAM_HANDS, 20260829);
+      rkStreamKey = key;
+      then(rkStream);
+    }, 30);
+  }
+
+  function betRange(strat) {
+    var lv = strat.levels;
+    var lo = lv[0], hi = lv[lv.length - 1];
+    return lo === hi ? "$" + lo.toFixed(0) : "$" + lo.toFixed(0) + "–" + hi.toFixed(0);
+  }
+
+  function rkRow(label, r, isFlat, strat) {
+    var tr = el("tr");
+    tr.appendChild(el("th", "row-label", label));
+    [[strat ? betRange(strat) : "—", "muted"],
+     ["$" + r.avgBet.toFixed(0), ""],
+     [(r.ruin * 100).toFixed(2) + "%", r.ruin > 0.2 ? "bad" : r.ruin < 0.05 ? "good" : ""],
+     [(r.ahead * 100).toFixed(1) + "%", r.ahead > 0.5 ? "good" : ""],
+     ["$" + r.median.toFixed(0), ""],
+     ["$" + r.p05.toFixed(0), ""],
+     ["$" + r.p95.toFixed(0), ""]].forEach(function (c) {
+      var td = el("td", "num " + c[1] + (isFlat ? " muted" : ""), c[0]);
+      tr.appendChild(td);
+    });
+    return tr;
+  }
+
+  function rkTable(rows) {
+    var t = el("table", "chart rk-table");
+    var h = el("tr");
+    ["", "bets", "avg bet", "ruin", "ahead", "median", "5th", "95th"].forEach(function (c, i) {
+      h.appendChild(el("th", i === 0 ? "row-label" : null, c));
+    });
+    t.appendChild(h);
+    rows.forEach(function (r) { t.appendChild(r); });
+    var wrap = el("div", "chart-scroll");
+    wrap.appendChild(t);
+    return wrap;
+  }
+
+  function runRisk() {
+    var key = document.getElementById("rk-strategy").value;
+    withStream(function (stream) {
+      var sess = rkSession();
+      var opts = { bankroll: sess.bankroll, hands: sess.hands, sessions: 20000, seed: 777 };
+      var p = rkParamsFor(key);
+      var strat = RK.fromParams(key, p);
+      var r = RK.runSessions(stream, strat, opts);
+      var fr = RK.runSessions(stream, RK.flat(r.avgBet), opts);
+      var need = RK.bankrollFor(stream, strat, opts, 0.05);
+
+      var out = document.getElementById("rk-result");
+      out.innerHTML = "";
+      out.appendChild(el("h3", null, "Over " + sess.hands + " hands, 20k sessions"));
+      out.appendChild(rkTable([
+        rkRow(RK.strategy(key).name, r, false, strat),
+        rkRow("flat at $" + r.avgBet.toFixed(0), fr, true, RK.flat(r.avgBet))
+      ]));
+
+      var verdict, kind;
+      if (RK.strategy(key).kind === "counting") {
+        var top = strat.levels[strat.levels.length - 1];
+        // An edge you cannot survive is not an edge. Counting only counts as
+        // working if it beats flat by a real margin AND has not blown the
+        // bankroll up doing it.
+        var realGain = r.ahead - fr.ahead > 0.005;
+        var survivable = r.ruin < 0.10 && r.ruin < fr.ruin * 1.8;
+        if (realGain && survivable) {
+          kind = "good";
+          verdict = "Counting finishes ahead " + (r.ahead * 100).toFixed(1) + "% of sessions " +
+            "against " + (fr.ahead * 100).toFixed(1) + "% for a flat bet of the same size. " +
+            "That gap is a real edge, not a reshaped one — it is the only thing here that " +
+            "earns money rather than moving it around.";
+        } else {
+          kind = "bad";
+          // Size the top bet at about 1/20th of the bankroll, then actually
+          // simulate that rather than asserting it.
+          var spread = top / sess.base;
+          var suggest = Math.max(5, Math.round(sess.bankroll / 20 / spread / 5) * 5);
+          var sp = rkParamsFor(key);
+          sp.base = suggest;
+          var sug = RK.runSessions(stream, RK.fromParams(key, sp), opts);
+          var sugFlat = RK.runSessions(stream, RK.flat(sug.avgBet), opts);
+          verdict = "The edge is real but you are overbetting it. " +
+            (spread === 8 || spread === 11 || spread === 18 ? "An " : "A ") + spread.toFixed(0) +
+            "x spread off a $" + sess.base + " base tops out at $" + top.toFixed(0) +
+            " a hand, and against a $" + sess.bankroll + " bankroll that ruins " +
+            (r.ruin * 100).toFixed(1) + "% of sessions — which swamps the advantage. " +
+            "A spread has to be sized to the bankroll, not the other way round. " +
+            "At a $" + suggest + " base the same system ruins " +
+            (sug.ruin * 100).toFixed(1) + "% and finishes ahead " +
+            (sug.ahead * 100).toFixed(1) + "% against " + (sugFlat.ahead * 100).toFixed(1) +
+            "% for a flat bet of the same size.";
+        }
+      } else if (r.ruin <= fr.ruin + 0.0005) {
+        kind = "good";
+        verdict = "This is flat betting, or close enough to it. Nothing here beats it on ruin.";
+      } else {
+        kind = "bad";
+        verdict = "Ruin is " + (r.ruin * 100).toFixed(2) + "% against " +
+          (fr.ruin * 100).toFixed(2) + "% for a flat bet at the same $" +
+          r.avgBet.toFixed(0) + " average. This progression is not buying you safety — " +
+          "it is raising your average bet from $" + sess.base + " to $" + r.avgBet.toFixed(0) +
+          ", and a flat bet of that size would be safer.";
+      }
+      out.appendChild(banner(kind, verdict));
+      out.appendChild(banner("", "To hold ruin at 5% over " + sess.hands +
+        " hands you would need a bankroll of about $" + (Math.round(need / 50) * 50) + "."));
+    });
+  }
+
+  function compareRisk() {
+    withStream(function (stream) {
+      var sess = rkSession();
+      var opts = { bankroll: sess.bankroll, hands: sess.hands, sessions: 20000, seed: 777 };
+      var cases = [
+        ["flat", {}, "Flat"],
+        ["ladder", {}, "Positive progression"],
+        ["paroli", {}, "Paroli"],
+        ["dalembert", {}, "d'Alembert"],
+        ["martingale", { cap: 400 }, "Martingale"],
+        ["count", { systemKey: "ko" }, "KO, 1–8"],
+        ["count", { systemKey: "red7" }, "Red 7, 1–8"],
+        ["count", { systemKey: "hilo" }, "Hi-Lo, 1–8"]
+      ];
+      var rows = [];
+      cases.forEach(function (c) {
+        var def = RK.strategy(c[0]);
+        var p = { base: sess.base };
+        def.params.forEach(function (n) {
+          if (n === "base") return;
+          p[n] = c[1][n] !== undefined ? c[1][n] : RK_FIELDS[n].def;
+        });
+        if (p.cap !== undefined && p.cap < p.base) p.cap = p.base;
+        var st2 = RK.fromParams(c[0], p);
+        var r = RK.runSessions(stream, st2, opts);
+        rows.push(rkRow(c[2], r, false, st2));
+      });
+      var out = document.getElementById("rk-result");
+      out.innerHTML = "";
+      out.appendChild(el("h3", null, "Every strategy, same hands, $" + sess.base + " base"));
+      out.appendChild(rkTable(rows));
+      out.appendChild(banner("warn",
+        "Read the 'ahead' column. Only the counting rows clear 50% — they are the " +
+        "only ones changing the edge. The progressions differ from each other in " +
+        "average bet, and their ruin follows that and nothing else."));
+    });
+  }
+
   /* ===== Boot ===== */
 
   function init() {
@@ -551,6 +864,7 @@
     initAnalyzer();
     resetAnalyzer();
     resetPlay();
+    rkStream = null;
     if (location.hash) {
       var t = location.hash.slice(1);
       if (document.getElementById(t)) show(t);

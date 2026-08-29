@@ -1,5 +1,5 @@
 /**
- * Jacks or Bettorment — Hand analyzer
+ * Jacks or Bettor — Hand analyzer
  *
  * Prices all 32 ways to hold a dealt hand and ranks them. Nothing here is an
  * approximation: each hold's expected value comes from enumerating every draw

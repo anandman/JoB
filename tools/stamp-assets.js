@@ -48,6 +48,7 @@ const APPS = [
       "js/strategy.js",
       "js/analyzer.js",
       "js/game.js",
+      "js/risk.js",
       "js/app.js",
     ],
   },

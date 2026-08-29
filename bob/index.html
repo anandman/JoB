@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Bettor or Bust — Blackjack Strategy &amp; Odds</title>
   <meta name="description" content="Blackjack basic strategy, hand analyzer and house edge, derived from your table's exact rules rather than looked up.">
-  <link rel="stylesheet" href="css/style.css?v=bbc41fe2">
+  <link rel="stylesheet" href="css/style.css?v=c1fa6dae">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -28,6 +28,7 @@
     <a href="#rules" class="nav-link active" data-tab="rules">Rules</a>
     <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
     <a href="#analyze" class="nav-link" data-tab="analyze">Analyze</a>
+    <a href="#risk" class="nav-link" data-tab="risk">Risk</a>
   </nav>
 
   <main>
@@ -105,6 +106,51 @@
         <div class="stats" id="play-stats"></div>
       </div>
     </section>
+    <section id="risk" class="tab-content">
+      <div class="banner" id="risk-primer"></div>
+
+      <h3>Your session</h3>
+      <div class="rules-grid">
+        <div class="rule-row">
+          <label for="rk-bankroll">Bankroll
+            <span class="hint">What you are willing to lose today.</span></label>
+          <input type="number" id="rk-bankroll" min="100" step="100" value="2000">
+        </div>
+        <div class="rule-row">
+          <label for="rk-hands">Hands
+            <span class="hint">About 80 an hour at a shoe game.</span></label>
+          <input type="number" id="rk-hands" min="20" step="20" value="300">
+        </div>
+        <div class="rule-row">
+          <label for="rk-base">Base bet
+            <span class="hint">The minimum you put out.</span></label>
+          <input type="number" id="rk-base" min="1" step="5" value="50">
+        </div>
+      </div>
+
+      <h3>Betting strategy</h3>
+      <div class="rule-row preset-row">
+        <label for="rk-strategy">Strategy</label>
+        <select id="rk-strategy"></select>
+      </div>
+
+      <div class="banner" id="rk-spell"></div>
+      <div class="rules-grid" id="rk-params"></div>
+
+      <div class="btn-row">
+        <button id="rk-run" class="primary">Run simulation</button>
+        <button id="rk-compare">Compare all</button>
+      </div>
+
+      <div id="rk-result"></div>
+
+      <p class="note">Sessions are simulated hand by hand against a real
+        depleting shoe with basic strategy, so a counting system's advantage is
+        measured rather than assumed. Play never deviates from basic strategy,
+        which is what a betting-only counter does; index plays would add roughly
+        a fifth again to counting's value and are not modelled.</p>
+    </section>
+
   </main>
 
   <footer>
@@ -113,12 +159,13 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/rules.js?v=bbc41fe2"></script>
-  <script src="js/engine.js?v=bbc41fe2"></script>
-  <script src="js/strategy.js?v=bbc41fe2"></script>
-  <script src="js/analyzer.js?v=bbc41fe2"></script>
-  <script src="js/game.js?v=bbc41fe2"></script>
-  <script src="js/app.js?v=bbc41fe2"></script>
+  <script src="js/rules.js?v=c1fa6dae"></script>
+  <script src="js/engine.js?v=c1fa6dae"></script>
+  <script src="js/strategy.js?v=c1fa6dae"></script>
+  <script src="js/analyzer.js?v=c1fa6dae"></script>
+  <script src="js/game.js?v=c1fa6dae"></script>
+  <script src="js/risk.js?v=c1fa6dae"></script>
+  <script src="js/app.js?v=c1fa6dae"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

@@ -389,3 +389,37 @@ footer p { font-size: 0.8rem; color: var(--color-text-muted); }
 @media (display-mode: standalone) {
   html, body { overscroll-behavior-y: none; }
 }
+
+/* ===== Risk table ===== */
+
+table.rk-table th, table.rk-table td {
+  width: auto;
+  height: auto;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+table.rk-table th.row-label {
+  width: auto;
+  text-align: left;
+  padding-right: 0.7rem;
+}
+
+table.rk-table td.num {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: right;
+  cursor: default;
+}
+
+/* The two columns worth reading are ruin and how often you finish ahead, so
+   only those are ever coloured. */
+table.rk-table td.good { color: var(--color-green); }
+table.rk-table td.bad { color: var(--color-red); }
+table.rk-table td.muted { color: var(--color-text-muted); font-weight: 400; }
+
+.banner strong { display: block; margin-bottom: 0.25rem; }
+.banner .note { margin-top: 0.3rem; }
+.banner table.chart { margin-top: 0.5rem; }

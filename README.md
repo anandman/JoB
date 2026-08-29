@@ -10,10 +10,10 @@ Live at **https://anandman.github.io/bettor/**
 
 | App | Game | Status |
 |-----|------|--------|
-| [**Jacks or Bettorment**](job/) (`/job/`) | Video poker | Live |
+| [**Jacks or Bettor**](job/) (`/job/`) | Video poker | Live |
 | [**Bettor or Bust**](bob/) (`/bob/`) | Blackjack | Live |
 
-**Jacks or Bettorment** covers eight pay tables across Jacks or Better, Bonus
+**Jacks or Bettor** covers eight pay tables across Jacks or Better, Bonus
 Poker, Double Double Bonus and Deuces Wild: returns, strategy cards derived
 from the pay table itself, a hand analyzer that prices all 32 holds, a play
 mode scored against perfect play, bankroll and risk-of-ruin math, W-2G handpay
@@ -38,7 +38,7 @@ caches independent — installing one doesn't drag in the other.
 ```
 index.html          # Bettor Edge landing page (self-contained)
 icons/favicon.svg   # Landing page mark
-job/                # Jacks or Bettorment — video poker
+job/                # Jacks or Bettor — video poker
 bob/                # Bettor or Bust — blackjack
 tools/              # Shared tooling (scrapers, icon and cache-stamp scripts)
 ```

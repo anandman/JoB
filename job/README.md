@@ -1,4 +1,4 @@
-# Jacks or Bettorment
+# Jacks or Bettor
 
 Video poker strategy and odds reference app. Mobile-first, static site — no build step, no dependencies, works on GitHub Pages.
 
