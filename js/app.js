@@ -982,6 +982,228 @@
     }
   }
 
+  /* ---------- Hand analyzer ---------- */
+
+  var anEls = {
+    game: document.getElementById("analyze-game"),
+    slots: document.getElementById("hand-slots"),
+    rankRow: document.getElementById("rank-row"),
+    suitRow: document.getElementById("suit-row"),
+    deal: document.getElementById("analyze-deal"),
+    clear: document.getElementById("analyze-clear"),
+    result: document.getElementById("analyze-result"),
+  };
+  var anHand = [];        // card integers chosen so far
+  var anPendingRank = -1; // rank tapped, waiting on a suit
+
+  function anCardEl(card, opts) {
+    var el = document.createElement("span");
+    el.className = "card" + (Analyzer.isRed(card) ? " red" : "") +
+      (opts && opts.held ? " held" : "") + (opts && opts.faded ? " faded" : "");
+    el.innerHTML = "<span class=\"card-rank\">" + Analyzer.RANK_LABELS[Analyzer.cardRank(card)] +
+      "</span><span class=\"card-suit\">" + Analyzer.SUIT_LABELS[Analyzer.cardSuit(card)] + "</span>";
+    return el;
+  }
+
+  function renderHandSlots(heldIndices) {
+    anEls.slots.innerHTML = "";
+    for (var i = 0; i < 5; i++) {
+      if (i < anHand.length) {
+        var held = heldIndices && heldIndices.indexOf(i) !== -1;
+        var el = anCardEl(anHand[i], { held: held, faded: heldIndices && !held });
+        el.title = "Remove";
+        (function (idx) {
+          el.addEventListener("click", function () {
+            anHand.splice(idx, 1);
+            renderAnalyze();
+          });
+        })(i);
+        anEls.slots.appendChild(el);
+      } else {
+        var slot = document.createElement("span");
+        slot.className = "card empty";
+        anEls.slots.appendChild(slot);
+      }
+    }
+  }
+
+  function anAddCard(rank, suit) {
+    var card = (rank << 2) | suit;
+    if (anHand.indexOf(card) !== -1 || anHand.length >= 5) return;
+    anHand.push(card);
+    anPendingRank = -1;
+    renderAnalyze();
+  }
+
+  function renderPicker() {
+    anEls.rankRow.innerHTML = "";
+    Analyzer.RANK_LABELS.forEach(function (label, r) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "pick" + (anPendingRank === r ? " active" : "");
+      b.textContent = label;
+      b.disabled = anHand.length >= 5;
+      b.addEventListener("click", function () {
+        anPendingRank = anPendingRank === r ? -1 : r;
+        renderPicker();
+      });
+      anEls.rankRow.appendChild(b);
+    });
+
+    anEls.suitRow.innerHTML = "";
+    Analyzer.SUIT_LABELS.forEach(function (label, suitIdx) {
+      var b = document.createElement("button");
+      b.type = "button";
+      // Suits stay disabled until a rank is chosen, so the two taps read as
+      // one action rather than two independent controls.
+      var taken = anPendingRank >= 0 && anHand.indexOf((anPendingRank << 2) | suitIdx) !== -1;
+      b.className = "pick suit" + (suitIdx === 1 || suitIdx === 2 ? " red" : "");
+      b.textContent = label;
+      b.disabled = anPendingRank < 0 || taken || anHand.length >= 5;
+      b.addEventListener("click", function () { anAddCard(anPendingRank, suitIdx); });
+      anEls.suitRow.appendChild(b);
+    });
+  }
+
+  function renderAnalyze() {
+    renderPicker();
+    if (anHand.length < 5) {
+      renderHandSlots(null);
+      anEls.result.innerHTML = "";
+      var hint = document.createElement("p");
+      hint.className = "note";
+      hint.textContent = anPendingRank >= 0
+        ? "Now pick a suit."
+        : "Pick a rank, then a suit. " + (5 - anHand.length) + " more card" +
+          (anHand.length === 4 ? "" : "s") + " to go — or deal one.";
+      anEls.result.appendChild(hint);
+      return;
+    }
+
+    renderHandSlots(null);
+    anEls.result.innerHTML = "";
+    var busy = document.createElement("p");
+    busy.className = "note";
+    busy.textContent = "Pricing all 32 holds…";
+    anEls.result.appendChild(busy);
+
+    // Let the "working" state paint before a few hundred ms of arithmetic.
+    setTimeout(function () {
+      var game = GAMES[anEls.game.value];
+      var res = Analyzer.analyze(anHand, game);
+      renderHandSlots(res.best.indices);
+      renderAnalyzeResult(res, game);
+    }, 16);
+  }
+
+  function renderAnalyzeResult(res, game) {
+    var out = anEls.result;
+    out.innerHTML = "";
+
+    var verdict = document.createElement("div");
+    verdict.className = "ceiling-callout";
+    var big = document.createElement("strong");
+    big.textContent = "Hold: " + Analyzer.holdLabel(res.best);
+    verdict.appendChild(big);
+    var sub = document.createElement("span");
+    var second = res.holds[1];
+    sub.textContent = "Worth " + res.best.ev.toFixed(4) + " per coin" +
+      (second ? " — " + second.cost.toFixed(4) + " better than the next best hold." : ".");
+    verdict.appendChild(sub);
+    out.appendChild(verdict);
+
+    var h1 = document.createElement("h3");
+    h1.textContent = "Every hold, ranked";
+    out.appendChild(h1);
+    var wrap = document.createElement("div");
+    wrap.className = "table-scroll";
+    var t = document.createElement("table");
+    t.className = "ladder-table";
+    t.innerHTML = "<thead><tr><th>Hold</th><th>EV</th><th>Cost</th></tr></thead>";
+    var tb = document.createElement("tbody");
+    res.holds.slice(0, 10).forEach(function (h, i) {
+      var tr = document.createElement("tr");
+      if (i === 0) tr.className = "current";
+      var td1 = document.createElement("td");
+      if (h.cards.length) {
+        h.cards.forEach(function (c) { td1.appendChild(anCardEl(c)); });
+      } else {
+        td1.textContent = "discard everything";
+      }
+      tr.appendChild(td1);
+      var td2 = document.createElement("td");
+      td2.textContent = h.ev.toFixed(4);
+      tr.appendChild(td2);
+      var td3 = document.createElement("td");
+      td3.textContent = i === 0 ? "—" : "−" + h.cost.toFixed(4);
+      if (h.cost > 0.05) td3.className = "over";
+      tr.appendChild(td3);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    wrap.appendChild(t);
+    out.appendChild(wrap);
+
+    var h2 = document.createElement("h3");
+    h2.textContent = "How that hold turns out";
+    out.appendChild(h2);
+    var dist = Analyzer.distribution(anHand, res.best.indices, game);
+    var wrap2 = document.createElement("div");
+    wrap2.className = "table-scroll";
+    var t2 = document.createElement("table");
+    t2.className = "ladder-table";
+    t2.innerHTML = "<thead><tr><th>Result</th><th>Pays</th><th>Chance</th><th>1 in</th></tr></thead>";
+    var tb2 = document.createElement("tbody");
+    dist.rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      function td(text) {
+        var c = document.createElement("td");
+        c.textContent = text;
+        return c;
+      }
+      tr.appendChild(td(r.name));
+      tr.appendChild(td(r.pay ? r.pay + "/coin" : "—"));
+      tr.appendChild(td((r.prob * 100).toFixed(r.prob < 0.001 ? 4 : 2) + "%"));
+      tr.appendChild(td(r.prob > 0 ? fmtInt(1 / r.prob) : "—"));
+      tb2.appendChild(tr);
+    });
+    t2.appendChild(tb2);
+    wrap2.appendChild(t2);
+    out.appendChild(wrap2);
+
+    var note = document.createElement("p");
+    note.className = "note";
+    note.textContent = dist.total.toLocaleString() + " possible draws, all enumerated — " +
+      "these are exact, not estimates.";
+    out.appendChild(note);
+  }
+
+  function initAnalyzer() {
+    Object.keys(GAMES).forEach(function (k) {
+      var g = GAMES[k];
+      var opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = g.name + " — " + g.label;
+      anEls.game.appendChild(opt);
+    });
+    anEls.game.value = "job-9-6";
+    anEls.game.addEventListener("change", renderAnalyze);
+
+    anEls.clear.addEventListener("click", function () {
+      anHand = []; anPendingRank = -1; renderAnalyze();
+    });
+    anEls.deal.addEventListener("click", function () {
+      anHand = [];
+      while (anHand.length < 5) {
+        var c = Math.floor(Math.random() * 52);
+        if (anHand.indexOf(c) === -1) anHand.push(c);
+      }
+      anPendingRank = -1;
+      renderAnalyze();
+    });
+    renderAnalyze();
+  }
+
   function initPromoControls() {
     Object.keys(GAMES).forEach(function (key) {
       var g = GAMES[key];
@@ -1104,6 +1326,7 @@
   renderGameCompare();
   renderStrategy("job-9-6", "simple");
   initPromoControls();
+  initAnalyzer();
   renderPromo();
   renderCasinos();
   tabFromHash();

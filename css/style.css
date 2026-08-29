@@ -1006,3 +1006,120 @@ footer {
   color: var(--color-red);
   font-weight: 600;
 }
+
+/* ===== Hand analyzer ===== */
+
+.hand-slots {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin: 0.9rem 0;
+}
+
+.card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.45rem 0.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-text);
+  color: #0d1117;
+  font-family: var(--font-mono);
+  line-height: 1.05;
+  cursor: pointer;
+}
+
+.card.red { color: #c02020; }
+
+.card-rank { font-size: 1rem; font-weight: 700; }
+.card-suit { font-size: 0.95rem; }
+
+/* The winning hold is called out; everything else recedes. */
+.card.held {
+  outline: 2px solid var(--color-green);
+  outline-offset: 1px;
+}
+
+.card.faded { opacity: 0.35; }
+
+.card.empty {
+  background: transparent;
+  border-style: dashed;
+  color: transparent;
+  min-height: 2.6rem;
+  cursor: default;
+}
+
+.ladder-table .card {
+  min-width: 0;
+  padding: 0.1rem 0.25rem;
+  margin-right: 0.15rem;
+  font-size: 0.72rem;
+  flex-direction: row;
+  gap: 0.05rem;
+  cursor: default;
+}
+
+.ladder-table .card-rank,
+.ladder-table .card-suit { font-size: 0.72rem; }
+
+.picker { margin-bottom: 0.8rem; }
+
+.rank-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.suit-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+}
+
+.pick {
+  padding: 0.5rem 0.2rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pick:disabled { opacity: 0.3; cursor: default; }
+.pick.active { border-color: var(--color-accent); color: var(--color-accent); }
+.pick.suit { font-size: 1.15rem; padding: 0.4rem 0.2rem; }
+.pick.suit.red { color: var(--color-red); }
+.pick.suit:disabled.red { color: var(--color-red); }
+
+.analyze-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn {
+  flex: 1;
+  padding: 0.6rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+/* Five tabs is the most this nav holds; shrink harder on narrow phones. */
+@media (max-width: 400px) {
+  .nav-link { padding: 0.7rem 0.15rem; font-size: 0.74rem; }
+}

@@ -28,6 +28,7 @@ const ASSETS = [
   "js/strategy-engine.js",
   "js/casinos.js",
   "js/promo.js",
+  "js/analyzer.js",
   "js/app.js",
 ];
 

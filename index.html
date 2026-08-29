@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
   <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
-  <link rel="stylesheet" href="css/style.css?v=493c9747">
+  <link rel="stylesheet" href="css/style.css?v=48d86b64">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -26,10 +26,11 @@
   </header>
 
   <nav>
-    <a href="#pay-tables" class="nav-link active" data-tab="pay-tables">Pay Tables</a>
+    <a href="#pay-tables" class="nav-link active" data-tab="pay-tables">Tables</a>
     <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
     <a href="#promo" class="nav-link" data-tab="promo">Promo</a>
     <a href="#casinos" class="nav-link" data-tab="casinos">Casinos</a>
+    <a href="#analyze" class="nav-link" data-tab="analyze">Analyze</a>
   </nav>
 
   <main>
@@ -290,6 +291,27 @@
       </p>
       <div id="casino-list"></div>
     </section>
+    <section id="analyze" class="tab-content">
+      <div class="field inline">
+        <label for="analyze-game">Game</label>
+        <select id="analyze-game"></select>
+      </div>
+
+      <div class="hand-slots" id="hand-slots"></div>
+
+      <div class="picker">
+        <div class="rank-row" id="rank-row"></div>
+        <div class="suit-row" id="suit-row"></div>
+      </div>
+
+      <div class="analyze-actions">
+        <button type="button" class="btn" id="analyze-deal">Deal a hand</button>
+        <button type="button" class="btn" id="analyze-clear">Clear</button>
+      </div>
+
+      <div id="analyze-result"></div>
+    </section>
+
   </main>
 
   <footer>
@@ -297,12 +319,13 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/data.js?v=493c9747"></script>
-  <script src="js/poker.js?v=493c9747"></script>
-  <script src="js/strategy-engine.js?v=493c9747"></script>
-  <script src="js/casinos.js?v=493c9747"></script>
-  <script src="js/promo.js?v=493c9747"></script>
-  <script src="js/app.js?v=493c9747"></script>
+  <script src="js/data.js?v=48d86b64"></script>
+  <script src="js/poker.js?v=48d86b64"></script>
+  <script src="js/strategy-engine.js?v=48d86b64"></script>
+  <script src="js/casinos.js?v=48d86b64"></script>
+  <script src="js/promo.js?v=48d86b64"></script>
+  <script src="js/analyzer.js?v=48d86b64"></script>
+  <script src="js/app.js?v=48d86b64"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

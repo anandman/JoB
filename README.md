@@ -10,6 +10,8 @@ Video poker strategy and odds reference app. Mobile-first, static site — no bu
 
 **Casinos** — Per-property game lists with returns, denominations, per-machine tier credit earn rates, and handpay exposure, scraped from vpfree2.com. Filter by game to cut a 15-game floor listing down to the one you actually play; the choice persists.
 
+**Analyzer** — Enter or deal a hand and see all 32 ways to hold it, ranked by expected value, with the exact cost of every alternative and the full outcome distribution for the best one. Works for any of the eight games.
+
 **Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
 
 ## Install it
@@ -48,6 +50,7 @@ js/poker.js               # Card encoding + hand evaluator
 js/strategy-engine.js     # EV calculator + strategy generator
 js/casinos.js             # GENERATED casino floor data
 js/promo.js               # Promo coin-in, W-2G, variance, gaming days
+js/analyzer.js            # Per-hand hold analysis
 js/app.js                 # Tab navigation, rendering, toggle logic
 manifest.webmanifest      # PWA manifest
 sw.js                     # Service worker (offline support)
