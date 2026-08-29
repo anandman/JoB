@@ -192,8 +192,16 @@ const STRATEGY_CATEGORIES = [
 
   // --- 4 to an Outside Straight (simpleGroup J) ---
   {
+    id: "4_outside_str_high",
+    hold: "Unsuited 10-J-Q-K",
+    cards: [_mc(8, 0), _mc(9, 1), _mc(10, 2), _mc(11, 3), _mc(1, 0)], // 10c Jd Qh Ks 3c
+    holdMask: [0, 1, 2, 3],
+    tier: "draw",
+    simpleGroup: "J",
+  },
+  {
     id: "4_outside_str",
-    hold: "4 to an Outside Straight",
+    hold: "4 to an Outside Straight (0–2 high cards)",
     cards: [_mc(5, 0), _mc(6, 1), _mc(7, 2), _mc(8, 3), _mc(1, 0)], // 7c 8d 9h 10s 3c
     holdMask: [0, 1, 2, 3],
     tier: "draw",
@@ -218,9 +226,28 @@ const STRATEGY_CATEGORIES = [
     simpleGroup: "K",
   },
   {
+  // Three lines. As one line this spanned suited Q-J down to suited A-J, and a
+  // 4-card inside straight with four high cards sits inside that range — so the
+  // merged line beat a draw that should beat two of its three members.
+    id: "2_suited_qj",
+    hold: "Suited Q-J",
+    cards: [_mc(9, 0), _mc(10, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // Jc Qc 5h 3s 8d
+    holdMask: [0, 1],
+    tier: "spec",
+    simpleGroup: "K",
+  },
+  {
     id: "2_suited_high",
-    hold: "2 Suited High Cards",
+    hold: "Suited K-Q or K-J",
     cards: [_mc(10, 0), _mc(11, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // Qc Kc 5h 3s 8d
+    holdMask: [0, 1],
+    tier: "spec",
+    simpleGroup: "K",
+  },
+  {
+    id: "2_suited_ace",
+    hold: "Suited A-K, A-Q or A-J",
+    cards: [_mc(9, 0), _mc(12, 0), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // Jc Ac 5h 3s 8d
     holdMask: [0, 1],
     tier: "spec",
     simpleGroup: "K",
@@ -237,7 +264,7 @@ const STRATEGY_CATEGORIES = [
   // --- Unsuited High Cards / Inside Straights (simpleGroup L) ---
   {
     id: "4_inside_str_3hc",
-    hold: "4 to an Inside Straight (3 high cards)",
+    hold: "4 to an Inside Straight (4 high cards)",
     cards: [_mc(9, 0), _mc(10, 1), _mc(11, 2), _mc(12, 3), _mc(3, 0)], // Jc Qd Kh As 5c
     holdMask: [0, 1, 2, 3],
     tier: "spec",
@@ -250,7 +277,7 @@ const STRATEGY_CATEGORIES = [
   // suited Q-10. An ace is a dead end for straights, which is most of the gap.
     id: "unsuited_jq",
     hold: "Unsuited J-Q",
-    cards: [_mc(9, 0), _mc(10, 1), _mc(3, 2), _mc(1, 3), _mc(6, 0)], // Jc Qd 5h 3s 8c
+    cards: [_mc(9, 0), _mc(10, 1), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // Jc Qd 5h 3s 8d
     holdMask: [0, 1],
     tier: "spec",
     simpleGroup: "L",
@@ -258,7 +285,7 @@ const STRATEGY_CATEGORIES = [
   {
     id: "2_unsuited_high",
     hold: "2 Unsuited High Cards (no ace)",
-    cards: [_mc(10, 0), _mc(11, 1), _mc(3, 2), _mc(1, 3), _mc(6, 0)], // Qc Kd 5h 3s 8c
+    cards: [_mc(10, 0), _mc(11, 1), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // Qc Kd 5h 3s 8d
     holdMask: [0, 1],
     tier: "spec",
     simpleGroup: "L",
@@ -269,14 +296,14 @@ const STRATEGY_CATEGORIES = [
     // Represented by J-A, the BEST member. This line has to outrank a suited
     // 10-K and a lone high card, so it is the strong member that has to speak
     // for it — the mirror of Single High Card, where the weak member does.
-    cards: [_mc(9, 0), _mc(12, 1), _mc(3, 2), _mc(1, 3), _mc(6, 0)], // Jc Ad 5h 3s 8c
+    cards: [_mc(9, 0), _mc(12, 1), _mc(3, 2), _mc(1, 3), _mc(6, 1)], // Jc Ad 5h 3s 8d
     holdMask: [0, 1],
     tier: "spec",
     simpleGroup: "M",
   },
   {
     id: "4_inside_str_2hc",
-    hold: "4 to an Inside Straight (2 high cards)",
+    hold: "4 to an Inside Straight (3 high cards)",
     cards: [_mc(8, 0), _mc(9, 1), _mc(10, 2), _mc(12, 3), _mc(3, 0)], // 10c Jd Qh As 5c
     holdMask: [0, 1, 2, 3],
     tier: "spec",
@@ -284,7 +311,7 @@ const STRATEGY_CATEGORIES = [
   },
   {
     id: "4_inside_str_1hc",
-    hold: "4 to an Inside Straight (1 high card)",
+    hold: "4 to an Inside Straight (1–2 high cards)",
     cards: [_mc(12, 0), _mc(0, 1), _mc(1, 2), _mc(2, 3), _mc(6, 0)], // Ac 2d 3h 4s 8c — A-low inside
     holdMask: [0, 1, 2, 3],
     tier: "spec",
@@ -461,7 +488,7 @@ function _jobGame(key, label, variantKey, ret) {
 
 /**
  * Total weighted combinations in a full video poker cycle, the denominator
- * Wizard of Odds normalises its return tables against:
+ * Published return tables normalise against:
  *   C(52,5) x 5 x C(47,5) = 2,598,960 x 5 x 1,533,939
  * Storing raw combination counts rather than rounded probabilities keeps the
  * data auditable — the counts must sum to exactly this, and the payout dot
@@ -486,7 +513,7 @@ const GAMES = {
   "job-8-6": _jobGame("job-8-6", "8/6", "8-6", 98.3927),
   "job-8-5": _jobGame("job-8-5", "8/5", "8-5", 97.2984),
 
-  // Combination counts: Wizard of Odds, verified to sum to VP_COMBOS and to
+  // Combination counts from published tables, verified to sum to VP_COMBOS and to
   // reproduce 99.1660% exactly.
   "bp-8-5": {
     key: "bp-8-5",
@@ -608,7 +635,7 @@ const VAR_BETWEEN_RATIO = 0.106;
  * ordered list — a hand with two deuces can never match a no-deuce line. Each
  * section is its own priority list.
  *
- * Order here is the published Wizard of Odds NSUD ordering rather than a
+ * Order here is the published NSUD ordering rather than a
  * computed EV sort. The published categories have deliberately overlapping EV
  * ranges ("3 of a kind through straight flush" spans 1.888 to 10, straddling
  * "4 to a straight flush"), so sorting single representative hands by EV

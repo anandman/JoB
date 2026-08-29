@@ -76,6 +76,13 @@ function holdEV(handCards, holdNames, payouts, evaluate) {
 
 const HIGH = ["J", "Q", "K", "A"];
 
+/** Which of the three suited-high-card lines a given pair belongs to. */
+function suitedLine(a, b) {
+  if (a === "A" || b === "A") return "Suited A-K, A-Q or A-J";
+  if ((a === "J" && b === "Q") || (a === "Q" && b === "J")) return "Suited Q-J";
+  return "Suited K-Q or K-J";
+}
+
 /** Which of the three unsuited-high-card lines a given pair belongs to. */
 function unsuitedLine(a, b) {
   if (a === "A" || b === "A") return "2 Unsuited High Cards (with an ace)";
@@ -109,7 +116,7 @@ function buildCases() {
         label: `suited ${x}-10 vs suited ${x},${y}`,
         cards: [x + "c", "Tc", y + "c"],
         a: { hold: [x + "c", "Tc"], line: `Suited 10–${x}` },
-        b: { hold: [x + "c", y + "c"], line: "2 Suited High Cards" },
+        b: { hold: [x + "c", y + "c"], line: suitedLine(x, y) },
       });
     }
   }
@@ -130,7 +137,7 @@ function buildCases() {
       label: `low pair ${r}${r} vs 2 suited high`,
       cards: [r + "c", r + "d", "Jh", "Qh"],
       a: { hold: [r + "c", r + "d"], line: "Low Pair (2–10)" },
-      b: { hold: ["Jh", "Qh"], line: "2 Suited High Cards" },
+      b: { hold: ["Jh", "Qh"], line: "Suited Q-J" },
     });
   }
   // 3 to a royal against the high pair / high cards inside it
@@ -142,7 +149,7 @@ function buildCases() {
       label: `3 to royal ${t.join("")} vs suited ${highs[0]},${highs[1]}`,
       cards: t.map((r) => r + "c"),
       a: { hold: t.map((r) => r + "c"), line: "3 to a Royal Flush" },
-      b: { hold: [highs[0] + "c", highs[1] + "c"], line: "2 Suited High Cards" },
+      b: { hold: [highs[0] + "c", highs[1] + "c"], line: suitedLine(highs[0], highs[1]) },
     });
   }
   return out;

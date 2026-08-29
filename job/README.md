@@ -74,7 +74,7 @@ Computation takes ~60ms on desktop and results are cached per pay table.
 
 ## Data sources
 
-Pay table payouts and expected return percentages are standard values from video poker literature. Strategy ordering is computed from the pay tables and verified against the well-known Wizard of Odds strategy for Jacks or Better.
+Pay table payouts and expected return percentages are standard values from video poker literature. Strategy ordering is computed from the pay tables, then checked hand by hand against exact hold expectations with `tools/audit-categories.js`.
 
 | Variant | Expected Return | House Edge |
 |---------|----------------|------------|

@@ -21,8 +21,8 @@ const ROOT = path.join(__dirname, "..");
 const src = fs.readFileSync(path.join(ROOT, "job/js/data.js"), "utf8")
           + fs.readFileSync(path.join(ROOT, "job/js/poker.js"), "utf8")
           + fs.readFileSync(path.join(ROOT, "job/js/strategy-engine.js"), "utf8");
-const { StrategyEngine, Poker, PAY_TABLES, GAMES, ROYAL_FLUSH_5COIN_PER } =
-  new Function(src + ";return {StrategyEngine,Poker,PAY_TABLES,GAMES,ROYAL_FLUSH_5COIN_PER};")();
+const { StrategyEngine, Poker, PAY_TABLES, GAMES, STRATEGY_CATEGORIES, ROYAL_FLUSH_5COIN_PER } =
+  new Function(src + ";return {StrategyEngine,Poker,PAY_TABLES,GAMES,STRATEGY_CATEGORIES,ROYAL_FLUSH_5COIN_PER};")();
 
 const rank = (c) => c >> 2;
 const suit = (c) => c & 3;
@@ -140,43 +140,83 @@ const SIMPLE_CARD = [
     const p = c.findIndex((n, r) => n === 2 && r < HIGH);
     return p >= 0 ? idxOfRank(h, p) : null;
   }],
-  ["4 to an Outside Straight", (h) =>
-    findSubset(h, 4, (i) => straightOuts(ranksOf(h, i)).length >= 2)],
+  ["Unsuited 10-J-Q-K / 4 to an Outside Straight", (h) => {
+    // 10-J-Q-K is an outside draw worth 0.87 against 0.68 for a plain one, so
+    // it is named first and tried first.
+    const tjqk = findSubset(h, 4, (i) => {
+      const rs = ranksOf(h, i).slice().sort((a, b) => a - b);
+      return rs.join() === "8,9,10,11";
+    });
+    if (tjqk) return tjqk;
+    return findSubset(h, 4, (i) => straightOuts(ranksOf(h, i)).length >= 2);
+  }],
   ["3 to a Straight Flush / 2 Suited High Cards", (h) => {
     const sf = findSubset(h, 3, (i) => sameSuit(h, i) && canMakeStraight(ranksOf(h, i), SF3_SPAN));
     if (sf) return sf;
     return findSubset(h, 2, (i) => sameSuit(h, i) && ranksOf(h, i).every((r) => r >= HIGH));
   }],
-  ["4 to an Inside Straight (3 high) / 2 Unsuited High Cards", (h) => {
-    const ins = findSubset(h, 4, (i) =>
-      straightOuts(ranksOf(h, i)).length === 1 && ranksOf(h, i).filter((r) => r >= HIGH).length >= 3);
-    if (ins) return ins;
-    // "Lowest 2 if 3+" — the card's own note.
-    const highs = [0, 1, 2, 3, 4].filter((i) => rank(h[i]) >= HIGH);
-    if (highs.length >= 2) {
-      highs.sort((a, b) => rank(h[a]) - rank(h[b]));
-      return [highs[0], highs[1]];
-    }
-    return null;
-  }],
-  ["Suited 10–J/Q/K / Single High Card", (h) => {
-    const t = findSubset(h, 2, (i) => {
-      const rs = ranksOf(h, i);
-      return sameSuit(h, i) && rs.includes(8) && rs.some((r) => r >= HIGH && r <= 11);
-    });
-    if (t) return t;
-    const hi = [0, 1, 2, 3, 4].filter((i) => rank(h[i]) >= HIGH);
-    return hi.length ? [hi[0]] : null;
-  }],
-  // Candidate line: a three-card straight-flush draw with two gaps. The
-  // category set has no line for it, so it currently falls through to a single
-  // high card or to discarding everything. Ranked here — below a high card,
-  // above tossing the hand — on the evidence of hands like 6d 8d Td.
-  ["3 to a Straight Flush (2 gaps)", (h) => EXTRA_LINE
-    ? findSubset(h, 3, (i) => sameSuit(h, i) && canMakeStraight(ranksOf(h, i), 4))
-    : null],
+  // The last two lines merge several categories each, and their printed order
+  // changes with the pay table — 9/6 names a suited 10-J before the unsuited
+  // high cards, 9/5 the other way. So the sub-rules are tried in whatever order
+  // the game's own category EVs put them, which is what the printed label does.
+  ["4 to an Inside Straight (3+ high) / Suited 10-J / 2 Unsuited High Cards", (h) => ordered(h, [
+    // Three or more high cards. The line's group also contains the weak
+    // inside-straight categories, but those are worth 0.40 against 0.60 here
+    // and belong near the bottom of the card, so the printed line restricts
+    // itself and they fall through to a single high card or to discarding.
+    ["4_inside_str_3hc", (x) => findSubset(x, 4, (i) =>
+      straightOuts(ranksOf(x, i)).length === 1 &&
+      ranksOf(x, i).filter((r) => r >= HIGH).length >= 3)],
+    ["suited_10_j", (x) => findSubset(x, 2, (i) =>
+      sameSuit(x, i) && ranksOf(x, i).slice().sort((a, b) => a - b).join() === "8,9")],
+    ["unsuited_jq", (x) => lowestTwoHigh(x, false)],
+  ])],
+  ["Suited 10-Q/K / 2 Unsuited High Cards with an Ace / Single High Card", (h) => ordered(h, [
+    ["suited_10_q", (x) => findSubset(x, 2, (i) => {
+      const rs = ranksOf(x, i).slice().sort((a, b) => a - b).join();
+      return sameSuit(x, i) && (rs === "8,10" || rs === "8,11");
+    })],
+    ["2_unsuited_high_ace", (x) => lowestTwoHigh(x, true)],
+    ["single_high", (x) => {
+      const hi = [0, 1, 2, 3, 4].filter((i) => rank(x[i]) >= HIGH);
+      if (!hi.length) return null;
+      // Keep the lowest high card; J beats Q beats K beats A in Jacks or Better.
+      hi.sort((a, b) => rank(x[a]) - rank(x[b]));
+      return [hi[0]];
+    }],
+  ])],
   ["Discard Everything", () => []],
 ];
+
+/**
+ * Two unsuited high cards, keeping the lowest two — the card's own note. When
+ * `withAce` is false an ace-high pair is left to the later line, and when it is
+ * true only ace-high pairs match.
+ */
+function lowestTwoHigh(h, withAce) {
+  const highs = [0, 1, 2, 3, 4].filter((i) => rank(h[i]) >= HIGH);
+  if (highs.length < 2) return null;
+  highs.sort((a, b) => rank(h[a]) - rank(h[b]));
+  const pick = [highs[0], highs[1]];
+  if (sameSuit(h, pick)) return null;                 // suited pairs belong higher up
+  const hasAce = pick.some((i) => rank(h[i]) === 12);
+  return hasAce === !!withAce ? pick : null;
+}
+
+/**
+ * Try a merged line's sub-rules in the order this pay table ranks them, which
+ * is the order the printed label lists them in.
+ */
+let CATEGORY_EV = {};
+function ordered(h, rules) {
+  const sorted = rules.slice().sort((a, b) =>
+    (CATEGORY_EV[b[0]] || 0) - (CATEGORY_EV[a[0]] || 0));
+  for (const [, match] of sorted) {
+    const hit = match(h);
+    if (hit) return hit;
+  }
+  return null;
+}
 
 function isStraight(rs) {
   if (!distinct(rs) || rs.length !== 5) return false;
@@ -196,6 +236,7 @@ function main() {
   const game = GAMES[gameKey];
   const pay = game.hands.map((x) => x.maxPay);
   const evaluate = gameKey.indexOf("bp-") === 0 ? Poker.evaluateBonusPoker : Poker.evaluateHand;
+  CATEGORY_EV = StrategyEngine.categoryEVs(STRATEGY_CATEGORIES, pay, evaluate);
 
   // Math.imul keeps the multiply in 32 bits. A plain `seed * 1103515245`
   // overflows double precision, and masking the low 31 bits then keeps exactly

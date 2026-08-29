@@ -303,13 +303,13 @@ var StrategyEngine = (function () {
     ],
     "K": [
       { name: "3 to a Straight Flush", ids: ["3_sf_open", "3_sf_inside_1hc", "3_sf_inside_0hc"] },
-      { name: "2 Suited High Cards", ids: ["2_suited_high"] },
+      { name: "2 Suited High Cards", ids: ["2_suited_qj", "2_suited_high", "2_suited_ace"] },
     ],
     // The inside-straight member outranks the high cards, so it has to be
     // named — the old label mentioned only the high cards while the line's EV
     // range quietly included a hold it never told you about.
     "L": [
-      { name: "4 to an Inside Straight (3 high)", ids: ["4_inside_str_3hc", "4_inside_str_2hc", "4_inside_str_1hc"] },
+      { name: "4 to an Inside Straight (3+ high cards)", ids: ["4_inside_str_3hc", "4_inside_str_2hc", "4_inside_str_1hc"] },
       { name: "Suited 10–J", ids: ["suited_10_j"] },
       { name: "2 Unsuited High Cards", ids: ["unsuited_jq", "2_unsuited_high"] },
     ],
