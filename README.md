@@ -6,11 +6,11 @@ Video poker strategy and odds reference app. Mobile-first, static site — no bu
 
 **Pay Tables** — View and compare pay tables for Jacks or Better variants (9/6, 9/5, 8/6, 8/5). See per-coin payouts, expected returns, and house edge at a glance.
 
-**Promo Planner** — Work out the coin-in a capped tier-credit multiplier needs, what it costs, how long it takes, and how much of your bankroll it puts at risk. Includes a configurable handpay threshold (the IRS W-2G line defaults to $1,200) that reports which hands cross it, how often, and the highest denomination that keeps handpays rare. Trip windows are split into gaming days on the property's reset hour, not midnight.
+**Risk** — What a session costs and what can go wrong. Set a coin-in goal, denomination, line count and coins per line, and it works out the hands, the time, the expected and typical cost, the swing, the risk of ruin against your bankroll, and the bankroll needed to hold ruin to 5% or 1%. A configurable W-2G handpay threshold (default $2,000) reports which hands cross it, how often, and the highest denomination that keeps handpays rare — compared both across denominations and across line counts at a fixed total bet.
 
 **Casinos** — Per-property game lists with returns, denominations, per-machine tier credit earn rates, and handpay exposure, scraped from vpfree2.com. Filter by game to cut a 15-game floor listing down to the one you actually play; the choice persists.
 
-**Analyzer** — Enter or deal a hand and see all 32 ways to hold it, ranked by expected value, with the exact cost of every alternative and the full outcome distribution for the best one. Works for any of the eight games.
+**Analyzer** — Enter or deal a hand and see all 32 ways to hold it, ranked by expected value, with the exact cost of every alternative and the full outcome distribution for the best one. Works for any of the eight games. Switch to **Play** and it deals, you hold, you draw, and every hand is scored against perfect play — tracking how often you found the best hold and what the misses cost.
 
 **Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
 

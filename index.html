@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jacks or Betterment — Video Poker Strategy &amp; Odds</title>
   <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
-  <link rel="stylesheet" href="css/style.css?v=48d86b64">
+  <link rel="stylesheet" href="css/style.css?v=5dc9fe47">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -28,9 +28,9 @@
   <nav>
     <a href="#pay-tables" class="nav-link active" data-tab="pay-tables">Tables</a>
     <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
-    <a href="#promo" class="nav-link" data-tab="promo">Promo</a>
-    <a href="#casinos" class="nav-link" data-tab="casinos">Casinos</a>
     <a href="#analyze" class="nav-link" data-tab="analyze">Analyze</a>
+    <a href="#promo" class="nav-link" data-tab="promo">Risk</a>
+    <a href="#casinos" class="nav-link" data-tab="casinos">Casinos</a>
   </nav>
 
   <main>
@@ -157,15 +157,23 @@
           <select id="promo-lines"></select>
         </div>
         <div class="field">
+          <label for="promo-coins">Coins per line</label>
+          <select id="promo-coins"></select>
+        </div>
+        <div class="field readonly">
+          <label>Bet per hand</label>
+          <output id="promo-bet"></output>
+        </div>
+        <div class="field">
           <label for="promo-bankroll">Bankroll</label>
           <input id="promo-bankroll" type="number" inputmode="numeric" value="9000" min="0" step="500">
         </div>
         <div class="field">
-          <label for="promo-cap">Tier credit cap</label>
+          <label for="promo-cap">Tier credit goal</label>
           <input id="promo-cap" type="number" inputmode="numeric" value="40000" min="1" step="1000">
         </div>
         <div class="field">
-          <label for="promo-mult">Multiplier</label>
+          <label for="promo-mult">TC multiplier</label>
           <input id="promo-mult" type="number" inputmode="numeric" value="10" min="1" step="1">
         </div>
         <div class="field">
@@ -177,7 +185,7 @@
           <input id="promo-hph" type="number" inputmode="numeric" value="700" min="1" step="50">
         </div>
         <div class="field">
-          <label for="promo-threshold">Handpay threshold</label>
+          <label for="promo-threshold">W-2G handpay</label>
           <input id="promo-threshold" type="number" inputmode="numeric" value="2000" min="1" step="100">
         </div>
       </div>
@@ -191,8 +199,8 @@
       <h3>W-2G exposure at this denomination</h3>
       <div id="promo-w2g"></div>
 
-      <h3>Denomination ladder</h3>
-      <p class="note">Expected cost is the same at every denomination &mdash; the house edge applies to coin-in, not bet size. Denomination only trades time against variance and handpays.</p>
+      <h3>Across denominations</h3>
+      <p class="note">At the line count above, varying the denomination. Expected cost is the same down the column &mdash; the house edge applies to coin-in, not bet size &mdash; so denomination only trades time against variance and handpays.</p>
       <div class="table-scroll">
         <table class="ladder-table">
           <thead>
@@ -210,7 +218,7 @@
         </table>
       </div>
 
-      <h3>Same total bet, spread across lines</h3>
+      <h3>Across line counts</h3>
       <p class="note">Every row wagers the same amount per hand, so coin-in, time, and expected cost are identical. What changes is how the money is spread: more lines means lower variance, and each line pays a fraction of the size &mdash; though a hand already made when dealt still pays on every line at once.</p>
       <div class="table-scroll">
         <table class="ladder-table">
@@ -229,47 +237,6 @@
         </table>
       </div>
 
-      <h3>Trip window</h3>
-      <p class="note">Gaming days roll over at the reset hour, not midnight &mdash; so a single overnight session can straddle two earning periods.</p>
-      <div class="promo-controls">
-        <div class="field">
-          <label for="trip-start">Arrive</label>
-          <input id="trip-start" type="datetime-local">
-        </div>
-        <div class="field">
-          <label for="trip-end">Leave</label>
-          <input id="trip-end" type="datetime-local">
-        </div>
-        <div class="field">
-          <label for="trip-reset">Gaming day resets at</label>
-          <select id="trip-reset"></select>
-        </div>
-        <div class="field checkbox">
-          <label for="trip-perday">
-            <input id="trip-perday" type="checkbox">
-            Cap resets each gaming day
-          </label>
-        </div>
-      </div>
-      <div id="trip-summary"></div>
-      <div class="table-scroll">
-        <table class="ladder-table">
-          <thead>
-            <tr><th>Gaming day</th><th>Window</th><th>Available</th><th>Play</th><th></th></tr>
-          </thead>
-          <tbody id="trip-days"></tbody>
-        </table>
-      </div>
-
-      <h3>Session progress</h3>
-      <div class="tracker">
-        <div class="field">
-          <label for="tracker-tc">Tier credits earned so far</label>
-          <input id="tracker-tc" type="number" inputmode="numeric" value="0" min="0" step="500">
-        </div>
-        <div class="progress-bar"><div class="progress-fill" id="tracker-fill"></div></div>
-        <div class="stat-grid compact" id="tracker-stats"></div>
-      </div>
     </section>
 
     <section id="casinos" class="tab-content">
@@ -297,7 +264,13 @@
         <select id="analyze-game"></select>
       </div>
 
+      <div class="strategy-toggle analyze-mode">
+        <button type="button" class="toggle-btn active" data-amode="analyze">Analyze</button>
+        <button type="button" class="toggle-btn" data-amode="play">Play</button>
+      </div>
+
       <div class="hand-slots" id="hand-slots"></div>
+      <p class="play-hint" id="play-hint"></p>
 
       <div class="picker">
         <div class="rank-row" id="rank-row"></div>
@@ -309,6 +282,7 @@
         <button type="button" class="btn" id="analyze-clear">Clear</button>
       </div>
 
+      <div id="play-stats" class="stat-grid compact"></div>
       <div id="analyze-result"></div>
     </section>
 
@@ -319,13 +293,13 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/data.js?v=48d86b64"></script>
-  <script src="js/poker.js?v=48d86b64"></script>
-  <script src="js/strategy-engine.js?v=48d86b64"></script>
-  <script src="js/casinos.js?v=48d86b64"></script>
-  <script src="js/promo.js?v=48d86b64"></script>
-  <script src="js/analyzer.js?v=48d86b64"></script>
-  <script src="js/app.js?v=48d86b64"></script>
+  <script src="js/data.js?v=5dc9fe47"></script>
+  <script src="js/poker.js?v=5dc9fe47"></script>
+  <script src="js/strategy-engine.js?v=5dc9fe47"></script>
+  <script src="js/casinos.js?v=5dc9fe47"></script>
+  <script src="js/promo.js?v=5dc9fe47"></script>
+  <script src="js/analyzer.js?v=5dc9fe47"></script>
+  <script src="js/app.js?v=5dc9fe47"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

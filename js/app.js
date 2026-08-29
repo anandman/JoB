@@ -355,6 +355,8 @@
     game: document.getElementById("promo-game"),
     denom: document.getElementById("promo-denom"),
     lines: document.getElementById("promo-lines"),
+    coins: document.getElementById("promo-coins"),
+    bet: document.getElementById("promo-bet"),
     bankroll: document.getElementById("promo-bankroll"),
     cap: document.getElementById("promo-cap"),
     mult: document.getElementById("promo-mult"),
@@ -363,17 +365,8 @@
     stats: document.getElementById("promo-stats"),
     w2g: document.getElementById("promo-w2g"),
     ladder: document.getElementById("promo-ladder"),
-    trackerTc: document.getElementById("tracker-tc"),
-    trackerFill: document.getElementById("tracker-fill"),
-    trackerStats: document.getElementById("tracker-stats"),
     threshold: document.getElementById("promo-threshold"),
     ceiling: document.getElementById("promo-ceiling"),
-    tripStart: document.getElementById("trip-start"),
-    tripEnd: document.getElementById("trip-end"),
-    tripReset: document.getElementById("trip-reset"),
-    tripPerDay: document.getElementById("trip-perday"),
-    tripSummary: document.getElementById("trip-summary"),
-    tripDays: document.getElementById("trip-days"),
     casinoDenom: document.getElementById("casino-denom"),
     casinoGame: document.getElementById("casino-game-filter"),
     casinoList: document.getElementById("casino-list"),
@@ -415,7 +408,7 @@
     return {
       game: GAMES[promoEls.game.value],
       denom: parseFloat(promoEls.denom.value),
-      coins: MAX_COINS,
+      coins: Math.max(1, parseInt(promoEls.coins.value, 10) || MAX_COINS),
       tcCap: Math.max(1, parseFloat(promoEls.cap.value) || 1),
       multiplier: Math.max(1, parseFloat(promoEls.mult.value) || 1),
       coinInPerTc: Math.max(0.01, parseFloat(promoEls.rate.value) || 1),
@@ -522,6 +515,10 @@
     if (!opts.game) return;
     var plan = Promo.plan(opts);
 
+    promoEls.bet.textContent = fmtMoney(plan.bet) +
+      "  (" + fmtDenom(opts.denom) + " × " + opts.coins + " × " + opts.lines + ")";
+    promoEls.bet.className = opts.coins < MAX_COINS ? "short-bet" : "";
+
     // --- Summary cards ---
     promoEls.stats.innerHTML = "";
     promoEls.stats.appendChild(statCard("Coin-in needed", fmtMoney(plan.coinIn),
@@ -531,7 +528,11 @@
     promoEls.stats.appendChild(statCard("Time", plan.hours.toFixed(1) + " hr",
       "at " + fmtInt(opts.handsPerHour) + " hands/hr"));
     promoEls.stats.appendChild(statCard("Expected cost", fmtMoney(plan.expectedCost),
-      fmtPct(1 - plan.ret) + " of coin-in"));
+      fmtPct(1 - plan.ret) + " of coin-in", opts.coins < MAX_COINS ? "warn" : ""));
+    if (opts.coins < MAX_COINS) {
+      promoEls.stats.appendChild(statCard("Short bet", "−1.36%",
+        "the royal drops from 800 to 250 a coin", "danger"));
+    }
     if (plan.noRoyalCost !== null) {
       promoEls.stats.appendChild(statCard("Typical cost", fmtMoney(plan.noRoyalCost),
         "if no royal (" + fmtPct(1 - plan.royalChance) + " likely)", "warn"));
@@ -638,6 +639,7 @@
         tcCap: opts.tcCap, multiplier: opts.multiplier,
         coinInPerTc: opts.coinInPerTc, handsPerHour: opts.handsPerHour,
         threshold: opts.threshold, lines: opts.lines, bankroll: opts.bankroll,
+        coins: opts.coins,
       });
       var tr = document.createElement("tr");
       if (d === opts.denom) tr.className = "current";
@@ -662,8 +664,6 @@
 
     renderSpread(plan, opts);
     renderCeiling(opts);
-    renderTrip(plan, opts);
-    renderTracker(plan, opts);
   }
 
   /**
@@ -681,12 +681,12 @@
     var totalBet = plan.bet;
 
     LINE_COUNTS.forEach(function (n) {
-      var denom = totalBet / (MAX_COINS * n);
+      var denom = totalBet / (opts.coins * n);
       // Only offer spreads that land on a denomination a machine actually has.
       var real = DENOMS.some(function (d) { return Math.abs(d - denom) < 1e-9; });
 
       var p = Promo.plan({
-        game: opts.game, denom: denom, coins: MAX_COINS, lines: n,
+        game: opts.game, denom: denom, coins: opts.coins, lines: n,
         tcCap: opts.tcCap, multiplier: opts.multiplier,
         coinInPerTc: opts.coinInPerTc, handsPerHour: opts.handsPerHour,
         threshold: opts.threshold, bankroll: opts.bankroll,
@@ -711,14 +711,14 @@
       // cards paying on every line at once.
       var biggest = 0;
       opts.game.hands.forEach(function (hand) {
-        var one = Promo.handPayout(hand, denom, MAX_COINS);
+        var one = Promo.handPayout(hand, denom, opts.coins);
         if (one > biggest) biggest = one;
       });
       var tdOne = td(fmtMoney(biggest));
       if (biggest >= opts.threshold) tdOne.className = "over";
       tr.appendChild(tdOne);
 
-      var w = Promo.w2gLines(opts.game, denom, n, MAX_COINS, opts.threshold);
+      var w = Promo.w2gLines(opts.game, denom, n, opts.coins, opts.threshold);
       var tdW = td(!w.known ? "—" : w.oneIn === null ? "never" : fmtInt(w.oneIn) + " hands");
       if (w.oneIn !== null && w.oneIn < 10000) tdW.className = "over";
       tr.appendChild(tdW);
@@ -728,7 +728,7 @@
   }
 
   function renderCeiling(opts) {
-    var c = Promo.denomCeiling(opts.game, DENOMS, opts.threshold, MAX_COINS, null, opts.lines);
+    var c = Promo.denomCeiling(opts.game, DENOMS, opts.threshold, opts.coins, null, opts.lines);
     promoEls.ceiling.innerHTML = "";
     if (!c.known) {
       promoEls.ceiling.className = "ceiling-callout muted";
@@ -739,7 +739,7 @@
     }
     promoEls.ceiling.className = "ceiling-callout";
     var big = document.createElement("strong");
-    var perHand = c.denom === null ? 0 : c.denom * MAX_COINS * opts.lines;
+    var perHand = c.denom === null ? 0 : c.denom * opts.coins * opts.lines;
     big.textContent = c.denom === null
       ? "Every denomination triggers handpays at " + fmtMoney(opts.threshold) + "."
       : "Bet ceiling: " + fmtDenom(c.denom) + " (" + fmtMoney(perHand) + " per hand" +
@@ -756,78 +756,6 @@
         (opts.lines > 1 ? " across " + opts.lines + " lines." : ".");
     }
     promoEls.ceiling.appendChild(sub);
-  }
-
-  function renderTrip(plan, opts) {
-    var start = new Date(promoEls.tripStart.value);
-    var end = new Date(promoEls.tripEnd.value);
-    var reset = parseInt(promoEls.tripReset.value, 10) || 0;
-    var perDay = promoEls.tripPerDay.checked;
-
-    var days = Promo.gamingDays(start, end, reset);
-    promoEls.tripSummary.innerHTML = "";
-    promoEls.tripDays.innerHTML = "";
-    if (!days.length) {
-      promoEls.tripSummary.className = "note warn";
-      promoEls.tripSummary.textContent = "Set an arrival before departure to see the gaming-day split.";
-      return;
-    }
-
-    var sched = Promo.schedule(plan, days, perDay);
-    promoEls.tripSummary.className = "stat-grid compact";
-    promoEls.tripSummary.appendChild(statCard("Gaming days", String(days.length),
-      "reset at " + (reset % 12 === 0 ? 12 : reset % 12) + (reset < 12 ? "am" : "pm")));
-    promoEls.tripSummary.appendChild(statCard("Play needed", sched.neededHours.toFixed(1) + " hr",
-      "of " + sched.totalHours.toFixed(1) + " hr on the floor",
-      sched.feasible ? "" : "danger"));
-    promoEls.tripSummary.appendChild(statCard("Total coin-in", fmtMoney(sched.totalCoinIn),
-      fmtMoney(sched.totalCost) + " expected cost"));
-    promoEls.tripSummary.appendChild(statCard("Slack", sched.slack.toFixed(1) + " hr",
-      sched.feasible ? "spare time" : "short", sched.feasible ? "" : "danger"));
-
-    days.forEach(function (d, i) {
-      var row = sched.days[i];
-      var tr = document.createElement("tr");
-      if (row.feasible === false) tr.className = "danger";
-      function td(text) {
-        var c = document.createElement("td");
-        c.textContent = text;
-        return c;
-      }
-      function hhmm(dt) {
-        return dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-      }
-      tr.appendChild(td(d.label));
-      tr.appendChild(td(hhmm(d.start) + " – " + hhmm(d.end)));
-      tr.appendChild(td(d.hours.toFixed(1) + " hr"));
-      tr.appendChild(td(row.need === null ? "—" : row.need.toFixed(1) + " hr"));
-      tr.appendChild(td(row.feasible === false ? "short" : (row.need > 0.01 ? "ok" : "—")));
-      promoEls.tripDays.appendChild(tr);
-    });
-  }
-
-  function renderTracker(plan, opts) {
-    var tc = Math.max(0, parseFloat(promoEls.trackerTc.value) || 0);
-    var prog = Promo.progress(plan, tc, opts.tcCap);
-
-    promoEls.trackerFill.style.width = (prog.pct * 100).toFixed(1) + "%";
-    promoEls.trackerFill.className = "progress-fill" + (prog.done ? " done" : "");
-
-    promoEls.trackerStats.innerHTML = "";
-    if (prog.done) {
-      promoEls.trackerStats.appendChild(statCard("Cap reached", "Stop",
-        "further play earns no multiplier", "done"));
-      return;
-    }
-    promoEls.trackerStats.appendChild(statCard("Remaining", fmtPct(1 - prog.pct), "of the cap"));
-    promoEls.trackerStats.appendChild(statCard("Hands left", fmtInt(prog.handsLeft),
-      fmtMoney(prog.coinInLeft) + " coin-in"));
-    promoEls.trackerStats.appendChild(statCard("Time left", prog.hoursLeft.toFixed(1) + " hr",
-      fmtMoney(prog.costLeft) + " expected cost"));
-
-    try {
-      localStorage.setItem("job-tracker-tc", String(tc));
-    } catch (e) { /* private mode — progress just won't persist */ }
   }
 
   function renderCasinos() {
@@ -1007,10 +935,26 @@
 
   function renderHandSlots(heldIndices) {
     anEls.slots.innerHTML = "";
+    var cards = sim.on && sim.phase === "drawn" ? sim.result.final : anHand;
     for (var i = 0; i < 5; i++) {
-      if (i < anHand.length) {
+      if (i < cards.length) {
         var held = heldIndices && heldIndices.indexOf(i) !== -1;
-        var el = anCardEl(anHand[i], { held: held, faded: heldIndices && !held });
+        var el = anCardEl(cards[i], { held: held, faded: heldIndices && !held });
+        if (sim.on) {
+          // In play mode a tap is a hold, not a delete.
+          if (sim.phase === "dealt") {
+            el.title = "Hold";
+            (function (idx) {
+              el.addEventListener("click", function () {
+                var at = sim.held.indexOf(idx);
+                if (at === -1) sim.held.push(idx); else sim.held.splice(at, 1);
+                renderAnalyze();
+              });
+            })(i);
+          }
+          anEls.slots.appendChild(el);
+          continue;
+        }
         el.title = "Remove";
         (function (idx) {
           el.addEventListener("click", function () {
@@ -1066,6 +1010,43 @@
   }
 
   function renderAnalyze() {
+    var hint = document.getElementById("play-hint");
+    document.querySelector(".picker").style.display = sim.on ? "none" : "";
+    anEls.clear.style.display = sim.on ? "none" : "";
+
+    if (sim.on) {
+      renderPicker();
+      if (sim.phase === "idle") {
+        anEls.slots.innerHTML = "";
+        for (var k = 0; k < 5; k++) {
+          var slot = document.createElement("span");
+          slot.className = "card empty";
+          anEls.slots.appendChild(slot);
+        }
+        hint.textContent = "Deal a hand, tap the cards you want to keep, then draw.";
+        anEls.deal.textContent = "Deal";
+        anEls.result.innerHTML = "";
+        renderPlayStats();
+        return;
+      }
+      if (sim.phase === "dealt") {
+        renderHandSlots(sim.held);
+        hint.textContent = sim.held.length
+          ? "Holding " + sim.held.length + " — draw when ready."
+          : "Tap the cards to hold. Holding none discards everything.";
+        anEls.deal.textContent = "Draw";
+        anEls.result.innerHTML = "";
+        renderPlayStats();
+        return;
+      }
+      renderHandSlots(sim.held);
+      hint.textContent = "";
+      anEls.deal.textContent = "Deal next";
+      renderPlayResult();
+      return;
+    }
+
+    hint.textContent = "";
     renderPicker();
     if (anHand.length < 5) {
       renderHandSlots(null);
@@ -1193,6 +1174,10 @@
       anHand = []; anPendingRank = -1; renderAnalyze();
     });
     anEls.deal.addEventListener("click", function () {
+      if (sim.on) {
+        if (sim.phase === "dealt") simDraw(); else simDeal();
+        return;
+      }
       anHand = [];
       while (anHand.length < 5) {
         var c = Math.floor(Math.random() * 52);
@@ -1201,7 +1186,151 @@
       anPendingRank = -1;
       renderAnalyze();
     });
+
+    document.querySelectorAll(".analyze-mode .toggle-btn").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var mode = this.getAttribute("data-amode");
+        sim.on = mode === "play";
+        document.querySelectorAll(".analyze-mode .toggle-btn").forEach(function (x) {
+          x.classList.remove("active");
+        });
+        this.classList.add("active");
+        sim.phase = "idle";
+        sim.held = [];
+        sim.result = null;
+        anHand = [];
+        anPendingRank = -1;
+        anEls.deal.textContent = sim.on ? "Deal" : "Deal a hand";
+        renderAnalyze();
+      });
+    });
+
     renderAnalyze();
+  }
+
+  /* ---------- Play mode: deal, hold, draw, and get scored ---------- */
+
+  var sim = {
+    on: false,
+    phase: "idle",   // idle -> dealt -> drawn
+    hand: [],
+    held: [],
+    deck: [],
+    result: null,
+    stats: { hands: 0, wagered: 0, returned: 0, correct: 0, coinsLost: 0 },
+  };
+
+  function shuffledDeck() {
+    var d = [], i, j, t;
+    for (i = 0; i < 52; i++) d.push(i);
+    for (i = 51; i > 0; i--) {
+      j = Math.floor(Math.random() * (i + 1));
+      t = d[i]; d[i] = d[j]; d[j] = t;
+    }
+    return d;
+  }
+
+  function simDeal() {
+    var d = shuffledDeck();
+    sim.hand = d.slice(0, 5);
+    sim.deck = d.slice(5);
+    sim.held = [];
+    sim.result = null;
+    sim.phase = "dealt";
+    anHand = sim.hand.slice();
+    renderAnalyze();
+  }
+
+  /**
+   * Resolve the draw, then score the hold that was actually made.
+   *
+   * Scoring compares against every alternative rather than against a strategy
+   * card, so a tie counts as correct and a mistake is priced at exactly what
+   * it gave up — the same number the analyzer shows.
+   */
+  function simDraw() {
+    var game = GAMES[anEls.game.value];
+    var evaluate = Analyzer.evaluatorFor(game.key);
+    var final = sim.hand.slice();
+    var next = 0;
+    for (var i = 0; i < 5; i++) {
+      if (sim.held.indexOf(i) === -1) final[i] = sim.deck[next++];
+    }
+
+    var idx = evaluate(final[0], final[1], final[2], final[3], final[4]);
+    var perCoin = idx === -1 ? 0 : game.hands[idx].maxPay;
+    var paid = perCoin * MAX_COINS;
+
+    var res = Analyzer.analyze(sim.hand, game);
+    var mine = null;
+    for (i = 0; i < res.holds.length; i++) {
+      if (res.holds[i].indices.join(",") === sim.held.slice().sort(function (a, b) { return a - b; }).join(",")) {
+        mine = res.holds[i];
+        break;
+      }
+    }
+    var cost = mine ? mine.cost : 0;
+    var wasBest = cost < 1e-9;
+
+    sim.stats.hands++;
+    sim.stats.wagered += MAX_COINS;
+    sim.stats.returned += paid;
+    if (wasBest) sim.stats.correct++;
+    sim.stats.coinsLost += cost * MAX_COINS;
+
+    sim.result = {
+      final: final,
+      name: idx === -1 ? "Nothing" : game.hands[idx].name,
+      paid: paid,
+      wasBest: wasBest,
+      cost: cost,
+      best: res.best,
+      mine: mine,
+    };
+    sim.phase = "drawn";
+    renderAnalyze();
+  }
+
+  function renderPlayStats() {
+    var box = document.getElementById("play-stats");
+    box.innerHTML = "";
+    if (!sim.on || !sim.stats.hands) return;
+    var st = sim.stats;
+    var net = st.returned - st.wagered;
+    box.appendChild(statCard("Hands", fmtInt(st.hands),
+      st.wagered + " coins in, " + st.returned + " back"));
+    box.appendChild(statCard("Net", (net >= 0 ? "+" : "−") + Math.abs(net) + " coins",
+      (st.returned / st.wagered * 100).toFixed(1) + "% returned",
+      net >= 0 ? "done" : ""));
+    box.appendChild(statCard("Played best", (st.correct / st.hands * 100).toFixed(0) + "%",
+      st.hands - st.correct + " hand" + (st.hands - st.correct === 1 ? "" : "s") + " misplayed",
+      st.correct === st.hands ? "done" : "warn"));
+    box.appendChild(statCard("Cost of errors", st.coinsLost.toFixed(2) + " coins",
+      (st.coinsLost / st.wagered * 100).toFixed(2) + "% of what you wagered",
+      st.coinsLost > 0 ? "warn" : "done"));
+  }
+
+  function renderPlayResult() {
+    var out = anEls.result;
+    out.innerHTML = "";
+    var r = sim.result;
+    if (!r) return;
+
+    var box = document.createElement("div");
+    box.className = "ceiling-callout" + (r.paid ? "" : " muted");
+    var big = document.createElement("strong");
+    big.textContent = r.name + (r.paid ? "  —  " + r.paid + " coins" : "  —  no pay");
+    box.appendChild(big);
+    var sub = document.createElement("span");
+    if (r.wasBest) {
+      sub.textContent = "Best possible hold. Nothing left on the table.";
+    } else {
+      sub.textContent = "Optimal was " + Analyzer.holdLabel(r.best) + " — that hold was worth " +
+        r.cost.toFixed(4) + " more per coin.";
+    }
+    box.appendChild(sub);
+    out.appendChild(box);
+    renderPlayStats();
   }
 
   function initPromoControls() {
@@ -1253,6 +1382,14 @@
       }
     } catch (e) { /* ignore */ }
 
+    for (var c = 1; c <= MAX_COINS; c++) {
+      var co = document.createElement("option");
+      co.value = String(c);
+      co.textContent = c + (c === MAX_COINS ? " (max bet)" : "");
+      promoEls.coins.appendChild(co);
+    }
+    promoEls.coins.value = String(MAX_COINS);
+
     LINE_COUNTS.forEach(function (n) {
       var o = document.createElement("option");
       o.value = String(n);
@@ -1261,38 +1398,10 @@
     });
     promoEls.lines.value = "1";
 
-    for (var hr = 0; hr < 24; hr++) {
-      var o = document.createElement("option");
-      o.value = String(hr);
-      o.textContent = (hr % 12 === 0 ? 12 : hr % 12) + ":00 " + (hr < 12 ? "am" : "pm");
-      promoEls.tripReset.appendChild(o);
-    }
-    promoEls.tripReset.value = "6";
 
-    // Default the window to a 4pm-to-4pm overnight starting tomorrow.
-    function localISO(d) {
-      var pad = function (n) { return (n < 10 ? "0" : "") + n; };
-      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
-        "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
-    }
-    var t0 = new Date();
-    t0.setDate(t0.getDate() + 1);
-    t0.setHours(16, 0, 0, 0);
-    var t1 = new Date(t0.getTime());
-    t1.setDate(t1.getDate() + 1);
-    promoEls.tripStart.value = localISO(t0);
-    promoEls.tripEnd.value = localISO(t1);
-
-    try {
-      var saved = localStorage.getItem("job-tracker-tc");
-      if (saved !== null) promoEls.trackerTc.value = saved;
-    } catch (e) { /* ignore */ }
-
-    [promoEls.game, promoEls.denom, promoEls.lines, promoEls.bankroll,
+    [promoEls.game, promoEls.denom, promoEls.lines, promoEls.coins, promoEls.bankroll,
      promoEls.cap, promoEls.mult,
-     promoEls.rate, promoEls.hph, promoEls.threshold, promoEls.trackerTc,
-     promoEls.tripStart, promoEls.tripEnd, promoEls.tripReset,
-     promoEls.tripPerDay].forEach(function (el) {
+     promoEls.rate, promoEls.hph, promoEls.threshold].forEach(function (el) {
       el.addEventListener("input", renderPromo);
       el.addEventListener("change", renderPromo);
     });

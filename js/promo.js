@@ -27,15 +27,19 @@ var Promo = (function () {
    * Return, variance and per-hand standard deviation, in units of amount
    * wagered. Only meaningful when the game has frequencies.
    */
-  function stats(game) {
+  function stats(game, coins) {
+    coins = coins || MAX_COINS;
     if (!hasFrequencies(game)) {
       return { known: false, ret: game.ret / 100, variance: null, sd: null };
     }
     var ret = 0, ev2 = 0;
     for (var i = 0; i < game.hands.length; i++) {
       var h = game.hands[i];
-      ret += h.freq * h.maxPay;
-      ev2 += h.freq * h.maxPay * h.maxPay;
+      // Short of max bet the royal pays its base rate, which costs about 1.5%
+      // of return — the whole reason to play max coins.
+      var pay = coins === MAX_COINS ? h.maxPay : h.pay;
+      ret += h.freq * pay;
+      ev2 += h.freq * pay * pay;
     }
     var variance = ev2 - ret * ret;
     return { known: true, ret: ret, variance: variance, sd: Math.sqrt(variance) };
@@ -91,7 +95,7 @@ var Promo = (function () {
     var denom = opts.denom;
     var coins = opts.coins || MAX_COINS;
     var lines = Math.max(1, opts.lines || 1);
-    var st = stats(game);
+    var st = stats(game, coins);
 
     var baseTc = opts.tcCap / opts.multiplier;
     var coinIn = baseTc * opts.coinInPerTc;
@@ -112,7 +116,7 @@ var Promo = (function () {
       : coinIn * (1 - (st.ret - royalFreq * royal.maxPay));
 
     // Swing over the full run, in dollars, at this line count.
-    var lv = linesVariance(game, lines);
+    var lv = linesVariance(game, lines, coins);
     var swing = lv.known ? lv.sd * Math.sqrt(hands) * bet : null;
 
     var w2g = w2gAnalysis(game, denom, coins, opts.threshold);
@@ -222,90 +226,7 @@ var Promo = (function () {
     return { triggers: triggers, largestSafe: largestSafe, threshold: threshold };
   }
 
-  /**
-   * Split a trip window into gaming days.
-   *
-   * Casino gaming days roll over at a set hour (Caesars uses 6am), not at
-   * midnight, so a trip that looks like one day of play can straddle two
-   * earning periods — which matters when a promo cap or a daily bonus
-   * resets on that boundary.
-   */
-  function gamingDays(start, end, resetHour) {
-    if (!(start instanceof Date) || !(end instanceof Date)) return [];
-    if (isNaN(start) || isNaN(end) || end <= start) return [];
 
-    var days = [];
-    var cursor = new Date(start.getTime());
-
-    while (cursor < end) {
-      // Start of the gaming day containing `cursor`.
-      var dayStart = new Date(cursor.getTime());
-      dayStart.setHours(resetHour, 0, 0, 0);
-      if (dayStart > cursor) dayStart.setDate(dayStart.getDate() - 1);
-
-      var dayEnd = new Date(dayStart.getTime());
-      dayEnd.setDate(dayEnd.getDate() + 1);
-
-      var from = cursor > dayStart ? cursor : dayStart;
-      var to = end < dayEnd ? end : dayEnd;
-      var hours = (to - from) / 3600000;
-
-      days.push({
-        label: dayStart.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
-        start: from,
-        end: to,
-        hours: hours,
-        partial: hours < 24,
-      });
-
-      cursor = dayEnd;
-    }
-    return days;
-  }
-
-  /**
-   * Can the promo be finished inside the trip window?
-   *
-   * perDay = the cap resets each gaming day (so each day needs a full run);
-   * otherwise the requirement is spread across the whole window.
-   */
-  function schedule(plan, days, perDay) {
-    var totalHours = days.reduce(function (a, d) { return a + d.hours; }, 0);
-    var needed = perDay ? plan.hours * days.length : plan.hours;
-
-    var rows = days.map(function (d) {
-      var need = perDay ? plan.hours : null;
-      return {
-        label: d.label,
-        hours: d.hours,
-        need: need,
-        feasible: need === null ? null : d.hours >= need,
-        start: d.start,
-        end: d.end,
-      };
-    });
-
-    if (!perDay) {
-      // Spend the requirement across days, filling each in order.
-      var left = plan.hours;
-      rows.forEach(function (r) {
-        r.need = Math.min(left, r.hours);
-        left -= r.need;
-        r.feasible = true;
-      });
-      if (left > 0.001) rows[rows.length - 1].feasible = false;
-    }
-
-    return {
-      days: rows,
-      totalHours: totalHours,
-      neededHours: needed,
-      slack: totalHours - needed,
-      feasible: totalHours >= needed,
-      totalCoinIn: perDay ? plan.coinIn * days.length : plan.coinIn,
-      totalCost: perDay ? plan.expectedCost * days.length : plan.expectedCost,
-    };
-  }
 
   /**
    * Expected handpays per deal on an n-play machine.
@@ -373,8 +294,8 @@ var Promo = (function () {
    * unit *wagered*: an n-play hand also wagers n times as much, so the swing
    * in dollars per hand still grows with n — it just grows slower than n.
    */
-  function linesVariance(game, lines) {
-    var st = stats(game);
+  function linesVariance(game, lines, coins) {
+    var st = stats(game, coins);
     if (!st.known) return { known: false, variance: null, sd: null, estimated: false };
     var measured = typeof VAR_BETWEEN[game.key] === "number";
     var between = measured ? VAR_BETWEEN[game.key] : VAR_BETWEEN_RATIO * st.variance;
@@ -433,20 +354,6 @@ var Promo = (function () {
     return hi;
   }
 
-  /** Progress through a promo given tier credits earned so far. */
-  function progress(plan, tcEarned, tcCap) {
-    var pct = Math.min(1, tcEarned / tcCap);
-    var handsDone = plan.hands * pct;
-    return {
-      pct: pct,
-      done: tcEarned >= tcCap,
-      handsDone: handsDone,
-      handsLeft: Math.max(0, plan.hands - handsDone),
-      coinInLeft: Math.max(0, plan.coinIn * (1 - pct)),
-      hoursLeft: Math.max(0, plan.hours * (1 - pct)),
-      costLeft: Math.max(0, plan.expectedCost * (1 - pct)),
-    };
-  }
 
   return {
     handPayout: handPayout,
@@ -459,9 +366,6 @@ var Promo = (function () {
     w2gAnalysis: w2gAnalysis,
     denomCeiling: denomCeiling,
     w2gForPayouts: w2gForPayouts,
-    gamingDays: gamingDays,
-    schedule: schedule,
     plan: plan,
-    progress: progress,
   };
 })();

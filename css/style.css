@@ -1123,3 +1123,29 @@ footer {
 @media (max-width: 400px) {
   .nav-link { padding: 0.7rem 0.15rem; font-size: 0.74rem; }
 }
+
+.field.readonly output {
+  display: block;
+  padding: 0.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--color-accent);
+}
+
+.field.readonly output.short-bet { color: var(--color-red); }
+
+.analyze-mode {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.play-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  min-height: 1.1rem;
+  margin-bottom: 0.6rem;
+}
