@@ -1,5 +1,5 @@
 /**
- * Jacks or Betterment — Strategy engine
+ * Jacks or Bettorment — Strategy engine
  * Computes per-category EVs via exhaustive draw enumeration,
  * then produces optimal (~30 entry) and simple (~14 entry) strategies.
  */

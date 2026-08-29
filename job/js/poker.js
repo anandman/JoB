@@ -1,5 +1,5 @@
 /**
- * Jacks or Betterment — Card representation + hand evaluator
+ * Jacks or Bettorment — Card representation + hand evaluator
  * Card = integer 0-51: rank * 4 + suit
  * Rank: 0=2, 1=3, ..., 8=10, 9=J, 10=Q, 11=K, 12=A
  * Suit: 0-3 (clubs, diamonds, hearts, spades — order doesn't matter)

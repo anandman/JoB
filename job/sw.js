@@ -1,5 +1,5 @@
 /**
- * Jacks or Betterment — service worker
+ * Jacks or Bettorment — service worker
  *
  * The point of offline here is practical: casino floors have poor reception
  * and this is a reference you need standing at a machine.
@@ -9,20 +9,20 @@
  * itself in the background. Bumping VERSION purges everything.
  */
 
-const VERSION = "8a32d939";
+const VERSION = "55d0c4f7";
 const CACHE = "job-" + VERSION;
 
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=8a32d939",
-  "./js/data.js?v=8a32d939",
-  "./js/poker.js?v=8a32d939",
-  "./js/strategy-engine.js?v=8a32d939",
-  "./js/casinos.js?v=8a32d939",
-  "./js/promo.js?v=8a32d939",
-  "./js/analyzer.js?v=8a32d939",
-  "./js/app.js?v=8a32d939",
+  "./css/style.css?v=55d0c4f7",
+  "./js/data.js?v=55d0c4f7",
+  "./js/poker.js?v=55d0c4f7",
+  "./js/strategy-engine.js?v=55d0c4f7",
+  "./js/casinos.js?v=55d0c4f7",
+  "./js/promo.js?v=55d0c4f7",
+  "./js/analyzer.js?v=55d0c4f7",
+  "./js/app.js?v=55d0c4f7",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

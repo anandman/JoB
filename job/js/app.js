@@ -1,5 +1,5 @@
 /**
- * Jacks or Betterment — App logic
+ * Jacks or Bettorment — App logic
  */
 
 (function () {

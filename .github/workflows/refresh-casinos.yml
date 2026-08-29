@@ -33,7 +33,7 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
-            const src = fs.readFileSync("js/casinos.js", "utf8");
+            const src = fs.readFileSync("job/js/casinos.js", "utf8");
             const { CASINOS } = new Function(src + ";return {CASINOS};")();
             if (!Array.isArray(CASINOS) || CASINOS.length === 0) throw new Error("no casinos parsed");
             for (const c of CASINOS) {
@@ -52,12 +52,12 @@ jobs:
 
       - name: Commit if changed
         run: |
-          if git diff --quiet -- js/casinos.js index.html sw.js; then
+          if git diff --quiet -- job/js/casinos.js job/index.html job/sw.js; then
             echo "no change"
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/casinos.js index.html sw.js
+          git add job/js/casinos.js job/index.html job/sw.js
           git commit -m "Refresh casino data from vpfree2"
           git push

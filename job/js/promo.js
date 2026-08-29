@@ -1,5 +1,5 @@
 /**
- * Jacks or Betterment — Promo, bankroll, and W-2G math
+ * Jacks or Bettorment — Promo, bankroll, and W-2G math
  *
  * Everything here is derived from a game's pay table plus (where available)
  * its hand frequencies under optimal play. Returns and variance are exact

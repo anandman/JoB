@@ -1,100 +1,68 @@
-# Jacks or Betterment
+# Bettor Edge
 
-Video poker strategy and odds reference app. Mobile-first, static site — no build step, no dependencies, works on GitHub Pages.
+Casino math you can check at the machine. Strategy charts, hand analyzers, and
+risk models for the games I actually play — mobile-first static sites with no
+build step and no dependencies.
 
-## What it does
+Live at **https://anandman.github.io/bettor/**
 
-**Pay Tables** — View and compare pay tables for Jacks or Better variants (9/6, 9/5, 8/6, 8/5). See per-coin payouts, expected returns, and house edge at a glance.
+## Apps
 
-**Risk** — What a session costs and what can go wrong. Set a coin-in goal, denomination, line count and coins per line, and it works out the hands, the time, the expected and typical cost, the swing, the risk of ruin against your bankroll, and the bankroll needed to hold ruin to 5% or 1%. A configurable W-2G handpay threshold (default $2,000) reports which hands cross it, how often, and the highest denomination that keeps handpays rare — compared both across denominations and across line counts at a fixed total bet.
+| App | Game | Status |
+|-----|------|--------|
+| [**Jacks or Bettorment**](job/) (`/job/`) | Video poker | Live |
+| **Bettor or Bust** (`/bob/`) | Blackjack | In progress |
 
-**Casinos** — Per-property game lists with returns, denominations, per-machine tier credit earn rates, and handpay exposure, scraped from vpfree2.com. Filter by game to cut a 15-game floor listing down to the one you actually play; the choice persists.
+**Jacks or Bettorment** covers eight pay tables across Jacks or Better, Bonus
+Poker, Double Double Bonus and Deuces Wild: returns, strategy cards derived
+from the pay table itself, a hand analyzer that prices all 32 holds, a play
+mode scored against perfect play, bankroll and risk-of-ruin math, W-2G handpay
+exposure, and scraped Reno floor data. See [job/README.md](job/README.md).
 
-**Analyzer** — Enter or deal a hand and see all 32 ways to hold it, ranked by expected value, with the exact cost of every alternative and the full outcome distribution for the best one. Works for any of the eight games. Switch to **Play** and it deals, you hold, you draw, and every hand is scored against perfect play — tracking how often you found the best hold and what the misses cost.
+**Bettor or Bust** will do the same for blackjack across deck counts and rule
+sets: a dealer probability engine feeding a basic strategy chart, a hand
+analyzer ranking every action by EV, a play mode, and risk of ruin for a
+progressive betting ladder.
 
-**Strategy Card** — Dynamically computed strategy charts for each pay table variant. Toggle between Simple (~14 lines, fits one phone screen) and Optimal (~27 lines, near-perfect play). Strategy updates automatically when you switch variants.
+## Repo layout
 
-## Install it
+One repo means one GitHub Pages site and one base path, so each app is a
+subdirectory rather than a separate site. Each owns its own HTML, CSS, JS,
+manifest, icons and service worker, which keeps their PWA scopes and offline
+caches independent — installing one doesn't drag in the other.
 
-The site is a PWA: open it on your phone and use Add to Home Screen (iOS) or
-Install app (Android). It runs standalone, respects notches and the home
-indicator, and works fully offline — useful on a casino floor with no signal.
-
-Live at **https://anandman.github.io/JoB/**
+```
+index.html          # Bettor Edge landing page (self-contained)
+icons/favicon.svg   # Landing page mark
+job/                # Jacks or Bettorment — video poker
+bob/                # Bettor or Bust — blackjack (not yet built)
+tools/              # Shared tooling (scrapers, icon and cache-stamp scripts)
+```
 
 ## Running locally
 
-Open `index.html` in a browser. That's it.
-
-Or serve it:
-
 ```sh
 python3 -m http.server 8000
-# then open http://localhost:8000
+# http://localhost:8000/          landing
+# http://localhost:8000/job/      video poker
 ```
+
+Opening an app's `index.html` directly from the filesystem also works.
 
 ## Deploying
 
-Push to `main` — GitHub Pages rebuilds automatically. No build step.
-
-A weekly GitHub Actions workflow re-scrapes vpfree2 and commits any changes,
-which redeploys the site. Casinos to track live in `tools/casinos.config.json`.
-
-## Project structure
-
-```
-index.html                # Single-page app shell
-css/style.css             # Mobile-first dark theme
-js/data.js                # Pay tables, strategy categories, note rules
-js/poker.js               # Card encoding + hand evaluator
-js/strategy-engine.js     # EV calculator + strategy generator
-js/casinos.js             # GENERATED casino floor data
-js/promo.js               # Promo coin-in, W-2G, variance, gaming days
-js/analyzer.js            # Per-hand hold analysis
-js/app.js                 # Tab navigation, rendering, toggle logic
-manifest.webmanifest      # PWA manifest
-sw.js                     # Service worker (offline support)
-icons/                    # GENERATED app icons
-tools/fetch-casino.js     # Scrapes vpfree2.com -> js/casinos.js
-tools/make-icons.py       # Regenerates icons/
-```
-
-## How strategy computation works
-
-Each strategy category (e.g., "Low Pair", "4 to a Flush") has a representative 5-card hand. The engine exhaustively enumerates all possible draw outcomes for the held cards, evaluates each resulting hand, and computes the exact expected value (EV). Categories are then sorted by EV to produce the optimal strategy, or grouped into ~14 merged entries for the simple strategy.
-
-Computation takes ~60ms on desktop and results are cached per pay table.
-
-## Data sources
-
-Pay table payouts and expected return percentages are standard values from video poker literature. Strategy ordering is computed from the pay tables and verified against the well-known Wizard of Odds strategy for Jacks or Better.
-
-| Variant | Expected Return | House Edge |
-|---------|----------------|------------|
-| 9/6 Full Pay | 99.54% | 0.46% |
-| 9/5 | 98.45% | 1.55% |
-| 8/6 | 98.39% | 1.61% |
-| 8/5 | 97.30% | 2.70% |
-
-## Development
-
-No build step, no dependencies. Edit the files and reload.
-
 ```sh
-python3 -m http.server 8000   # or just open index.html
+node tools/stamp-assets.js
+git push
 ```
 
-Scripts load in order: `data.js` → `poker.js` → `strategy-engine.js` →
-`casinos.js` → `promo.js` → `app.js`. Each exposes one global; load order matters.
-
-`js/casinos.js` is generated — refresh it with:
-
-```sh
-node tools/fetch-casino.js --promo silver-legacy eldorado-hotel-casino
-```
-
-There are no tests, no linter, and no CI. Verify by opening the page, switching
-variants, and toggling Simple/Optimal.
+Pages rebuilds from `main` automatically. **The stamp step is not optional.**
+Pages serves everything with `Cache-Control: max-age=600`, so for ten minutes
+after a deploy a browser can pair a new `index.html` with cached old JS — which
+throws on load and leaves the page half-rendered. `stamp-assets.js` writes a
+content hash into every asset URL so the HTML and its scripts can never
+disagree. It hashes each app separately, so a video poker change doesn't
+invalidate the blackjack cache.
 
 ## License
 

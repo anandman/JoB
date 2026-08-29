@@ -24,9 +24,9 @@
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.join(__dirname, "..");
-const src = fs.readFileSync(path.join(ROOT, "js/data.js"), "utf8")
-          + fs.readFileSync(path.join(ROOT, "js/poker.js"), "utf8")
-          + fs.readFileSync(path.join(ROOT, "js/strategy-engine.js"), "utf8");
+const src = fs.readFileSync(path.join(ROOT, "job/js/data.js"), "utf8")
+          + fs.readFileSync(path.join(ROOT, "job/js/poker.js"), "utf8")
+          + fs.readFileSync(path.join(ROOT, "job/js/strategy-engine.js"), "utf8");
 const { StrategyEngine, Poker, GAMES } = new Function(src + ";return {StrategyEngine,Poker,GAMES};")();
 const { SIMPLE_CARD } = require("./verify-strategy.js");
 

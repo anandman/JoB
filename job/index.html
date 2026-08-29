@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Jacks or Bettorment — Video Poker Strategy &amp; Odds</title>
+  <meta name="description" content="Video poker strategy charts and pay table odds for Jacks or Better. Simple strategy that fits on your phone screen.">
+  <link rel="stylesheet" href="css/style.css?v=55d0c4f7">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <!-- Opaque status bar: iOS reserves the space itself, so the layout never
+       renders under the clock. Safe-area insets still cover landscape notches
+       and the home indicator. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="JoB">
+</head>
+<body>
+  <header>
+    <h1>Jacks or Bettorment</h1>
+    <p class="subtitle">Video Poker Strategy &amp; Odds</p>
+  </header>
+
+  <nav>
+    <a href="#pay-tables" class="nav-link active" data-tab="pay-tables">Tables</a>
+    <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
+    <a href="#analyze" class="nav-link" data-tab="analyze">Analyze</a>
+    <a href="#promo" class="nav-link" data-tab="promo">Risk</a>
+    <a href="#casinos" class="nav-link" data-tab="casinos">Casinos</a>
+  </nav>
+
+  <main>
+    <section id="pay-tables" class="tab-content active">
+      <div class="variant-selector">
+        <label for="variant-select">Select game:</label>
+        <select id="variant-select"></select>
+      </div>
+
+      <div class="pay-table-info">
+        <div class="return-badge" id="return-badge">
+          <span class="return-label">Expected Return</span>
+          <span class="return-value" id="return-value">99.54%</span>
+          <span class="return-sublabel">with optimal strategy, max bet</span>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="pay-table" id="pay-table">
+          <thead>
+            <tr>
+              <th>Hand</th>
+              <th>1 Coin</th>
+              <th>2 Coins</th>
+              <th>3 Coins</th>
+              <th>4 Coins</th>
+              <th class="max-bet">5 Coins</th>
+              <th>Odds</th>
+            </tr>
+          </thead>
+          <tbody id="pay-table-body">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="stat-grid compact" id="game-stats"></div>
+
+      <p class="note">Always play max bet (5 coins) to get the Royal Flush bonus payout of 4,000 instead of 1,250.</p>
+
+      <h3>Compare Games</h3>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr><th>Game</th><th>Return</th><th>Edge</th><th>Variance</th><th>Royal</th></tr>
+          </thead>
+          <tbody id="game-compare"></tbody>
+        </table>
+      </div>
+
+      <h3>Jacks or Better Variants</h3>
+      <p class="note">Full House and Flush are the only payouts that differ &mdash; check those two numbers on the glass before you sit down.</p>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Hand</th>
+            <th>9/6</th>
+            <th>9/5</th>
+            <th>8/6</th>
+            <th>8/5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Royal Flush</td><td>250</td><td>250</td><td>250</td><td>250</td></tr>
+          <tr><td>Straight Flush</td><td>50</td><td>50</td><td>50</td><td>50</td></tr>
+          <tr><td>4 of a Kind</td><td>25</td><td>25</td><td>25</td><td>25</td></tr>
+          <tr class="highlight"><td>Full House</td><td>9</td><td>9</td><td>8</td><td>8</td></tr>
+          <tr class="highlight"><td>Flush</td><td>6</td><td>5</td><td>6</td><td>5</td></tr>
+          <tr><td>Straight</td><td>4</td><td>4</td><td>4</td><td>4</td></tr>
+          <tr><td>3 of a Kind</td><td>3</td><td>3</td><td>3</td><td>3</td></tr>
+          <tr><td>Two Pair</td><td>2</td><td>2</td><td>2</td><td>2</td></tr>
+          <tr><td>Jacks or Better</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+          <tr class="return-row"><td>Expected Return</td><td>99.54%</td><td>98.45%</td><td>98.39%</td><td>97.30%</td></tr>
+          <tr class="edge-row"><td>House Edge</td><td>0.46%</td><td>1.55%</td><td>1.61%</td><td>2.70%</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="strategy" class="tab-content">
+      <div class="strategy-header">
+        <div class="strategy-controls">
+          <select id="strategy-variant-select" class="strategy-variant-select"></select>
+          <div class="strategy-toggle">
+            <button class="toggle-btn active" data-mode="simple">Simple</button>
+            <button class="toggle-btn" data-mode="optimal">Optimal</button>
+          </div>
+        </div>
+        <p class="strategy-intro" id="strategy-intro">Hold the <strong>first</strong> match from the top. Discard the rest.</p>
+        <p class="strategy-meta" id="strategy-meta">~0.08% cost vs. optimal play</p>
+      </div>
+
+      <ol class="strategy-list" id="strategy-list"></ol>
+      <div id="strategy-sections"></div>
+
+      <div class="strategy-legend">
+        <span class="legend-item"><span class="dot dot-gold"></span>Pat winners</span>
+        <span class="legend-item"><span class="dot dot-green"></span>Made hands</span>
+        <span class="legend-item"><span class="dot dot-blue"></span>Draws</span>
+        <span class="legend-item"><span class="dot dot-gray"></span>Speculative</span>
+      </div>
+
+      <details class="strategy-tips">
+        <summary>Definitions &amp; Tips</summary>
+        <dl>
+          <dt>High Card</dt><dd>J, Q, K, or A</dd>
+          <dt>Low Pair</dt><dd>2s through 10s</dd>
+          <dt>Outside Straight</dt><dd>Open-ended (e.g., 7-8-9-10)</dd>
+          <dt>Inside Straight</dt><dd>Gutshot or one-ended (e.g., A-2-3-4)</dd>
+        </dl>
+      </details>
+    </section>
+
+    <section id="promo" class="tab-content">
+      <div class="promo-controls">
+        <div class="field">
+          <label for="promo-game">Game</label>
+          <select id="promo-game"></select>
+        </div>
+        <div class="field">
+          <label for="promo-denom">Denomination</label>
+          <select id="promo-denom"></select>
+        </div>
+        <div class="field">
+          <label for="promo-lines">Lines (n-play)</label>
+          <select id="promo-lines"></select>
+        </div>
+        <div class="field">
+          <label for="promo-coins">Coins per line</label>
+          <select id="promo-coins"></select>
+        </div>
+        <div class="field readonly">
+          <label>Bet per hand</label>
+          <output id="promo-bet"></output>
+        </div>
+        <div class="field">
+          <label for="promo-bankroll">Bankroll</label>
+          <input id="promo-bankroll" type="number" inputmode="numeric" value="9000" min="0" step="500">
+        </div>
+        <div class="field">
+          <label for="promo-cap">Tier credit goal</label>
+          <input id="promo-cap" type="number" inputmode="numeric" value="5000" min="1" step="500">
+        </div>
+        <div class="field">
+          <label for="promo-mult">TC multiplier</label>
+          <input id="promo-mult" type="number" inputmode="numeric" value="1" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="promo-rate">Coin-in per base TC</label>
+          <input id="promo-rate" type="number" inputmode="numeric" value="10" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="promo-hph">Hands per hour</label>
+          <input id="promo-hph" type="number" inputmode="numeric" value="700" min="1" step="50">
+        </div>
+        <div class="field">
+          <label for="promo-threshold">W-2G handpay</label>
+          <input id="promo-threshold" type="number" inputmode="numeric" value="2000" min="1" step="100">
+        </div>
+      </div>
+
+      <div class="ceiling-callout" id="promo-ceiling"></div>
+
+      <p class="note warn" id="promo-verify">Confirm the earn rate at the players club: video poker often earns tier credits slower than slots, and some multipliers exclude it entirely.</p>
+
+      <div class="stat-grid" id="promo-stats"></div>
+
+      <h3>W-2G exposure at this denomination</h3>
+      <div id="promo-w2g"></div>
+
+      <h3>Across denominations</h3>
+      <p class="note">At the line count above, varying the denomination. Expected cost is the same down the column &mdash; the house edge applies to coin-in, not bet size &mdash; so denomination only trades time against variance and handpays.</p>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr>
+              <th>Denom</th>
+              <th>Bet</th>
+              <th>Hands</th>
+              <th>Hours</th>
+              <th>W-2G every</th>
+              <th>Expected</th>
+              <th>Ruin</th>
+            </tr>
+          </thead>
+          <tbody id="promo-ladder"></tbody>
+        </table>
+      </div>
+
+      <h3>Across line counts</h3>
+      <p class="note">Every row wagers the same amount per hand, so coin-in, time, and expected cost are identical. What changes is how the money is spread: more lines means lower variance, and each line pays a fraction of the size &mdash; though a hand already made when dealt still pays on every line at once.</p>
+      <div class="table-scroll">
+        <table class="ladder-table">
+          <thead>
+            <tr>
+              <th>Lines</th>
+              <th>Denom</th>
+              <th>SD/hand</th>
+              <th>Swing</th>
+              <th>Ruin</th>
+              <th>Biggest 1 line</th>
+              <th>Handpay every</th>
+            </tr>
+          </thead>
+          <tbody id="promo-spread"></tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <section id="casinos" class="tab-content">
+      <p class="note">Reno floor data from <a href="https://www.vpfree2.com" target="_blank" rel="noopener">vpfree2.com</a>, refreshed weekly. Verify at the machine before you sit down.</p>
+      <div class="casino-filters">
+        <div class="field">
+          <label for="casino-game-filter">Game</label>
+          <select id="casino-game-filter"></select>
+        </div>
+        <div class="field">
+          <label for="casino-denom">W-2G risk at</label>
+          <select id="casino-denom"></select>
+        </div>
+      </div>
+      <p class="chip-legend">
+        <span class="chip chip-ok">denom</span> royal only
+        <span class="chip chip-warn">denom</span> plus straight flush
+        <span class="chip chip-danger">denom</span> quads too
+      </p>
+      <div id="casino-list"></div>
+    </section>
+    <section id="analyze" class="tab-content">
+      <div class="field inline">
+        <label for="analyze-game">Game</label>
+        <select id="analyze-game"></select>
+      </div>
+
+      <div class="strategy-toggle analyze-mode">
+        <button type="button" class="toggle-btn active" data-amode="analyze">Analyze</button>
+        <button type="button" class="toggle-btn" data-amode="play">Play</button>
+      </div>
+
+      <div class="hand-slots" id="hand-slots"></div>
+      <p class="play-hint" id="play-hint"></p>
+
+      <div class="picker">
+        <div class="rank-row" id="rank-row"></div>
+        <div class="suit-row" id="suit-row"></div>
+      </div>
+
+      <div class="analyze-actions">
+        <button type="button" class="btn" id="analyze-deal">Deal a hand</button>
+        <button type="button" class="btn" id="analyze-clear">Clear</button>
+      </div>
+
+      <div id="play-stats" class="stat-grid compact"></div>
+      <div id="analyze-result"></div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Jacks or Bettorment &mdash; Video poker strategy reference.</p>
+    <p class="site-link"><a href="../">Part of Bettor Edge</a></p>
+    <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
+  </footer>
+
+  <script src="js/data.js?v=55d0c4f7"></script>
+  <script src="js/poker.js?v=55d0c4f7"></script>
+  <script src="js/strategy-engine.js?v=55d0c4f7"></script>
+  <script src="js/casinos.js?v=55d0c4f7"></script>
+  <script src="js/promo.js?v=55d0c4f7"></script>
+  <script src="js/analyzer.js?v=55d0c4f7"></script>
+  <script src="js/app.js?v=55d0c4f7"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {
+          // Offline support is a bonus; the app works without it.
+        });
+      });
+    }
+  </script>
+</body>
+</html>

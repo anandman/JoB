@@ -21,46 +21,68 @@ const path = require("path");
 const crypto = require("crypto");
 
 const ROOT = path.join(__dirname, "..");
-const ASSETS = [
-  "css/style.css",
-  "js/data.js",
-  "js/poker.js",
-  "js/strategy-engine.js",
-  "js/casinos.js",
-  "js/promo.js",
-  "js/analyzer.js",
-  "js/app.js",
+
+// One entry per app. Each app owns its index.html and service worker and gets
+// its own hash, so a video poker change doesn't invalidate the blackjack cache
+// and send everyone a pointless re-download. Apps not built yet are skipped.
+const APPS = [
+  {
+    dir: "job",
+    assets: [
+      "css/style.css",
+      "js/data.js",
+      "js/poker.js",
+      "js/strategy-engine.js",
+      "js/casinos.js",
+      "js/promo.js",
+      "js/analyzer.js",
+      "js/app.js",
+    ],
+  },
+  {
+    dir: "bob",
+    assets: [],
+  },
 ];
 
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const write = (p, s) => fs.writeFileSync(path.join(ROOT, p), s);
+const exists = (p) => fs.existsSync(path.join(ROOT, p));
+const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-function main() {
+function stamp(app) {
+  const html = path.join(app.dir, "index.html");
+  if (!app.assets.length || !exists(html)) {
+    console.log(app.dir + ": nothing to stamp");
+    return;
+  }
+
   const h = crypto.createHash("sha256");
-  for (const a of ASSETS) h.update(read(a));
+  for (const a of app.assets) h.update(read(path.join(app.dir, a)));
   const version = h.digest("hex").slice(0, 8);
 
   // index.html: (re)stamp every asset reference.
-  let html = read("index.html");
-  for (const a of ASSETS) {
-    const esc = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    html = html.replace(new RegExp('(src|href)="' + esc + '(\\?v=[a-f0-9]+)?"', "g"),
-                        '$1="' + a + "?v=" + version + '"');
+  let doc = read(html);
+  for (const a of app.assets) {
+    doc = doc.replace(new RegExp('(src|href)="' + escape(a) + '(\\?v=[a-f0-9]+)?"', "g"),
+                      '$1="' + a + "?v=" + version + '"');
   }
-  write("index.html", html);
+  write(html, doc);
 
   // sw.js: same version for the cache name, and stamp the precache list so it
   // matches what the page actually requests.
-  let sw = read("sw.js");
-  sw = sw.replace(/const VERSION = "[^"]*";/, 'const VERSION = "' + version + '";');
-  for (const a of ASSETS) {
-    const esc = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    sw = sw.replace(new RegExp('"\\./' + esc + '(\\?v=[a-f0-9]+)?"', "g"),
-                    '"./' + a + "?v=" + version + '"');
+  const swPath = path.join(app.dir, "sw.js");
+  if (exists(swPath)) {
+    let sw = read(swPath);
+    sw = sw.replace(/const VERSION = "[^"]*";/, 'const VERSION = "' + version + '";');
+    for (const a of app.assets) {
+      sw = sw.replace(new RegExp('"\\./' + escape(a) + '(\\?v=[a-f0-9]+)?"', "g"),
+                      '"./' + a + "?v=" + version + '"');
+    }
+    write(swPath, sw);
   }
-  write("sw.js", sw);
 
-  console.log("stamped " + ASSETS.length + " assets with v=" + version);
+  console.log(app.dir + ": stamped " + app.assets.length + " assets with v=" + version);
 }
 
-main();
+for (const app of APPS) stamp(app);

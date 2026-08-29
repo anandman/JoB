@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Generate PWA icons into icons/. Run after changing the mark:
+Generate Jacks or Bettorment PWA icons into job/icons/. Run after changing
+the mark:
 
     python3 tools/make-icons.py
 
@@ -16,7 +17,7 @@ GOLD  = (240, 192, 64)   # --color-gold
 RED   = (248, 81, 73)    # --color-red
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-OUT  = os.path.join(ROOT, "icons")
+OUT  = os.path.join(ROOT, "job", "icons")
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
 
 
