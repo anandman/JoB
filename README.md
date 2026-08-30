@@ -1,8 +1,7 @@
 # Bettor Edge
 
-Casino math you can check at the machine. Strategy charts, hand analyzers, and
-risk models for the games I actually play — mobile-first static sites with no
-build step and no dependencies.
+Casino math you can check at the machine, and a ledger for what it actually
+cost. Mobile-first static sites with no build step and no dependencies.
 
 Live at **https://anandman.github.io/bettor/**
 
@@ -12,6 +11,7 @@ Live at **https://anandman.github.io/bettor/**
 |-----|------|--------|
 | [**Jacks or Bettor**](job/) (`/job/`) | Video poker | Live |
 | [**Bettor or Bust**](bob/) (`/bob/`) | Blackjack | Live |
+| [**Color Up**](colorup/) (`/colorup/`) | Session ledger | Live |
 
 **Jacks or Bettor** covers eight pay tables across Jacks or Better, Bonus
 Poker, Double Double Bonus and Deuces Wild: returns, strategy cards derived
@@ -25,8 +25,14 @@ best action, the hand analyzer is the same numbers unsummarised, and play mode
 scores each decision by the gap between what you did and the best action. Dial
 in decks, S17/H17, DAS, doubling and splitting limits, surrender and the
 blackjack payout, and the chart and house edge both move. Verified against the
-published 6-deck S17 DAS chart on all 340 cells. Still to come: risk of ruin
-for a progressive betting ladder.
+published 6-deck S17 DAS chart on all 340 cells.
+
+**Color Up** is the other half of the same question: not what the math says a
+session should cost, but what it did. One row per session — what went in, what
+came out, the tier credits, any W-2G handpays, and how long it took, which is
+the number a spreadsheet of totals cannot give you. It stores everything in
+your own browser and sends nothing anywhere; a backup leaves the device only
+when you export one. See [colorup/README.md](colorup/README.md).
 
 ## Repo layout
 
@@ -40,7 +46,8 @@ index.html          # Bettor Edge landing page (self-contained)
 icons/favicon.svg   # Landing page mark
 job/                # Jacks or Bettor — video poker
 bob/                # Bettor or Bust — blackjack
-tools/              # Shared tooling (scrapers, icon and cache-stamp scripts)
+colorup/            # Color Up — session ledger
+tools/              # Shared tooling (scrapers, checks, icon and cache-stamp scripts)
 ```
 
 ## Running locally
@@ -50,6 +57,7 @@ python3 -m http.server 8000
 # http://localhost:8000/          landing
 # http://localhost:8000/job/      video poker
 # http://localhost:8000/bob/      blackjack
+# http://localhost:8000/colorup/  session ledger
 ```
 
 Opening an app's `index.html` directly from the filesystem also works.

@@ -8,6 +8,16 @@ HANDOFF.md
 .claude/
 .gemini/
 
+# Color Up records a real financial history, and none of it belongs here. The
+# app keeps sessions in the browser and writes files only when the user exports
+# one by hand, so nothing should ever appear in the tree — this is the guard
+# against an export being saved into the repo and swept up by `git add -A`.
+*.xlsx
+*.xls
+*.csv
+data/
+backups/
+
 # OS / editor cruft
 .DS_Store
 *.swp

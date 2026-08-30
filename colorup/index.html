@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Color Up — Session Ledger</title>
+  <meta name="description" content="A gambling session ledger: what you put in, what you walked out with, and how long it took.">
+  <link rel="stylesheet" href="css/style.css?v=3ab6b64d">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <!-- Opaque status bar: iOS reserves the space itself, so the layout never
+       renders under the clock. Safe-area insets cover the rest. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Color Up">
+</head>
+<body>
+  <header>
+    <h1>Color Up</h1>
+    <p class="subtitle">Session ledger</p>
+  </header>
+
+  <div id="banners"></div>
+
+  <nav>
+    <a href="#now" class="nav-link active" data-tab="now">Now</a>
+    <a href="#log" class="nav-link" data-tab="log">Log</a>
+    <a href="#stats" class="nav-link" data-tab="stats">Stats</a>
+    <a href="#data" class="nav-link" data-tab="data">Data</a>
+  </nav>
+
+  <main>
+    <section id="now" class="tab-content active">
+      <div id="now-card"></div>
+      <div id="now-recent"></div>
+    </section>
+
+    <section id="log" class="tab-content">
+      <div class="row-actions">
+        <button type="button" class="btn" id="log-add">Add a past session</button>
+      </div>
+      <div id="log-list"></div>
+    </section>
+
+    <section id="stats" class="tab-content">
+      <div class="filters" id="stats-filters"></div>
+      <div id="stats-body"></div>
+    </section>
+
+    <section id="data" class="tab-content">
+      <div id="data-body"></div>
+    </section>
+  </main>
+
+  <!-- Every form in the app opens here: start, color up, and full edit are the
+       same renderer over different field lists. -->
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet-head">
+        <h2 id="sheet-title"></h2>
+        <button type="button" class="sheet-close" id="sheet-close" aria-label="Close">&times;</button>
+      </div>
+      <form class="sheet-body" id="sheet-body" autocomplete="off"></form>
+      <div class="sheet-foot" id="sheet-foot"></div>
+    </div>
+  </div>
+
+  <datalist id="venues"></datalist>
+  <datalist id="details"></datalist>
+  <datalist id="locations"></datalist>
+
+  <footer>
+    <p>Color Up &mdash; your record, on your device.</p>
+    <p class="disclaimer">Nothing here leaves this phone until you export it.</p>
+  </footer>
+
+  <script src="js/xlsx.js?v=3ab6b64d"></script>
+  <script src="js/store.js?v=3ab6b64d"></script>
+  <script src="js/export.js?v=3ab6b64d"></script>
+  <script src="js/analysis.js?v=3ab6b64d"></script>
+  <script src="js/app.js?v=3ab6b64d"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {
+          // Offline support is the point, but the app still runs without it.
+        });
+      });
+    }
+  </script>
+</body>
+</html>

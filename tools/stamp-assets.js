@@ -40,6 +40,17 @@ const APPS = [
     ],
   },
   {
+    dir: "colorup",
+    assets: [
+      "css/style.css",
+      "js/xlsx.js",
+      "js/store.js",
+      "js/export.js",
+      "js/analysis.js",
+      "js/app.js",
+    ],
+  },
+  {
     dir: "bob",
     assets: [
       "css/style.css",
