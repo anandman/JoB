@@ -1330,7 +1330,13 @@
     var net = st.returned - st.wagered;
     box.appendChild(statCard("Hands", fmtInt(st.hands),
       st.wagered + " coins in, " + st.returned + " back"));
+    // Coins are the natural unit here, but a session reads better in money, so
+    // the tally is also priced at whatever denomination the Risk tab is set to.
+    var denom = parseFloat(promoEls.denom.value) || 0.25;
+    var money = net * denom;
     box.appendChild(statCard("Net", (net >= 0 ? "+" : "−") + Math.abs(net) + " coins",
+      (money >= 0 ? "+$" : "−$") + Math.abs(money).toFixed(2) + " at " +
+      (denom < 1 ? (denom * 100) + "¢" : "$" + denom) + " — " +
       (st.returned / st.wagered * 100).toFixed(1) + "% returned",
       net >= 0 ? "done" : ""));
     box.appendChild(statCard("Played best", (st.correct / st.hands * 100).toFixed(0) + "%",

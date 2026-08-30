@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Bettor or Bust — Blackjack Strategy &amp; Odds</title>
   <meta name="description" content="Blackjack basic strategy, hand analyzer and house edge, derived from your table's exact rules rather than looked up.">
-  <link rel="stylesheet" href="css/style.css?v=7a1e6a87">
+  <link rel="stylesheet" href="css/style.css?v=7d6f404a">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -29,6 +29,7 @@
     <a href="#strategy" class="nav-link" data-tab="strategy">Strategy</a>
     <a href="#analyze" class="nav-link" data-tab="analyze">Analyze</a>
     <a href="#risk" class="nav-link" data-tab="risk">Risk</a>
+    <a href="#count" class="nav-link" data-tab="count">Count</a>
   </nav>
 
   <main>
@@ -157,6 +158,48 @@
         a fifth again to counting's value and are not modelled.</p>
     </section>
 
+    <section id="count" class="tab-content">
+      <div class="banner" id="ct-primer"></div>
+
+      <div class="rules-grid">
+        <div class="rule-row preset-row">
+          <label for="ct-system">System</label>
+          <select id="ct-system"></select>
+        </div>
+        <div class="rule-row">
+          <label for="ct-speed">Speed
+            <span class="hint">Cards a second. A dealer runs about 2.</span></label>
+          <select id="ct-speed"></select>
+        </div>
+        <div class="rule-row">
+          <label for="ct-batch">Cards a round
+            <span class="hint">How many before it asks.</span></label>
+          <select id="ct-batch"></select>
+        </div>
+        <div class="rule-row">
+          <label for="ct-truecount">Ask for the true count too
+            <span class="hint">Balanced systems only. Running count divided by decks left.</span></label>
+          <input type="checkbox" id="ct-truecount">
+        </div>
+      </div>
+
+      <div id="ct-tags"></div>
+
+      <div class="seat" id="ct-table">
+        <div class="seat-label"><span id="ct-status">Ready</span><span class="seat-total" id="ct-shoe"></span></div>
+        <div class="hand" id="ct-current"></div>
+        <div class="hand ct-seen" id="ct-seen"></div>
+      </div>
+
+      <div class="btn-row" id="ct-actions"></div>
+      <div id="ct-answer"></div>
+      <div class="stats" id="ct-stats"></div>
+
+      <p class="note">The shoe carries between rounds, exactly as it does at a
+        table — the count you are asked for is the running total since the last
+        shuffle, not since the last round.</p>
+    </section>
+
   </main>
 
   <footer>
@@ -165,13 +208,13 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/rules.js?v=7a1e6a87"></script>
-  <script src="js/engine.js?v=7a1e6a87"></script>
-  <script src="js/strategy.js?v=7a1e6a87"></script>
-  <script src="js/analyzer.js?v=7a1e6a87"></script>
-  <script src="js/game.js?v=7a1e6a87"></script>
-  <script src="js/risk.js?v=7a1e6a87"></script>
-  <script src="js/app.js?v=7a1e6a87"></script>
+  <script src="js/rules.js?v=7d6f404a"></script>
+  <script src="js/engine.js?v=7d6f404a"></script>
+  <script src="js/strategy.js?v=7d6f404a"></script>
+  <script src="js/analyzer.js?v=7d6f404a"></script>
+  <script src="js/game.js?v=7d6f404a"></script>
+  <script src="js/risk.js?v=7d6f404a"></script>
+  <script src="js/app.js?v=7d6f404a"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

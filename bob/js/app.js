@@ -85,6 +85,8 @@
     });
     if (tab === "strategy") renderChart();
     if (tab === "risk") { renderRiskPrimer(); renderRiskControls(); }
+    if (tab === "count") { renderCountPrimer(); renderCountTags(); renderCount(); }
+    if (tab !== "count") ctStop();
     window.scrollTo(0, 0);
   }
 
@@ -188,6 +190,8 @@
     resetAnalyzer();
     resetPlay();
     rkStream = null;
+    ctStop();
+    ct = null;
   }
 
   function renderEdge() {
@@ -534,12 +538,24 @@
     if (!play) return;
     var st = play.stats;
     var acc = st.decisions ? st.correct / st.decisions : 0;
-    [["Hands", String(st.hands)],
-     ["Correct", st.decisions ? pct(acc, 0) + " (" + st.correct + "/" + st.decisions + ")" : "—"],
-     ["Errors cost", st.decisions ? "−" + st.cost.toFixed(3) : "—"]].forEach(function (p) {
+    // Net is kept in bets, which is the unit the whole app thinks in, and shown
+    // in money at the Risk tab's base bet so it reads like a session.
+    var stake = rkNum("rk-base", 25);
+    var money = st.net * stake;
+    [["Hands", String(st.hands), ""],
+     ["Net", (st.net >= 0 ? "+" : "−") + Math.abs(st.net).toFixed(1) + " bets",
+      (money >= 0 ? "+$" : "−$") + Math.abs(money).toFixed(0) + " at $" + stake + " a hand",
+      st.net > 0 ? "good" : st.net < 0 ? "bad" : ""],
+     ["Correct", st.decisions ? pct(acc, 0) : "—",
+      st.decisions ? st.correct + " of " + st.decisions + " decisions" : ""],
+     ["Errors cost", st.decisions ? "−" + st.cost.toFixed(2) : "—",
+      st.decisions && st.cost > 0 ? "−$" + (st.cost * stake).toFixed(0) + " given up" : ""]
+    ].forEach(function (p) {
       var s = el("div", "stat");
       s.appendChild(el("div", "k", p[0]));
-      s.appendChild(el("div", "v", p[1]));
+      var v = el("div", "v" + (p[3] ? " " + p[3] : ""), p[1]);
+      s.appendChild(v);
+      if (p[2]) s.appendChild(el("div", "sub", p[2]));
       box.appendChild(s);
     });
   }
@@ -982,6 +998,296 @@
     return banner("bad", msg);
   }
 
+  /* ===== Counting trainer ===== */
+
+  /**
+   * Drills the running count against a real shoe.
+   *
+   * The shoe carries between rounds rather than resetting, because that is the
+   * thing that is actually hard at a table: holding a number across hundreds of
+   * cards while doing something else. A drill that restarts at zero every ten
+   * cards trains the tags and not the task.
+   */
+  var ct = null, ctTimer = null;
+
+  var CT_SPEEDS = [[0.75, "Slow — 0.75/s"], [1.5, "1.5 a second"],
+                   [2, "Dealer pace — 2/s"], [3, "Fast — 3/s"], [4.5, "Brutal — 4.5/s"]];
+  var CT_BATCHES = [5, 10, 20, 52];
+
+  function ctCreate() {
+    var sysKey = (document.getElementById("ct-system") || {}).value || "ko";
+    var sys = RK.system(sysKey);
+    return {
+      sysKey: sysKey,
+      shoe: E.freshShoe(rules.decks),
+      rc: sys.irc(rules.decks),
+      seen: [],
+      phase: "idle",          // idle | dealing | asking | graded
+      last: null,
+      stats: { rounds: 0, correct: 0, drift: 0, cards: 0 }
+    };
+  }
+
+  function ctSys() { return RK.system(ct.sysKey); }
+
+  function ctStop() {
+    if (ctTimer) { clearInterval(ctTimer); ctTimer = null; }
+  }
+
+  function ctDraw() {
+    var rem = E.countCards(ct.shoe);
+    if (rem <= 0) return -1;
+    var x = Math.floor(Math.random() * rem);
+    for (var r = 0; r < E.RANKS; r++) {
+      x -= ct.shoe[r];
+      if (x < 0) { ct.shoe[r]--; return r; }
+    }
+    return E.TEN;
+  }
+
+  function ctStart() {
+    ctStop();
+    var speed = Number(document.getElementById("ct-speed").value);
+    var batch = Number(document.getElementById("ct-batch").value);
+    ct.seen = [];
+    ct.phase = "dealing";
+    ct.last = null;
+    var dealt = 0;
+    renderCount();
+    ctTimer = setInterval(function () {
+      var r = ctDraw();
+      if (r < 0) {                       // shoe exhausted mid-round
+        ctStop();
+        ct.phase = "asking";
+        renderCount();
+        return;
+      }
+      ct.rc += ctSys().tags[r];
+      ct.stats.cards++;
+      ct.seen.push({ rank: r, dress: dress(r) });
+      dealt++;
+      if (dealt >= batch) { ctStop(); ct.phase = "asking"; }
+      renderCount();
+    }, 1000 / speed);
+  }
+
+  function ctDecksLeft() { return E.countCards(ct.shoe) / 52; }
+  function ctTrue() { return ct.rc / Math.max(0.5, ctDecksLeft()); }
+
+  function ctGrade() {
+    var rcGuess = Number(document.getElementById("ct-rc").value);
+    var askTrue = document.getElementById("ct-truecount").checked && ctSys().balanced;
+    var tcGuess = askTrue ? Number(document.getElementById("ct-tc").value) : null;
+    var rcOk = rcGuess === ct.rc;
+    var tcOk = !askTrue || Math.abs(tcGuess - ctTrue()) < 0.75;
+    ct.stats.rounds++;
+    if (rcOk && tcOk) ct.stats.correct++;
+    ct.stats.drift += Math.abs(rcGuess - ct.rc);
+    ct.last = { rcGuess: rcGuess, rcOk: rcOk, askTrue: askTrue, tcGuess: tcGuess, tcOk: tcOk,
+                rc: ct.rc, tc: ctTrue(), decks: ctDecksLeft() };
+    // Once you have seen the answer the count is no longer yours to keep, so a
+    // wrong answer resyncs rather than compounding into every later round.
+    ct.phase = "graded";
+    renderCount();
+  }
+
+  function renderCountPrimer() {
+    var b = document.getElementById("ct-primer");
+    b.className = "banner warn";
+    b.innerHTML = "";
+    b.appendChild(el("strong", null, "Keep the running count."));
+    b.appendChild(el("p", "note",
+      "Cards come one at a time at the speed you pick. Add up the tags in your " +
+      "head, and when it stops, type the total. The shoe keeps going between " +
+      "rounds — the number it wants is the count since the last shuffle."));
+  }
+
+  function renderCountTags() {
+    if (!ct) ct = ctCreate();
+    var box = document.getElementById("ct-tags");
+    box.innerHTML = "";
+    var sy = ctSys();
+    var card = el("div", "banner");
+    card.appendChild(el("strong", null, sy.name));
+    card.appendChild(el("p", "note", sy.blurb));
+    var t = el("table", "chart"), h = el("tr"), r2 = el("tr");
+    h.appendChild(el("th", "row-label", "card"));
+    r2.appendChild(el("th", "row-label", "count"));
+    [1, 2, 3, 4, 5, 6, 7, 8, 0, 9].forEach(function (rk) {
+      h.appendChild(el("th", null, E.RANK_LABELS[rk]));
+      var tag = sy.tags[rk];
+      r2.appendChild(el("td", "act " + (tag > 0 ? "act-hit" : tag < 0 ? "act-stand" : "act-surrender"),
+        tag === 0.5 ? "+½" : (tag > 0 ? "+" : "") + tag));
+    });
+    t.appendChild(h); t.appendChild(r2);
+    var sc = el("div", "chart-scroll"); sc.appendChild(t); card.appendChild(sc);
+    card.appendChild(el("p", "note", sy.balanced
+      ? "Balanced: a full shoe counts to zero, so if you end a shoe on anything else you dropped one."
+      : (function () {
+          // Where an unbalanced count must finish: the initial count plus every
+          // tag in the shoe. Getting anything else means a card was dropped.
+          var sum = 0;
+          for (var r = 0; r < E.RANKS; r++) {
+            sum += sy.tags[r] * (r === E.TEN ? 16 : 4) * rules.decks;
+          }
+          var end = sy.irc(rules.decks) + sum;
+          return "Unbalanced: start at " + sy.irc(rules.decks) + " for " + rules.decks +
+                 " deck" + (rules.decks > 1 ? "s" : "") + ", and a full shoe finishes at " +
+                 (end >= 0 ? "+" : "") + end + ". Anything else means you dropped one.";
+        })()));
+    box.appendChild(card);
+  }
+
+  function renderCount() {
+    if (!ct) ct = ctCreate();
+    var cur = document.getElementById("ct-current");
+    var seen = document.getElementById("ct-seen");
+    cur.innerHTML = ""; seen.innerHTML = "";
+
+    var last = ct.seen[ct.seen.length - 1];
+    if (ct.phase === "dealing" && last) {
+      var wrap = el("div");
+      wrap.appendChild(cardEl(last.rank, { suit: last.dress.suit, face: last.dress.face }));
+      cur.appendChild(wrap);
+    } else if (ct.phase === "idle") {
+      cur.appendChild(el("span", "note", "Press Deal to start a round."));
+    } else {
+      cur.appendChild(el("span", "note", ct.seen.length + " cards this round."));
+    }
+
+    // The cards just dealt, shown only once the round is over.
+    if (ct.phase !== "dealing") {
+      ct.seen.forEach(function (c) {
+        seen.appendChild(cardEl(c.rank, { suit: c.dress.suit, face: c.dress.face, small: true }));
+      });
+    }
+
+    document.getElementById("ct-status").textContent =
+      ct.phase === "dealing" ? "Watch…" : ct.phase === "asking" ? "What is the count?" :
+      ct.phase === "graded" ? "Round " + ct.stats.rounds : "Ready";
+    document.getElementById("ct-shoe").textContent =
+      ctDecksLeft().toFixed(1) + " decks left";
+
+    renderCountActions();
+    renderCountAnswer();
+    renderCountStats();
+  }
+
+  function renderCountActions() {
+    var box = document.getElementById("ct-actions");
+    box.innerHTML = "";
+    if (ct.phase === "dealing") {
+      var stop = el("button", null, "Stop and answer");
+      stop.onclick = function () { ctStop(); ct.phase = "asking"; renderCount(); };
+      box.appendChild(stop);
+      return;
+    }
+    if (ct.phase === "asking") return;    // the answer form carries its own button
+    var deal = el("button", "primary", ct.stats.rounds ? "Next round" : "Deal");
+    deal.onclick = ctStart;
+    box.appendChild(deal);
+    var shuffle = el("button", null, "Shuffle");
+    shuffle.onclick = function () { ctStop(); ct = ctCreate(); renderCount(); };
+    box.appendChild(shuffle);
+  }
+
+  function renderCountAnswer() {
+    var box = document.getElementById("ct-answer");
+    box.innerHTML = "";
+
+    if (ct.phase === "asking") {
+      var askTrue = document.getElementById("ct-truecount").checked && ctSys().balanced;
+      var row = el("div", "ct-answer-row");
+      var lab = el("label", null, "Running count");
+      lab.setAttribute("for", "ct-rc");
+      var inp = el("input"); inp.type = "number"; inp.id = "ct-rc"; inp.value = "";
+      row.appendChild(lab); row.appendChild(inp);
+      box.appendChild(row);
+
+      if (askTrue) {
+        var row2 = el("div", "ct-answer-row");
+        var lab2 = el("label", null, "True count (" + ctDecksLeft().toFixed(1) + " decks left)");
+        lab2.setAttribute("for", "ct-tc");
+        var inp2 = el("input"); inp2.type = "number"; inp2.step = "0.5"; inp2.id = "ct-tc";
+        row2.appendChild(lab2); row2.appendChild(inp2);
+        box.appendChild(row2);
+      }
+      var br = el("div", "btn-row");
+      var check = el("button", "primary", "Check");
+      check.onclick = ctGrade;
+      br.appendChild(check);
+      box.appendChild(br);
+      inp.focus();
+      inp.onkeydown = function (e) { if (e.key === "Enter" && !askTrue) ctGrade(); };
+      return;
+    }
+
+    if (ct.phase === "graded" && ct.last) {
+      var L = ct.last;
+      var ok = L.rcOk && L.tcOk;
+      var msg = L.rcOk
+        ? "✓ Running count " + L.rc + "."
+        : "✗ You said " + L.rcGuess + "; it was " + L.rc +
+          " (off by " + Math.abs(L.rcGuess - L.rc) + ").";
+      if (L.askTrue) {
+        msg += L.tcOk
+          ? "  True count " + L.tc.toFixed(1) + " — near enough."
+          : "  True count was " + L.tc.toFixed(1) + " over " + L.decks.toFixed(1) +
+            " decks, you said " + L.tcGuess + ".";
+      } else if (ctSys().balanced) {
+        msg += "  That is a true count of " + L.tc.toFixed(1) + " over " +
+               L.decks.toFixed(1) + " decks.";
+      }
+      box.appendChild(banner(ok ? "good" : "bad", msg));
+    }
+  }
+
+  function renderCountStats() {
+    var box = document.getElementById("ct-stats");
+    box.innerHTML = "";
+    var st = ct.stats;
+    if (!st.rounds && !st.cards) return;
+    var acc = st.rounds ? st.correct / st.rounds : 0;
+    [["Rounds", String(st.rounds), ""],
+     ["Correct", st.rounds ? pct(acc, 0) : "—", st.correct + " of " + st.rounds,
+      st.rounds && acc === 1 ? "good" : acc < 0.6 && st.rounds > 2 ? "bad" : ""],
+     ["Average miss", st.rounds ? (st.drift / st.rounds).toFixed(1) : "—", "counts off per round"],
+     ["Cards seen", String(st.cards), ""]
+    ].forEach(function (p) {
+      var s = el("div", "stat");
+      s.appendChild(el("div", "k", p[0]));
+      s.appendChild(el("div", "v" + (p[3] ? " " + p[3] : ""), p[1]));
+      if (p[2]) s.appendChild(el("div", "sub", p[2]));
+      box.appendChild(s);
+    });
+  }
+
+  function initCount() {
+    var sel = document.getElementById("ct-system");
+    RK.SYSTEMS.forEach(function (sy) {
+      var o = el("option", null, sy.name);
+      o.value = sy.key;
+      sel.appendChild(o);
+    });
+    sel.value = "ko";
+    sel.onchange = function () { ctStop(); ct = ctCreate(); renderCountTags(); renderCount(); };
+
+    var sp = document.getElementById("ct-speed");
+    CT_SPEEDS.forEach(function (p) {
+      var o = el("option", null, p[1]); o.value = String(p[0]); sp.appendChild(o);
+    });
+    sp.value = "2";
+
+    var ba = document.getElementById("ct-batch");
+    CT_BATCHES.forEach(function (n) {
+      var o = el("option", null, n === 52 ? "52 — a whole deck" : String(n));
+      o.value = String(n); ba.appendChild(o);
+    });
+    ba.value = "10";
+
+    document.getElementById("ct-truecount").onchange = function () { renderCount(); };
+  }
+
   /* ===== Boot ===== */
 
   function init() {
@@ -989,6 +1295,7 @@
     renderRules();
     renderEdge();
     initAnalyzer();
+    initCount();
     resetAnalyzer();
     resetPlay();
     rkStream = null;
