@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Bettor or Bust — Blackjack Strategy &amp; Odds</title>
   <meta name="description" content="Blackjack basic strategy, hand analyzer and house edge, derived from your table's exact rules rather than looked up.">
-  <link rel="stylesheet" href="css/style.css?v=d348c697">
+  <link rel="stylesheet" href="css/style.css?v=7a1e6a87">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -126,6 +126,12 @@
             <span class="hint">The minimum you put out.</span></label>
           <input type="number" id="rk-base" min="1" step="5" value="50">
         </div>
+        <div class="rule-row">
+          <label for="rk-cap">Most you'll bet
+            <span class="hint">Your own ceiling or the table's, whichever is lower.
+              Binds every strategy, counting included.</span></label>
+          <input type="number" id="rk-cap" min="1" step="25" value="150">
+        </div>
       </div>
 
       <h3>Betting strategy</h3>
@@ -159,13 +165,13 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/rules.js?v=d348c697"></script>
-  <script src="js/engine.js?v=d348c697"></script>
-  <script src="js/strategy.js?v=d348c697"></script>
-  <script src="js/analyzer.js?v=d348c697"></script>
-  <script src="js/game.js?v=d348c697"></script>
-  <script src="js/risk.js?v=d348c697"></script>
-  <script src="js/app.js?v=d348c697"></script>
+  <script src="js/rules.js?v=7a1e6a87"></script>
+  <script src="js/engine.js?v=7a1e6a87"></script>
+  <script src="js/strategy.js?v=7a1e6a87"></script>
+  <script src="js/analyzer.js?v=7a1e6a87"></script>
+  <script src="js/game.js?v=7a1e6a87"></script>
+  <script src="js/risk.js?v=7a1e6a87"></script>
+  <script src="js/app.js?v=7a1e6a87"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

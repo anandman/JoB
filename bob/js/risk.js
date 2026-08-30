@@ -85,7 +85,7 @@ var BJRisk = (function () {
       why: "Presses winning streaks, so the right tail is genuinely fatter. It does " +
            "not reduce ruin: it raises your average bet, and at that same average a " +
            "flat bet is safer.",
-      params: ["base", "step", "cap"],
+      params: ["base", "step"],
       spec: function (p) {
         return { base: p.base, unit: p.step, cap: p.cap, mode: "add",
                  onWin: "up", onPush: "hold", onLoss: "reset" };
@@ -98,7 +98,7 @@ var BJRisk = (function () {
       why: "Each win recovers the whole losing streak plus one base bet, which is why " +
            "it feels safe. The cap and your bankroll are what break it, and they break " +
            "it all at once — the losses that end a streak are enormous.",
-      params: ["base", "cap"],
+      params: ["base"],
       spec: function (p) {
         return { base: p.base, unit: 0, factor: 2, cap: p.cap, mode: "multiply",
                  onWin: "reset", onPush: "hold", onLoss: "up" };
@@ -110,7 +110,7 @@ var BJRisk = (function () {
              "Never go below the base.",
       why: "A gentler way of chasing losses than Martingale, with the same defect: it " +
            "puts the most money at risk exactly when your bankroll is lowest.",
-      params: ["base", "step", "cap"],
+      params: ["base", "step"],
       spec: function (p) {
         return { base: p.base, unit: p.step, cap: p.cap, mode: "add",
                  onWin: "down", onPush: "hold", onLoss: "up" };
@@ -122,7 +122,7 @@ var BJRisk = (function () {
              "loss, go back to the base.",
       why: "A positive progression that gives back less than the ladder on a broken " +
            "streak, because it resets itself at the top.",
-      params: ["base", "cap"],
+      params: ["base"],
       spec: function (p) {
         return { base: p.base, unit: 0, factor: 2, cap: p.cap, mode: "multiply",
                  onWin: "up", onPush: "hold", onLoss: "reset" };
@@ -180,15 +180,19 @@ var BJRisk = (function () {
   /** A count-driven bet ramp: flat minimum until the count clears `threshold`. */
   function buildCount(p) {
     var sys = system(p.systemKey);
+    // The cap is the table limit and binds here exactly as it binds a
+    // progression. Without it a 1-8 spread quietly bet eight times the base no
+    // matter what maximum the player had set.
+    var top = p.cap ? Math.min(p.base * p.spread, p.cap) : p.base * p.spread;
     return {
       counting: true,
       sysKey: sys.key,
       balanced: sys.balanced,
-      levels: [p.base, p.base * p.spread],
+      levels: [p.base, top],
       bet: function (lvl, count) {
         var over = count - p.threshold;
         if (over <= 0) return p.base;
-        return p.base * Math.min(p.spread, 1 + over);
+        return Math.min(top, p.base * (1 + over));
       },
       step: function () { return 0; }
     };

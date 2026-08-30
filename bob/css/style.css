@@ -423,3 +423,7 @@ table.rk-table td.muted { color: var(--color-text-muted); font-weight: 400; }
 .banner strong { display: block; margin-bottom: 0.25rem; }
 .banner .note { margin-top: 0.3rem; }
 .banner table.chart { margin-top: 0.5rem; }
+
+.banner ul.assume { margin: 0.4rem 0 0 1rem; padding: 0; }
+.banner ul.assume li { font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 0.2rem; }
+.banner ul.assume strong { display: inline; color: var(--color-text); }

@@ -552,7 +552,6 @@
 
   var RK_FIELDS = {
     step: { label: "Step size", hint: "How much each level adds.", def: 25, min: 5, stepBy: 5 },
-    cap: { label: "Maximum bet", hint: "The table limit, or your own.", def: 150, min: 10, stepBy: 25 },
     threshold: { label: "Start raising at", hint: "The count at which you leave the minimum.",
                  def: 1, min: -4, stepBy: 1 },
     spread: { label: "Bet spread", hint: "Top bet as a multiple of the base.",
@@ -568,11 +567,12 @@
 
   function rkSession() {
     return { bankroll: rkNum("rk-bankroll", 2000), hands: Math.round(rkNum("rk-hands", 300)),
-             base: rkNum("rk-base", 50) };
+             base: rkNum("rk-base", 50), cap: rkNum("rk-cap", 150) };
   }
 
   function rkParamsFor(key) {
-    var p = { base: rkSession().base };
+    var sess = rkSession();
+    var p = { base: sess.base, cap: Math.max(sess.cap, sess.base) };
     RK.strategy(key).params.forEach(function (name) {
       if (name === "base") return;
       var f = RK_FIELDS[name];
@@ -606,7 +606,7 @@
       });
       sel.value = "ladder";
       sel.onchange = function () { rkParams = {}; renderRiskControls(); };
-      ["rk-bankroll", "rk-hands", "rk-base"].forEach(function (id) {
+      ["rk-bankroll", "rk-hands", "rk-base", "rk-cap"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", function () {
           renderRiskControls();
           document.getElementById("rk-result").innerHTML = "";
@@ -829,7 +829,7 @@
         ["ladder", {}, "Positive progression"],
         ["paroli", {}, "Paroli"],
         ["dalembert", {}, "d'Alembert"],
-        ["martingale", { cap: 400 }, "Martingale"],
+        ["martingale", {}, "Martingale"],
         ["count", { systemKey: "ko" }, "KO, 1–8"],
         ["count", { systemKey: "red7" }, "Red 7, 1–8"],
         ["count", { systemKey: "hilo" }, "Hi-Lo, 1–8"]
@@ -837,25 +837,74 @@
       var rows = [], results = [];
       cases.forEach(function (c) {
         var def = RK.strategy(c[0]);
-        var p = { base: sess.base };
+        var p = { base: sess.base, cap: Math.max(sess.cap, sess.base) };
         def.params.forEach(function (n) {
           if (n === "base") return;
           p[n] = c[1][n] !== undefined ? c[1][n] : RK_FIELDS[n].def;
         });
         if (p.cap !== undefined && p.cap < p.base) p.cap = p.base;
         var st2 = RK.fromParams(c[0], p);
+        // Name the spread the player actually gets. The cap can truncate a
+        // 1-8 ramp to 1-3, and labelling it 1-8 would describe bets the table
+        // will not take.
+        var label = c[2];
+        if (def.kind === "counting") {
+          var mult = st2.levels[st2.levels.length - 1] / p.base;
+          label = RK.system(p.systemKey).name.replace(/ \(.*\)/, "") +
+                  ", 1–" + (Math.round(mult * 10) / 10);
+        }
         var r = RK.runSessions(stream, st2, opts);
         var fr = RK.runSessions(stream, RK.flat(r.avgBet), opts);
         r.vsFlat = r.ahead - fr.ahead;
-        results.push({ label: c[2], r: r, strat: st2, kind: def.kind });
-        rows.push(rkRow(c[2], r, false, st2));
+        results.push({ label: label, r: r, strat: st2, kind: def.kind });
+        rows.push(rkRow(label, r, false, st2));
       });
       var out = document.getElementById("rk-result");
       out.innerHTML = "";
       out.appendChild(el("h3", null, "Every strategy, same hands, $" + sess.base + " base"));
       out.appendChild(rkTable(rows));
-      out.appendChild(rkVerdict(results, sess));
+      out.appendChild(rkAssumptions(results, sess));
+      out.appendChild(rkVerdict(results, sess, stream, opts));
     });
+  }
+
+  /**
+   * Every input the comparison used.
+   *
+   * The strategy panel only ever shows the parameters of the ONE strategy you
+   * have selected, so a comparison across all of them necessarily fills the
+   * rest in from defaults. Printing them is the difference between a table you
+   * can check and a table you have to trust.
+   */
+  function rkAssumptions(results, sess) {
+    var counting = results.filter(function (x) { return x.kind === "counting"; });
+    var nominal = RK_FIELDS.spread.def;
+    var effective = counting.length
+      ? counting[0].strat.levels[counting[0].strat.levels.length - 1] / sess.base : nominal;
+
+    var box = el("div", "banner");
+    box.appendChild(el("strong", null, "What this comparison assumed"));
+    var ul = el("ul", "assume");
+    [["Session", "$" + sess.bankroll + " bankroll, " + sess.hands + " hands, $" +
+                 sess.base + " base bet, never more than $" + sess.cap + " on a hand."],
+     ["Progressions", "$" + RK_FIELDS.step.def + " a step, which is the default — " +
+                      "the panel above only shows the settings of the strategy you have selected."],
+     ["Counting", "ramp starts at a count of +" + RK_FIELDS.threshold.def +
+                  ", nominal spread 1–" + nominal +
+                  (effective < nominal - 0.05
+                    ? ", cut to 1–" + (Math.round(effective * 10) / 10) +
+                      " by your $" + sess.cap + " ceiling."
+                    : ".")]
+    ].forEach(function (pair) {
+      var li = el("li");
+      li.appendChild(el("strong", null, pair[0] + ": "));
+      li.appendChild(document.createTextNode(pair[1]));
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+    box.appendChild(el("p", "note",
+      "Pick a strategy above and use Run simulation to change any of these."));
+    return box;
   }
 
   /**
@@ -863,7 +912,7 @@
    * claiming the counting rows clear 50%, which is false whenever the bankroll
    * cannot carry the spread — the table then contradicted its own caption.
    */
-  function rkVerdict(results, sess) {
+  function rkVerdict(results, sess, stream, opts) {
     var counting = results.filter(function (x) { return x.kind === "counting"; });
     var beating = counting.filter(function (x) { return x.r.vsFlat > 0.005; });
     var topBet = 0;
@@ -900,13 +949,31 @@
 
     var msg = "Nothing here beats a flat bet of its own size — the 'vs flat' column " +
       "is zero or negative for every row, counting included. ";
-    if (share > 0.2) {
-      var suggest = Math.max(5, Math.round(sess.bankroll / 20 / (topBet / sess.base) / 5) * 5);
-      msg += "That is a bankroll problem, not a verdict on counting. The spread tops " +
-        "out at $" + topBet.toFixed(0) + " against a $" + sess.bankroll + " bankroll — " +
-        Math.round(share * 100) + "% of it on one hand — so you are ruined before the " +
-        "count can pay. Counting needs its top bet to be a small slice of the roll. " +
-        "Try a base bet of about $" + suggest + ", or bring more money.";
+    var effSpread = topBet / sess.base;
+    if (share > 0.2 || effSpread < 4) {
+      msg += "That is a sizing problem, not a verdict on counting. ";
+      if (effSpread < 4) {
+        msg += "Your $" + sess.cap + " ceiling over a $" + sess.base + " base leaves a " +
+          "spread of only 1–" + (Math.round(effSpread * 10) / 10) + ", and a counter's " +
+          "whole edge is in betting far more when the shoe is good. ";
+      }
+      if (share > 0.2) {
+        msg += "The top bet is $" + topBet.toFixed(0) + " against a $" + sess.bankroll +
+          " bankroll — " + Math.round(share * 100) + "% of it on one hand — so you are " +
+          "ruined before the count can pay. ";
+      }
+      // Two ways out, and the bankroll figure is measured rather than asserted:
+      // keep the stake and bring more money, or keep the money and stake less.
+      var best = counting.slice().sort(function (a, b) { return b.r.vsFlat - a.r.vsFlat; })[0];
+      var need = best ? RK.bankrollFor(stream, best.strat, opts, 0.05) : 0;
+      // A ramp needs roughly 1-15 to earn its keep inside a tight ceiling;
+      // 1-10 measured no better than flat at this bankroll.
+      var smaller = Math.max(5, Math.round(sess.cap / 15 / 5) * 5);
+      msg += "Two ways out. Keep the $" + sess.base + " base and the $" + sess.cap +
+        " ceiling but bring about $" + (Math.round(need / 250) * 250) +
+        ", which is what holds ruin at 5% here. Or keep the $" + sess.bankroll +
+        " and drop the base to about $" + smaller + ", which buys back the spread " +
+        "inside the same ceiling.";
     } else {
       msg += "With " + sess.hands + " hands the result is mostly noise: the house edge " +
         "moves the total by a fraction of one bet while the swing is several bets, so " +
