@@ -722,6 +722,8 @@
     tr.appendChild(el("th", "row-label", label));
     [[strat ? betRange(strat) : "—", "muted"],
      ["$" + r.avgBet.toFixed(0), ""],
+     [r.vsFlat === undefined ? "—" : (r.vsFlat >= 0 ? "+" : "") + (r.vsFlat * 100).toFixed(1),
+      r.vsFlat === undefined ? "muted" : r.vsFlat > 0.005 ? "good" : r.vsFlat < -0.005 ? "bad" : "muted"],
      [(r.ruin * 100).toFixed(2) + "%", r.ruin > 0.2 ? "bad" : r.ruin < 0.05 ? "good" : ""],
      [(r.ahead * 100).toFixed(1) + "%", r.ahead > 0.5 ? "good" : ""],
      ["$" + r.median.toFixed(0), ""],
@@ -736,7 +738,7 @@
   function rkTable(rows) {
     var t = el("table", "chart rk-table");
     var h = el("tr");
-    ["", "bets", "avg bet", "ruin", "ahead", "median", "5th", "95th"].forEach(function (c, i) {
+    ["", "bets", "avg bet", "vs flat", "ruin", "ahead", "median", "5th", "95th"].forEach(function (c, i) {
       h.appendChild(el("th", i === 0 ? "row-label" : null, c));
     });
     t.appendChild(h);
@@ -755,6 +757,7 @@
       var strat = RK.fromParams(key, p);
       var r = RK.runSessions(stream, strat, opts);
       var fr = RK.runSessions(stream, RK.flat(r.avgBet), opts);
+      r.vsFlat = r.ahead - fr.ahead;
       var need = RK.bankrollFor(stream, strat, opts, 0.05);
 
       var out = document.getElementById("rk-result");
@@ -831,7 +834,7 @@
         ["count", { systemKey: "red7" }, "Red 7, 1–8"],
         ["count", { systemKey: "hilo" }, "Hi-Lo, 1–8"]
       ];
-      var rows = [];
+      var rows = [], results = [];
       cases.forEach(function (c) {
         var def = RK.strategy(c[0]);
         var p = { base: sess.base };
@@ -842,17 +845,74 @@
         if (p.cap !== undefined && p.cap < p.base) p.cap = p.base;
         var st2 = RK.fromParams(c[0], p);
         var r = RK.runSessions(stream, st2, opts);
+        var fr = RK.runSessions(stream, RK.flat(r.avgBet), opts);
+        r.vsFlat = r.ahead - fr.ahead;
+        results.push({ label: c[2], r: r, strat: st2, kind: def.kind });
         rows.push(rkRow(c[2], r, false, st2));
       });
       var out = document.getElementById("rk-result");
       out.innerHTML = "";
       out.appendChild(el("h3", null, "Every strategy, same hands, $" + sess.base + " base"));
       out.appendChild(rkTable(rows));
-      out.appendChild(banner("warn",
-        "Read the 'ahead' column. Only the counting rows clear 50% — they are the " +
-        "only ones changing the edge. The progressions differ from each other in " +
-        "average bet, and their ruin follows that and nothing else."));
+      out.appendChild(rkVerdict(results, sess));
     });
+  }
+
+  /**
+   * What the comparison actually showed. This used to be a fixed sentence
+   * claiming the counting rows clear 50%, which is false whenever the bankroll
+   * cannot carry the spread — the table then contradicted its own caption.
+   */
+  function rkVerdict(results, sess) {
+    var counting = results.filter(function (x) { return x.kind === "counting"; });
+    var beating = counting.filter(function (x) { return x.r.vsFlat > 0.005; });
+    var topBet = 0;
+    counting.forEach(function (x) {
+      topBet = Math.max(topBet, x.strat.levels[x.strat.levels.length - 1]);
+    });
+    var share = topBet / sess.bankroll;
+
+    if (beating.length) {
+      var text = "Read the 'vs flat' column: it compares each row against a flat bet of " +
+        "its own average size, which is the only fair comparison. The counting rows are " +
+        "ahead of it, because they change the edge rather than just reshaping the outcome. ";
+      // A negative progression can beat flat on "ahead" while being strictly
+      // worse, because it wins small very often and loses everything rarely —
+      // which is the shape "ahead" is blind to. Say so rather than claim every
+      // progression sits at or below zero, which is not always true.
+      var oddOnes = results.filter(function (x) {
+        return x.kind !== "counting" && x.r.vsFlat > 0.005;
+      });
+      if (oddOnes.length) {
+        var worst = oddOnes.slice().sort(function (a, b) { return b.r.ruin - a.r.ruin; })[0];
+        text += "Do not read " + worst.label + "'s positive figure as an edge. A " +
+          "progression that presses losses wins a little very often and loses " +
+          "everything rarely, and 'ahead' cannot see the difference — look at its " +
+          "ruin (" + (worst.r.ruin * 100).toFixed(1) + "% against " +
+          (results[0].r.ruin * 100).toFixed(1) + "% for flat) and its 5th percentile " +
+          "instead. Its expected loss is identical.";
+      } else {
+        text += "Every progression sits at or below zero there, and their ruin follows " +
+          "their average bet and nothing else.";
+      }
+      return banner("warn", text);
+    }
+
+    var msg = "Nothing here beats a flat bet of its own size — the 'vs flat' column " +
+      "is zero or negative for every row, counting included. ";
+    if (share > 0.2) {
+      var suggest = Math.max(5, Math.round(sess.bankroll / 20 / (topBet / sess.base) / 5) * 5);
+      msg += "That is a bankroll problem, not a verdict on counting. The spread tops " +
+        "out at $" + topBet.toFixed(0) + " against a $" + sess.bankroll + " bankroll — " +
+        Math.round(share * 100) + "% of it on one hand — so you are ruined before the " +
+        "count can pay. Counting needs its top bet to be a small slice of the roll. " +
+        "Try a base bet of about $" + suggest + ", or bring more money.";
+    } else {
+      msg += "With " + sess.hands + " hands the result is mostly noise: the house edge " +
+        "moves the total by a fraction of one bet while the swing is several bets, so " +
+        "no strategy can separate itself. Lengthen the session to compare them.";
+    }
+    return banner("bad", msg);
   }
 
   /* ===== Boot ===== */
