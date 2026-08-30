@@ -106,6 +106,86 @@ console.log("\nDates are local, because a casino is somewhere in particular");
     ? ok("and a new session gets one") : bad("blank date " + Store.blank().date);
 }
 
+console.log("\nGames, and what kind of thing each one is");
+{
+  const kinds = {};
+  Store.GAMES.forEach((g) => { kinds[g.kind] = (kinds[g.kind] || 0) + 1; });
+  Store.GAMES.length >= 20 ? ok(`${Store.GAMES.length} games across ${Object.keys(kinds).length} kinds`)
+                           : bad("only " + Store.GAMES.length + " games");
+  ["Video Poker", "Blackjack", "Baccarat", "Roulette", "Pai Gow Poker", "Craps",
+   "Three Card Poker", "Poker Room", "Sports Betting"].every((n) => Store.gameInfo(n).kind !== "other")
+    ? ok("the usual ones are all named, so nothing common lands in Other") : bad("a common game is missing");
+
+  Store.gameInfo("Video Poker").kind === "machine" && Store.gameInfo("Blackjack").kind === "table"
+    ? ok("a machine counts, a table is rated") : bad("kinds wrong");
+  Store.gameInfo("Poker Room").tcRate === 0
+    ? ok("a poker room earns credits for time, so it suggests no $/TC rather than a wrong one")
+    : bad("poker room rate " + Store.gameInfo("Poker Room").tcRate);
+  Store.gameInfo("Nonesuch").kind === "other"
+    ? ok("and an unknown game degrades rather than throwing") : bad("unknown game threw");
+
+  let d = Store.derive(session({ game: "Roulette", startTC: 0, endTC: 100, tcRate: 25 }));
+  d.coinInBasis === "pit estimate" ? ok("roulette coin-in says it is the pit's estimate")
+                                   : bad("basis " + d.coinInBasis);
+  d = Store.derive(session({ game: "Slots", startTC: 0, endTC: 100, tcRate: 5 }));
+  d.coinInBasis === "measured" ? ok("a slot machine's is measured") : bad("basis " + d.coinInBasis);
+}
+
+console.log("\nA bet that varies, which is what a progression is");
+{
+  // Under Martingale or d'Alembert there is no bet size to divide coin-in by.
+  // Counting the hands instead gives the average bet, rather than assuming it.
+  let d = Store.derive(session({ game: "Blackjack", startTC: 0, endTC: 60, tcRate: 25,
+                                 handsOverride: 180 }));
+  near(d.hands, 180) && d.handsCounted ? ok("counted hands are used as counted")
+                                       : bad("hands " + d.hands);
+  near(d.avgBet, 1500 / 180) ? ok("and the average bet falls out of them: $8.33")
+                             : bad("avgBet " + d.avgBet);
+
+  d = Store.derive(session({ game: "Video Poker", startTC: 0, endTC: 500, tcRate: 10, perHand: 25 }));
+  near(d.hands, 200) && !d.handsCounted ? ok("a flat bet still gives hands from coin-in")
+                                        : bad("hands " + d.hands);
+  near(d.avgBet, 25) ? ok("with the average bet being the bet") : bad("avgBet " + d.avgBet);
+
+  d = Store.derive(session({ handsOverride: 300 }));
+  near(d.hands, 300) && d.avgBet === null
+    ? ok("hands without coin-in give no average bet rather than a made-up one")
+    : bad("avgBet " + d.avgBet);
+
+  Store.warnings(session({ venue: "X", cashIn: 100, game: "Blackjack", startTC: 0, endTC: 60,
+                           tcRate: 25, handsOverride: 180, perHand: 50 }))
+    .some((x) => /but the tier credits work out to/.test(x))
+    ? ok("three numbers that cannot all be true say so") : bad("no mismatch warning");
+}
+
+console.log("\nSuggestions, narrowed by what else is on the form");
+{
+  const rows = [
+    session({ date: "2026-08-01", venue: "Eldorado", location: "Reno, NV", game: "Video Poker",
+              detail: "9/6 $5", endTC: 100 }),
+    session({ date: "2026-08-10", venue: "Peppermill", location: "Reno, NV", game: "Blackjack",
+              detail: "$25 shoe", endTC: 400 }),
+    session({ date: "2026-08-20", venue: "Eldorado", location: "Reno, NV", game: "Video Poker",
+              detail: "9/5 HL $5", endTC: 900 })
+  ];
+  const d = Store.seen(rows, "detail", { venue: "Eldorado", game: "Video Poker" });
+  d[0] === "9/5 HL $5" && d[1] === "9/6 $5"
+    ? ok("machines from this venue come first") : bad("got " + JSON.stringify(d));
+  d.indexOf("$25 shoe") >= 0
+    ? ok("but nothing is hidden — you have played elsewhere") : bad("narrowing hid a value");
+  Store.lastWith(rows, { venue: "Peppermill" }, "location") === "Reno, NV"
+    ? ok("a venue you have been to knows what city it is in") : bad("no city");
+
+  Store.previousFor(rows, "2026-08-15").endTC === 400
+    ? ok("a session backdated to the 15th inherits the 10th's ending credits, not the 20th's")
+    : bad("got " + Store.previousFor(rows, "2026-08-15").endTC);
+  Store.previousFor(rows, "2026-08-30").endTC === 900
+    ? ok("and one today inherits the most recent") : bad("wrong predecessor");
+  const running = session({ date: "2026-08-25", start: "2026-08-25T20:00:00Z", endTC: null });
+  Store.previousFor(rows.concat([running]), "2026-08-30").endTC === 900
+    ? ok("a session still on the clock is never the one inherited from") : bad("inherited an open session");
+}
+
 console.log("\nW-2G handpays");
 {
   let d = Store.derive(session({ cashIn: 2000, cashOut: 2650,

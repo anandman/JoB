@@ -46,9 +46,11 @@ var Backup = (function () {
     { header: "Coin In",      key: "coinIn",      type: "money",    width: 13 },
     { header: "Coin In From", key: "coinInFrom",  type: "text",     width: 13 },
     { header: "Return",       key: "realized",    type: "percent",  width: 10 },
-    { header: "$/Hand",       key: "perHand",     type: "money",    width: 10 },
+    { header: "Avg Bet",      key: "avgBet",      type: "money",    width: 10 },
     { header: "Hands",        key: "hands",       type: "integer",  width: 10 },
+    { header: "Hands From",   key: "handsFrom",   type: "text",     width: 11 },
     { header: "Hands/Hour",   key: "handsPerHour", type: "integer", width: 11 },
+    { header: "System",       key: "system",      type: "text",     width: 18 },
     { header: "W-2G",         key: "handpayCount", type: "integer", width: 8 },
     { header: "W-2G Total",   key: "handpayTotal", type: "money",   width: 13 },
     { header: "W-2G Withheld", key: "handpayWithheld", type: "money", width: 14 },
@@ -86,10 +88,15 @@ var Backup = (function () {
       coinIn: d.coinIn,
       // Named rather than flagged: "estimated" in a cell explains itself six
       // months later, where a TRUE in a column called "rated" does not.
-      coinInFrom: d.coinIn === null ? null : (d.coinInIsEstimate ? "pit estimate" : "measured"),
+      coinInFrom: d.coinInBasis,
       realized: d.realizedReturn,
-      perHand: s.perHand,
+      avgBet: d.avgBet,
       hands: d.hands === null ? null : Math.round(d.hands),
+      // Which number was typed and which was worked out. Under a progression
+      // the average bet is a result, not an input, and the sheet should not
+      // read as though someone flat bet it.
+      handsFrom: d.hands === null ? null : (d.handsCounted ? "counted" : "coin in"),
+      system: s.system,
       handsPerHour: d.handsPerHour === null ? null : Math.round(d.handsPerHour),
       handpayCount: orNull(d.handpayCount, d.handpayCount),
       handpayTotal: orNull(d.handpayTotal, d.handpayCount),

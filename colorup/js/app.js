@@ -120,7 +120,9 @@ var App = (function () {
     venue:    { label: "Venue", kind: "text", list: "venues", placeholder: "Eldorado" },
     location: { label: "City", kind: "text", list: "locations", placeholder: "Reno, NV" },
     game:     { label: "Game", kind: "select", options: function () {
-                  return Store.GAMES.map(function (g) { return { value: g, label: g }; }); } },
+                  return Store.GAMES.map(function (g) {
+                    return { value: g.name, label: g.name, group: g.group };
+                  }); } },
     detail:   { label: "Machine or table", kind: "text", list: "details",
                 placeholder: "9/5 JoB $5 high limit" },
     start:    { label: "Started", kind: "datetime" },
@@ -136,8 +138,16 @@ var App = (function () {
                     return { value: r.value, label: r.label + " · " + r.note };
                   }); },
                 hint: "Only used to work out coin-in. Tier credits are never totalled here." },
-    perHand:  { label: "$ per hand", kind: "money",
-                hint: "Bet size, for hands per hour. $25 is five coins at $5." },
+    perHand:  { label: "Average bet", kind: "money",
+                hint: "What a hand cost on average. $25 is five coins at $5. " +
+                      "On a progression leave this and fill in hands instead." },
+    handsOverride: { label: "Hands played", kind: "int",
+                     hint: "If you counted them. Fill this in when the bet varied, " +
+                           "and the average bet is worked out from it." },
+    system:   { label: "Betting system", kind: "text", list: "systems",
+                suggest: ["Flat", "Positive progression", "Martingale", "d'Alembert",
+                          "Fibonacci", "Oscar's Grind", "Paroli", "Card counting"],
+                hint: "Optional. Recorded so you can ask later whether it did anything." },
     handpays: { label: "W-2G handpays", kind: "handpays" },
     comment:  { label: "Comment", kind: "textarea" },
     winLossOverride:   { label: "Win/(loss) override", kind: "money",
@@ -147,11 +157,13 @@ var App = (function () {
 
   // Layout: a string is a full-width row, an array is a row of fields sharing it.
   var FORM_START = ["venue", "location", "game", "detail",
-                    ["cashIn", "bonus"], ["startTC", "perHand"], "tcRate", "start"];
-  var FORM_COLOR = ["cashOut", "end", "endTC", "handpays", "comment"];
+                    ["cashIn", "bonus"], ["startTC", "tcRate"],
+                    ["perHand", "system"], "start"];
+  var FORM_COLOR = ["cashOut", "end", "endTC", "handsOverride", "handpays", "comment"];
   var FORM_FULL  = ["date", "venue", "location", "game", "detail",
                     ["start", "end"], ["cashIn", "bonus"], "cashOut",
-                    ["startTC", "endTC"], ["tcRate", "perHand"], "handpays", "comment"];
+                    ["startTC", "endTC"], "tcRate",
+                    ["perHand", "handsOverride"], "system", "handpays", "comment"];
   var FORM_OVERRIDES = ["winLossOverride", "sessionTCOverride"];
 
   function numOrNull(v) {
@@ -171,10 +183,15 @@ var App = (function () {
     var input;
     if (f.kind === "select") {
       input = el("select", { id: id, "data-key": key });
+      var groups = {};
       f.options().forEach(function (o) {
         var opt = el("option", { value: o.value, text: o.label });
         if (String(session[key]) === String(o.value)) opt.selected = true;
-        input.appendChild(opt);
+        if (!o.group) return input.appendChild(opt);
+        // Twenty-odd games is a long list to thumb through; the headings turn
+        // it into three short ones.
+        if (!groups[o.group]) input.appendChild(groups[o.group] = el("optgroup", { label: o.group }));
+        groups[o.group].appendChild(opt);
       });
     } else if (f.kind === "textarea") {
       input = el("textarea", { id: id, "data-key": key, rows: 2 });
@@ -199,20 +216,24 @@ var App = (function () {
     wrap.appendChild(input);
 
     // Safari's datalist support is unreliable, and a venue name is a tedious
-    // thing to type standing up. The last few values are offered as buttons,
-    // which work everywhere.
+    // thing to type standing up. The values you have used before are offered
+    // as buttons, which work everywhere — and they are recomputed whenever
+    // anything else on the form changes, so the machines offered are the ones
+    // from the venue currently selected.
     if (f.list) {
-      var recent = Store.seen(state.sessions, key).slice(0, 3).filter(function (v) {
-        return v !== session[key];
+      var picks = el("div", { class: "row-actions picks" });
+      wrap.appendChild(picks);
+      pickers.push(function (current) {
+        clear(picks);
+        var options = Store.seen(state.sessions, key, NARROW[key] ? NARROW[key](current) : null);
+        if (!options.length && f.suggest) options = f.suggest;
+        options.filter(function (v) { return v !== input.value; })
+          .slice(0, 6)
+          .forEach(function (v) {
+            picks.appendChild(el("button", { type: "button", class: "btn pick", text: v,
+              onclick: function () { input.value = v; onChange(); } }));
+          });
       });
-      if (recent.length) {
-        wrap.appendChild(el("div", { class: "row-actions picks" }, recent.map(function (v) {
-          return el("button", { type: "button", class: "btn pick", text: v, onclick: function () {
-            input.value = v;
-            onChange();
-          } });
-        })));
-      }
     }
 
     if (f.hint) wrap.appendChild(el("p", { class: "hint", text: f.hint }));
@@ -259,6 +280,13 @@ var App = (function () {
     return wrap;
   }
 
+  // What each suggestion list is narrowed by. A machine belongs to a venue and
+  // a game; a city belongs to a venue; a venue belongs to nothing.
+  var NARROW = {
+    detail: function (s) { return { venue: s.venue, game: s.game }; },
+    location: function (s) { return { venue: s.venue }; }
+  };
+
   /** Read the open form back into a session object. */
   function readForm(base) {
     var s = Object.assign({}, base);
@@ -294,17 +322,49 @@ var App = (function () {
 
   var sheet = { base: null, onSave: null };
 
+  // Re-render functions for the quick-pick rows, rebuilt with each sheet.
+  var pickers = [];
+
   function openSheet(opts) {
     sheet.base = opts.session;
     var body = clear($("#sheet-body"));
     var foot = clear($("#sheet-foot"));
     $("#sheet-title").textContent = opts.title;
+    pickers = [];
 
     var derived = el("div", { class: "derived" });
     var warnBox = el("div");
+    var lastGame = opts.session.game;
+    var lastVenue = opts.session.venue;
+    var rateTouched = false;
 
     function refreshDerived() {
       var s = readForm(sheet.base);
+
+      // Changing the game re-suggests the $/TC rate, unless you have said
+      // otherwise — a suggestion that overwrites your own answer is worse
+      // than no suggestion. Nothing here fires on a value we set ourselves,
+      // because assigning to .value raises no event.
+      if (s.game !== lastGame) {
+        lastGame = s.game;
+        var rateNode = body.querySelector('[data-key="tcRate"]');
+        if (rateNode && !rateTouched) {
+          rateNode.value = String(Store.gameInfo(s.game).tcRate);
+          s = readForm(sheet.base);
+        }
+      }
+
+      // A venue you have been to before knows what city it is in.
+      if (s.venue !== lastVenue) {
+        lastVenue = s.venue;
+        var locNode = body.querySelector('[data-key="location"]');
+        if (locNode && !locNode.value) {
+          var city = Store.lastWith(state.sessions, { venue: s.venue }, "location");
+          if (city) { locNode.value = city; s = readForm(sheet.base); }
+        }
+      }
+
+      pickers.forEach(function (fn) { fn(s); });
       var d = Store.derive(s);
       clear(derived);
       // Before there is a cash out there is no result, only money on the table.
@@ -321,6 +381,13 @@ var App = (function () {
         ["Coin in", d.coinIn === null ? "—" : money(d.coinIn) + (d.coinInIsEstimate ? " est." : ""), ""],
         ["Per hour", d.perHour === null ? "—" : money(d.perHour, { sign: true }), netClass(d.perHour)]
       ]);
+      if (d.hands !== null) {
+        lines.push(["Hands", count(d.hands) + (d.handsCounted ? " counted" : ""), ""]);
+        if (d.avgBet !== null) {
+          lines.push(["Average bet", money(d.avgBet, { cents: d.avgBet < 20 }) +
+                                     (d.handsCounted ? " worked out" : ""), ""]);
+        }
+      }
       if (d.handpayCount) lines.push(["Handpays", d.handpayCount + " · " + money(d.handpayTotal), ""]);
       lines.forEach(function (l) {
         derived.appendChild(el("div", {}, [
@@ -357,6 +424,9 @@ var App = (function () {
       body.appendChild(det);
     }
 
+    var rateField = body.querySelector('[data-key="tcRate"]');
+    if (rateField) rateField.addEventListener("change", function () { rateTouched = true; });
+
     body.appendChild(derived);
     body.appendChild(warnBox);
     refreshDerived();
@@ -380,8 +450,7 @@ var App = (function () {
   /* ===== the Now tab ===== */
 
   function startSession() {
-    var previous = state.sessions.length ? state.sessions[state.sessions.length - 1] : null;
-    var s = Store.blank(previous);
+    var s = Store.blank(Store.previousFor(state.sessions, Store.today()));
     s.start = new Date().toISOString();
     s.date = localDate(s.start);
     openSheet({
@@ -436,13 +505,12 @@ var App = (function () {
   }
 
   function addPastSession() {
-    var previous = state.sessions.length ? state.sessions[state.sessions.length - 1] : null;
-    var s = Store.blank(previous);
-    // Inheriting the last cash out is right for the next session of a trip and
-    // wrong for one being reconstructed days later, when it is a guess wearing
-    // the clothes of a fact.
+    var s = Store.blank(Store.previousFor(state.sessions, Store.today()));
+    // Tier credits carry forward, because the ending figure of the session
+    // before is genuinely where this one started. The cash does not: for a
+    // session being reconstructed days later it is a guess wearing the clothes
+    // of a fact, and a wrong number that looks entered is worse than a blank.
     s.cashIn = null;
-    s.startTC = null;
     editSession(s, { title: "Add a past session" });
   }
 
@@ -714,6 +782,20 @@ var App = (function () {
       body.appendChild(el("h3", { text: pair[1] }));
       body.appendChild(breakdown(groups));
     });
+
+    // Only worth showing once there is something to compare against something.
+    // The sessions with no system recorded are left out rather than lumped
+    // together, since "no answer" is not a betting system.
+    var withSystem = rows.filter(function (r) { return r.system; });
+    var systems = Analysis.by(withSystem, "system");
+    if (systems.length >= 2) {
+      body.appendChild(el("h3", { text: "By betting system" }));
+      body.appendChild(breakdown(systems));
+      body.appendChild(el("p", { class: "note",
+        text: "Sessions are far too few to separate a system from luck — the spread " +
+              "between these is variance long before it is anything else. It is here " +
+              "to record what you did, not to tell you which one works." }));
+    }
 
     var months = Analysis.byMonth(rows);
     if (months.length > 1) {
@@ -1064,6 +1146,7 @@ var App = (function () {
       fillList("venues", Store.seen(rows, "venue"));
       fillList("details", Store.seen(rows, "detail"));
       fillList("locations", Store.seen(rows, "location"));
+      fillList("systems", Store.seen(rows, "system"));
       renderBanners();
       renderNow();
       renderLog();

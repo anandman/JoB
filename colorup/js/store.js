@@ -21,22 +21,68 @@ var Store = (function () {
   // Nothing here enforces it; it is the number the prompt quotes.
   var W2G_THRESHOLD = 2000;
 
-  var GAMES = ["Video Poker", "Blackjack", "Slots", "Sports Betting", "Craps", "Other"];
+  /**
+   * Every game, and what kind of thing it is — which decides two questions the
+   * app cannot answer any other way.
+   *
+   * **Where tier credits come from.** A machine counts every dollar through it,
+   * so coin-in derived from TC is a measurement. A table is rated by a person
+   * estimating your average bet and your hours, so the same arithmetic gives an
+   * estimate. A poker room or a bingo hall awards credits for time at the table
+   * and not for money wagered at all, so coin-in cannot be derived from them
+   * and the default rate is left unknown rather than invented.
+   *
+   * **A starting $/TC.** These are suggestions to save typing, not facts:
+   * rates vary by property, by denomination and by promotion. Confirm at the
+   * players club; the field is always editable and never inferred twice.
+   */
+  var GAMES = [
+    { name: "Video Poker",           group: "Machines",  kind: "machine", tcRate: 10 },
+    { name: "Slots",                 group: "Machines",  kind: "machine", tcRate: 5 },
+    { name: "Video Keno",            group: "Machines",  kind: "machine", tcRate: 5 },
+    { name: "Blackjack",             group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Craps",                 group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Baccarat",              group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Roulette",              group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Pai Gow Poker",         group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Pai Gow Tiles",         group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Three Card Poker",      group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Ultimate Texas Hold'em", group: "Tables",   kind: "table",   tcRate: 25 },
+    { name: "Mississippi Stud",      group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Let It Ride",           group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Caribbean Stud",        group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Casino War",            group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Sic Bo",                group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Big Six",               group: "Tables",    kind: "table",   tcRate: 25 },
+    { name: "Poker Room",            group: "Elsewhere", kind: "time",    tcRate: 0 },
+    { name: "Keno",                  group: "Elsewhere", kind: "time",    tcRate: 0 },
+    { name: "Bingo",                 group: "Elsewhere", kind: "time",    tcRate: 0 },
+    { name: "Sports Betting",        group: "Elsewhere", kind: "book",    tcRate: 0 },
+    { name: "Horse Racing",          group: "Elsewhere", kind: "book",    tcRate: 0 },
+    { name: "Other",                 group: "Elsewhere", kind: "other",   tcRate: 0 }
+  ];
+
+  var BY_NAME = {};
+  GAMES.forEach(function (g) { BY_NAME[g.name] = g; });
+
+  function gameInfo(name) {
+    return BY_NAME[name] || { name: name, group: "Elsewhere", kind: "other", tcRate: 0 };
+  }
+
+  // Kept as a list of names because that is how a person reads it back.
+  var RATED_GAMES = GAMES.filter(function (g) { return g.kind === "table"; })
+                         .map(function (g) { return g.name; });
 
   // Dollars of coin-in per tier credit. Machine rates are exact; a table rate is
   // the pit's estimate of your average bet and hours, which is a different and
   // much softer number.
   var TC_RATES = [
-    { value: 5,  label: "$5 per TC",  note: "high limit video poker" },
-    { value: 10, label: "$10 per TC", note: "usual Caesars machine rate" },
+    { value: 5,  label: "$5 per TC",  note: "slots, high limit video poker" },
+    { value: 10, label: "$10 per TC", note: "usual Caesars video poker rate" },
     { value: 20, label: "$20 per TC", note: "some Caesars machines" },
     { value: 25, label: "$25 per TC", note: "Caesars table games — pit estimated" },
     { value: 0,  label: "Not known",  note: "coin-in cannot be derived" }
   ];
-
-  // Tier credits at a table are rated by a human watching your average bet, so
-  // coin-in derived from them is an estimate, not a measurement.
-  var RATED_GAMES = ["Blackjack", "Craps"];
 
   var db = null;
 
@@ -124,7 +170,15 @@ var Store = (function () {
     // session's starting TC will not match the last one's ending TC. It is used
     // here only as a proxy for how much money went through the machine.
     d.coinIn = (d.sessionTC !== null && num(s.tcRate) > 0) ? d.sessionTC * num(s.tcRate) : null;
-    d.coinInIsEstimate = RATED_GAMES.indexOf(s.game) >= 0;
+
+    var kind = gameInfo(s.game).kind;
+    d.coinInIsEstimate = kind === "table";
+    // Said in words rather than as a flag, because six months later "estimate"
+    // explains itself and a boolean called `rated` does not.
+    d.coinInBasis = d.coinIn === null ? null
+                  : kind === "machine" ? "measured"
+                  : kind === "table" ? "pit estimate"
+                  : "not from coin-in";
 
     // What you actually got back per dollar wagered, against the pay table's
     // theoretical return. Meaningless without real coin-in.
@@ -140,7 +194,20 @@ var Store = (function () {
 
     d.perHour = (d.hours && d.hours > 0) ? d.winLoss / d.hours : null;
     d.coinInPerHour = (d.coinIn && d.hours && d.hours > 0) ? d.coinIn / d.hours : null;
-    d.hands = (d.coinIn && num(s.perHand) > 0) ? d.coinIn / num(s.perHand) : null;
+
+    // Hands, from whichever end you actually know.
+    //
+    // A flat bet gives hands from coin-in. A progression does not — under
+    // Martingale or d'Alembert there is no bet size to divide by, and picking
+    // one would silently invent the answer. So a counted number of hands wins
+    // when there is one, and the average bet is then derived from it rather
+    // than assumed. Either way exactly one of the two is typed.
+    d.hands = (s.handsOverride !== null && s.handsOverride !== undefined)
+      ? num(s.handsOverride)
+      : ((d.coinIn && num(s.perHand) > 0) ? d.coinIn / num(s.perHand) : null);
+    d.handsCounted = s.handsOverride !== null && s.handsOverride !== undefined;
+    d.avgBet = (d.coinIn && d.hands > 0) ? d.coinIn / d.hands
+             : (num(s.perHand) > 0 ? num(s.perHand) : null);
     d.handsPerHour = (d.hands && d.hours && d.hours > 0) ? d.hands / d.hours : null;
     return d;
   }
@@ -167,6 +234,17 @@ var Store = (function () {
       // Losing more than the coin-in is arithmetically impossible on a machine.
       if (d.realizedReturn < 0) w.push("You lost more than the coin-in, which cannot happen. Check the tier credits or the $/TC.");
       if (d.realizedReturn > 3) w.push("Return over 300%. Possible on a jackpot, worth confirming otherwise.");
+    }
+    // Hands, average bet and coin-in are three views of one quantity. If all
+    // three were typed and they disagree, one of them is wrong, and it is
+    // cheaper to notice now than at the end of a year.
+    if (d.handsCounted && num(s.perHand) > 0 && d.coinIn) {
+      var implied = num(s.handsOverride) * num(s.perHand);
+      if (implied > 0 && Math.abs(implied - d.coinIn) / d.coinIn > 0.25) {
+        w.push(Math.round(num(s.handsOverride)) + " hands at " + num(s.perHand) +
+               " is about " + Math.round(implied) + ", but the tier credits work out to " +
+               Math.round(d.coinIn) + ".");
+      }
     }
     (s.handpays || []).forEach(function (h) {
       if (!(num(h && h.amount) > 0)) w.push("A handpay with no amount on it.");
@@ -196,6 +274,8 @@ var Store = (function () {
       sessionTCOverride: null,
       tcRate: p.tcRate !== undefined && p.tcRate !== null ? p.tcRate : 10,
       perHand: p.perHand !== undefined ? p.perHand : null,
+      handsOverride: null,
+      system: p.system || "",
       handpays: [],
       comment: "",
       synced: 0,
@@ -299,23 +379,68 @@ var Store = (function () {
     });
   }
 
-  /** Values seen before, most recent first — what the pickers offer. */
-  function seen(rows, field) {
-    var out = [], i;
+  /**
+   * Values seen before, most recent first — what the quick pickers offer.
+   *
+   * `where` narrows without hiding: rows matching it come first, then the
+   * rest. Asked for a machine, that puts the ones from this venue at the front
+   * without pretending you have never played anywhere else.
+   */
+  function seen(rows, field, where) {
+    var near = [], far = [], i, k, matches;
     for (i = rows.length - 1; i >= 0; i--) {
       var v = rows[i][field];
-      if (v && out.indexOf(v) < 0) out.push(v);
+      if (!v) continue;
+      matches = true;
+      for (k in (where || {})) if (where[k] && rows[i][k] !== where[k]) matches = false;
+      var into = matches ? near : far;
+      if (near.indexOf(v) < 0 && far.indexOf(v) < 0) into.push(v);
     }
-    return out;
+    return near.concat(far);
+  }
+
+  /** The most recent value of `field` on a row where `match` holds. */
+  function lastWith(rows, match, field) {
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var ok = true, k;
+      for (k in match) if (rows[i][k] !== match[k]) ok = false;
+      if (ok && rows[i][field]) return rows[i][field];
+    }
+    return null;
+  }
+
+  /**
+   * The session a new one should inherit from: the last finished one on or
+   * before the given date.
+   *
+   * Not simply the newest row. A session being reconstructed for last Tuesday
+   * should carry Tuesday's ending tier credits forward, not Saturday's — and
+   * carrying the wrong ones is worse than carrying none, because the number
+   * looks entered rather than guessed.
+   */
+  function previousFor(rows, date, exceptId) {
+    var best = null;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r.id === exceptId) continue;
+      if (r.start && !r.end) continue;
+      if (date && r.date && r.date > date) continue;
+      if (!best || (r.date || "") > (best.date || "") ||
+          ((r.date || "") === (best.date || "") && r.updated > best.updated)) best = r;
+    }
+    return best;
   }
 
   return {
     today: today,
+    gameInfo: gameInfo,
     deletions: deletions,
     applyDeletions: applyDeletions,
     W2G_THRESHOLD: W2G_THRESHOLD,
     running: running,
     seen: seen,
+    lastWith: lastWith,
+    previousFor: previousFor,
     GAMES: GAMES,
     TC_RATES: TC_RATES,
     RATED_GAMES: RATED_GAMES,

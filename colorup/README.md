@@ -74,6 +74,12 @@ of a session:
 - **Everything is editable, always.** The timer is a convenience, never a
   constraint. Forgetting to color up until the next morning is the expected
   case: the app asks, and lets you set the time you actually left.
+- **The form fills itself in where it honestly can.** A new session inherits
+  from the last one that finished *before it* — so a session backdated to
+  Tuesday carries Tuesday's ending tier credits, not Saturday's. Venues,
+  cities, machines and tables you have used before are one tap away, narrowed
+  by what is already on the form: asked for a machine it offers the ones from
+  the venue selected, without hiding the rest.
 
 ## Some arithmetic worth stating
 
@@ -85,9 +91,24 @@ winnings.
 times dollars-per-TC gives roughly what went through the machine, which is the
 only figure that makes two sessions comparable. TC never reconciles between
 sessions — bonuses, table games and promotions all post late — so no total is
-ever shown. Table games are rated by a human watching your average bet, and
-their coin-in says "pit estimate" in the sheet rather than pretending to be a
-measurement.
+ever shown.
+
+Where the credits came from decides what that figure is worth, so each game
+says which kind of thing it is. A **machine** counts every dollar through it,
+and its coin-in is a measurement. A **table** is rated by a person estimating
+your average bet and your hours, so the same arithmetic gives an estimate, and
+the sheet says "pit estimate" rather than pretending otherwise. A **poker room
+or bingo hall** awards credits for time and not for money wagered at all, so
+no rate is suggested and no coin-in is derived. Selecting a game suggests a
+$/TC rate to save typing — a suggestion, never a fact, and it never overwrites
+one you have set yourself.
+
+**A bet that varies is normal.** Under a progression there is no bet size to
+divide coin-in by, so counting the hands is the way in: enter hands and the
+average bet is worked out from them, or enter an average bet and the hands are
+worked out instead. Exactly one of the two is ever typed, and the sheet records
+which. If hands, average bet and coin-in are all present and cannot all be
+true, the app says so.
 
 **Winnings and losses do not net.** Winning sessions are income and losing
 sessions are an itemised deduction, so the two gross figures are reported

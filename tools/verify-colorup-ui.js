@@ -222,6 +222,53 @@ function localStamp(y, mo, d, h, mi) {
     is($("#now-card .big-btn").textContent, "Color up", "and the one thing to do is now to color up");
   }
 
+  console.log("\nThe form fills itself in where it can");
+  {
+    click($("#log-add"));
+    const games = $('#sheet-body [data-key="game"]');
+    yes(games.querySelectorAll("optgroup").length >= 3,
+        "twenty-odd games are grouped, not one long list");
+    yes(Array.from(games.options).some((o) => o.value === "Baccarat") &&
+        Array.from(games.options).some((o) => o.value === "Pai Gow Poker"),
+        "with the games nobody plays often still there when they do");
+
+    type("game", "Blackjack");
+    is($('#sheet-body [data-key="tcRate"]').value, "25",
+       "picking a table game suggests the table rate");
+    type("game", "Slots");
+    is($('#sheet-body [data-key="tcRate"]').value, "5", "and a machine suggests the machine rate");
+
+    // A suggestion that overwrites your own answer is worse than no suggestion.
+    type("tcRate", "20");
+    type("game", "Video Poker");
+    is($('#sheet-body [data-key="tcRate"]').value, "20",
+       "but once you have set it yourself, changing the game leaves it alone");
+
+    type("venue", "Silver Legacy");
+    is($('#sheet-body [data-key="location"]').value, "Reno, NV",
+       "a venue you have been to before knows what city it is in");
+
+    const shownFor = () => Array.from($('#sheet-body [data-key="detail"]')
+      .parentNode.querySelectorAll(".pick")).map((b) => b.textContent);
+
+    type("game", "Blackjack");
+    yes(shownFor().indexOf("$25 table, 6 deck S17") < 0,
+        "what the field already says is not offered back as a suggestion", shownFor().join(" | "));
+
+    type("detail", "");
+    is(shownFor()[0], "$25 table, 6 deck S17",
+       "and cleared, the table you played at this venue is the first thing offered");
+
+    type("game", "Video Poker");
+    const other = shownFor();
+    yes(other.indexOf("$25 table, 6 deck S17") >= 0 && other.indexOf("9/5 JoB $5 high limit") >= 0,
+        "a game you have not played there yet still offers everything, rather than nothing",
+        other.join(" | "));
+
+    click(footBtn("Cancel"));
+    await settle();
+  }
+
   console.log("\nColoring up");
   {
     click($("#now-card .big-btn"));
@@ -231,6 +278,7 @@ function localStamp(y, mo, d, h, mi) {
     type("end", localStamp(2026, 8, 30, 13, 30));
     type("cashOut", "2650");
     type("endTC", "4600");
+    type("handsOverride", "");
     click($('#sheet-body [data-key="handpays"] .btn'));      // + Add a handpay
     const amount = $('#sheet-body [data-hp="amount"]');
     const withheld = $('#sheet-body [data-hp="withheld"]');
@@ -259,6 +307,29 @@ function localStamp(y, mo, d, h, mi) {
     is(d.handpayCount, 1, "one W-2G");
     near(d.handpayTotal, 4000, "for $4,000");
     is(w.Store.running(rows), null, "and nothing is left running");
+  }
+
+  console.log("\nA bet that varied");
+  {
+    // The session above was flat, so hands came from coin-in. Counting them
+    // instead is what a progression needs, and the average bet then follows.
+    const vp = (await w.Store.all()).find((s) => s.venue === "Eldorado");
+    click($$("#log-list .session")[0]);
+    type("handsOverride", "1200");
+    type("system", "d'Alembert");
+    const shown = $("#sheet-body .derived").textContent.replace(/\s+/g, "");
+    yes(/1,200counted/.test(shown), "counted hands are used as counted", shown);
+    yes(/\$6\.00workedout/.test(shown),
+        "and the average bet is worked out from them rather than assumed", shown);
+    click(footBtn("Save"));
+    await settle();
+
+    const saved = (await w.Store.all()).find((s) => s.id === vp.id);
+    const d = w.Store.derive(saved);
+    is(d.hands, 1200, "which is what gets stored");
+    is(d.handsCounted, true, "flagged as counted, so the sheet does not read as a flat bet");
+    is(saved.system, "d'Alembert", "with the system recorded beside it");
+    is(w.Backup.row(saved).handsFrom, "counted", "and the column says which number was typed");
   }
 
   console.log("\nThe forgotten color-up asks rather than assuming");
