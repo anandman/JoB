@@ -399,6 +399,34 @@ function localStamp(y, mo, d, h, mi) {
         "connecting without an app key does not pretend to have started");
   }
 
+  console.log("\nA half-finished connection survives leaving the app");
+  {
+    // Fetching the code means going to dropbox.com, and a home screen app that
+    // is left may be reloaded before you get back. Coming back to a Connect
+    // button with a code in hand and nowhere to put it is how this is lost.
+    $('#dropbox-box input').value = "app-key-123";
+    fire($('#dropbox-box input'), "input");
+    click($$("#dropbox-box .btn").find((b) => b.textContent === "Connect"));
+    await settle();
+    yes($("#dropbox-box .code-input"), "connecting offers somewhere to paste the code");
+
+    // The app is reloaded from scratch, exactly as iOS may do behind you.
+    w.App.show("now");
+    await w.App.refresh();
+    await settle();
+    const banner = $$("#banners .banner").find((b) => /Finish connecting/.test(b.textContent));
+    yes(banner, "and a banner says so from wherever you land");
+
+    click(banner);
+    await settle();
+    yes($("#dropbox-box .code-input"),
+        "which leads straight back to the box, still waiting");
+
+    click($$("#dropbox-box .btn").find((b) => b.textContent === "Start over"));
+    await settle();
+    yes(!$("#dropbox-box .code-input"), "and starting over puts it away");
+  }
+
   console.log("\nStats");
   {
     w.App.show("stats");

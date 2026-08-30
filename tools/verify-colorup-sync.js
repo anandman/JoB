@@ -137,16 +137,29 @@ const wipe = () => Store.replaceAll([]).then(() => Store.meta("deleted", {}));
     yes(url.indexOf("redirect_uri") < 0,
         "with no redirect URI, which is what makes Dropbox show the code instead");
 
+    yes(await Dropbox.pending(),
+        "starting leaves a record that it started, so the step can be resumed");
+    const again = await Dropbox.resumeUrl();
+    is(again, url, "and resuming rebuilds the same URL rather than storing it twice");
+
     let err = null;
     try { await Dropbox.finish("WRONG"); } catch (e) { err = e.message; }
     yes(/already used or has expired/.test(err || ""),
         "a bad code says what to do about it", err);
     is(await Dropbox.connected(), false, "and leaves the app disconnected");
+    yes(await Dropbox.pending(),
+        "with the step still open, because a mistyped code is not a reason to start again");
 
     await Dropbox.finish("THE-CODE");
     is(await Dropbox.connected(), true, "the right one connects");
     is((await Store.meta("dropboxVerifier")) || null, null,
        "and the verifier is cleared, because it is single use");
+    is(await Dropbox.pending(), null, "so nothing is left half-finished");
+
+    await Dropbox.beginUrl();
+    is(await Dropbox.pending(), null,
+       "and once connected, a stray verifier is not mistaken for an unfinished connection");
+    await Dropbox.cancel();
   }
 
   console.log("\nThe first sync of an empty account");

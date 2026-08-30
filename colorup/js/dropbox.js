@@ -80,25 +80,52 @@ var Dropbox = (function () {
 
   /* ===== the connect flow ===== */
 
+  function urlFor(key, v) {
+    return challenge(v).then(function (ch) {
+      return AUTH_URL +
+        "?client_id=" + encodeURIComponent(key) +
+        "&response_type=code" +
+        "&code_challenge=" + ch +
+        "&code_challenge_method=S256" +
+        // Without this Dropbox issues a short-lived token only, and the app
+        // would ask to be reconnected every four hours.
+        "&token_access_type=offline";
+    });
+  }
+
   /** Step one: a URL to open, with the verifier stashed for step two. */
   function beginUrl() {
     return appKey().then(function (key) {
       if (!key) throw new Error("No Dropbox app key yet.");
       var v = verifier();
-      return Store.meta("dropboxVerifier", v)
-        .then(function () { return challenge(v); })
-        .then(function (ch) {
-          return AUTH_URL +
-            "?client_id=" + encodeURIComponent(key) +
-            "&response_type=code" +
-            "&code_challenge=" + ch +
-            "&code_challenge_method=S256" +
-            // Without this Dropbox issues a short-lived token only, and the
-            // app would ask to be reconnected every four hours.
-            "&token_access_type=offline";
-        });
+      return Store.meta("dropboxVerifier", v).then(function () { return urlFor(key, v); });
     });
   }
+
+  /**
+   * A connection that was started and not finished.
+   *
+   * Fetching the code means leaving the app, and a home screen app that is
+   * left may well be reloaded before you get back — so the half-finished
+   * state cannot live in a variable or in the DOM. The stashed verifier is
+   * the record that step one happened, which makes it the thing to ask.
+   */
+  function pending() {
+    return Promise.all([auth(), Store.meta("dropboxVerifier")]).then(function (r) {
+      var live = r[0] && r[0].refresh;
+      return (!live && r[1]) ? r[1] : null;
+    });
+  }
+
+  /** The same authorize URL again, rebuilt rather than stored twice. */
+  function resumeUrl() {
+    return Promise.all([appKey(), pending()]).then(function (r) {
+      if (!r[0] || !r[1]) throw new Error("Nothing to resume.");
+      return urlFor(r[0], r[1]);
+    });
+  }
+
+  function cancel() { return Store.meta("dropboxVerifier", null); }
 
   /** Step two: trade the pasted code for a durable refresh token. */
   function finish(code) {
@@ -282,6 +309,9 @@ var Dropbox = (function () {
     setAppKey: setAppKey,
     connected: connected,
     beginUrl: beginUrl,
+    pending: pending,
+    resumeUrl: resumeUrl,
+    cancel: cancel,
     finish: finish,
     forget: forget,
     sync: sync,

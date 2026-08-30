@@ -290,3 +290,7 @@ a.btn { text-decoration: none; display: inline-block; text-align: center; }
 .steps li { margin-bottom: 0.3rem; }
 
 details summary { font-size: 0.8rem; cursor: pointer; padding: 0.3rem 0; }
+
+/* The pasted authorisation code is long and unmemorable; let it wrap rather
+   than scroll a single line the user cannot read back. */
+.code-input { font-family: var(--font-mono); font-size: 16px !important; }

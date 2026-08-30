@@ -20,7 +20,8 @@
 var App = (function () {
   "use strict";
 
-  var state = { sessions: [], filters: {}, tab: "now", tick: null, dropbox: false };
+  var state = { sessions: [], filters: {}, tab: "now", tick: null,
+                dropbox: false, dropboxPending: false };
 
   /* ===== small helpers ===== */
 
@@ -541,6 +542,13 @@ var App = (function () {
       }
     }
 
+    if (state.dropboxPending) {
+      box.appendChild(el("button", { class: "banner info", onclick: function () { show("data"); } }, [
+        el("strong", { text: "Finish connecting to Dropbox." }),
+        el("span", { text: "Paste the code Dropbox gave you — tap here for the box to put it in." })
+      ]));
+    }
+
     var un = state.sessions.filter(function (s) { return !s.synced && !(s.start && !s.end); });
     if (un.length) {
       var oldest = un.reduce(function (a, b) { return (a.updated < b.updated) ? a : b; });
@@ -879,10 +887,15 @@ var App = (function () {
     if (!box) return;
     clear(box);
 
-    Promise.all([Dropbox.appKey(), Dropbox.connected(), Store.meta("lastSync")])
+    Promise.all([Dropbox.appKey(), Dropbox.connected(), Store.meta("lastSync"), Dropbox.pending()])
       .then(function (r) {
-        var key = r[0], live = r[1], last = r[2];
+        var key = r[0], live = r[1], last = r[2], half = r[3];
         clear(box);
+
+        // Fetching the code means leaving the app, and the app may be reloaded
+        // before you get back. Coming back to a Connect button — with a code
+        // in hand and nowhere to put it — is the obvious way to lose someone.
+        if (half) return Dropbox.resumeUrl().then(function (url) { showCodeStep(box, url, true); });
 
         if (live) {
           box.appendChild(el("p", { class: "note",
@@ -928,7 +941,7 @@ var App = (function () {
           el("button", { class: "btn primary wide", text: "Connect", onclick: function () {
             Dropbox.setAppKey(keyField.value)
               .then(Dropbox.beginUrl)
-              .then(function (url) { showCodeStep(box, url); })
+              .then(function (url) { showCodeStep(box, url, false); })
               .catch(function (e) { toast(e.message, true); });
           } })
         ]));
@@ -942,31 +955,38 @@ var App = (function () {
    * reliably returned to the same storage, and losing the handshake halfway is
    * worse than one paste.
    */
-  function showCodeStep(box, url) {
+  function showCodeStep(box, url, opened) {
     clear(box);
     box.appendChild(el("p", { class: "note",
-      text: "Dropbox will show you a code. Copy it, come back, and paste it here." }));
-    box.appendChild(el("div", { class: "row-actions" }, [
-      el("a", { class: "btn primary wide", href: url, target: "_blank", rel: "noopener",
-                text: "Open Dropbox" })
-    ]));
+      text: "Dropbox shows you a code. Copy it, come back here, and paste it below. " +
+            "This step waits for you — leaving the app and returning is fine." }));
 
-    var code = el("input", { type: "text", placeholder: "Paste the code",
+    var code = el("input", { class: "code-input", type: "text", placeholder: "Paste the code here",
                              autocapitalize: "off", autocorrect: "off", spellcheck: "false" });
-    box.appendChild(el("div", { class: "field" }, [
+    box.appendChild(el("div", { class: "field hero" }, [
       el("label", { text: "Authorisation code" }), code
     ]));
     box.appendChild(el("div", { class: "row-actions" }, [
       el("button", { class: "btn primary wide", text: "Finish connecting", onclick: function () {
+        if (!code.value.trim()) return toast("Paste the code from Dropbox first.", true);
         Dropbox.finish(code.value)
           .then(function () { toast("Connected. Syncing…"); renderData(); return maybeSync(true); })
           .catch(function (e) { toast(e.message, true); });
-      } }),
-      el("button", { class: "btn wide", text: "Cancel", onclick: renderData })
+      } })
     ]));
-    // Opening it for them saves a tap; the link stays because a home screen
-    // app may refuse to open a window at all.
-    try { window.open(url, "_blank", "noopener"); } catch (e) { /* the link is there */ }
+    box.appendChild(el("div", { class: "row-actions" }, [
+      el("a", { class: "btn wide", href: url, target: "_blank", rel: "noopener",
+                text: opened ? "Open Dropbox again" : "Open Dropbox" }),
+      el("button", { class: "btn wide", text: "Start over", onclick: function () {
+        Dropbox.cancel().then(renderData);
+      } })
+    ]));
+
+    // Opening it saves a tap the first time. On a return it must not, or
+    // coming back to paste would bounce straight out again.
+    if (!opened) {
+      try { window.open(url, "_blank", "noopener"); } catch (e) { /* the link is there */ }
+    }
   }
 
   function exportJson() {
@@ -1036,10 +1056,11 @@ var App = (function () {
   }
 
   function refresh() {
-    return Promise.all([Store.all(), Dropbox.connected()]).then(function (r) {
+    return Promise.all([Store.all(), Dropbox.connected(), Dropbox.pending()]).then(function (r) {
       var rows = r[0];
       state.sessions = rows;
       state.dropbox = r[1];
+      state.dropboxPending = !!r[2];
       fillList("venues", Store.seen(rows, "venue"));
       fillList("details", Store.seen(rows, "detail"));
       fillList("locations", Store.seen(rows, "location"));
