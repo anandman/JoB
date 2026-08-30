@@ -115,12 +115,15 @@ var Backup = (function () {
 
   var FORMAT = "colorup/1";
 
-  function json(sessions, now) {
+  function json(sessions, deleted, now) {
     return JSON.stringify({
       format: FORMAT,
       exported: (now || new Date()).toISOString(),
       count: sessions.length,
-      sessions: sessions
+      sessions: sessions,
+      // Ids of sessions that were deleted, and when. Without these a merge
+      // would restore anything another copy still holds.
+      deleted: deleted || {}
     }, null, 2);
   }
 
@@ -151,6 +154,7 @@ var Backup = (function () {
 
     return {
       sessions: kept,
+      deleted: (data && data.deleted) || {},
       note: kept.length === rows.length ? null
           : (rows.length - kept.length) + " row(s) had no id and were skipped."
     };
@@ -161,7 +165,7 @@ var Backup = (function () {
    * should union, and the newer edit of a shared id should win — replacing
    * outright would silently destroy whichever side imported second.
    */
-  function merge(existing, incoming) {
+  function merge(existing, incoming, deleted) {
     var by = {}, added = 0, updated = 0, i;
     for (i = 0; i < existing.length; i++) by[existing[i].id] = existing[i];
     for (i = 0; i < incoming.length; i++) {
@@ -170,7 +174,18 @@ var Backup = (function () {
       else if ((inc.updated || 0) > (have.updated || 0)) { by[inc.id] = inc; updated++; }
     }
     var out = Object.keys(by).map(function (k) { return by[k]; });
-    return { sessions: out, added: added, updated: updated };
+    // A tombstone newer than the row it names wins; an older one loses, so a
+    // session deleted and then deliberately re-entered stays.
+    var kept = Store.applyDeletions(out, deleted);
+    return { sessions: kept, added: added, updated: updated, removed: out.length - kept.length };
+  }
+
+  /** The later timestamp wins, so a tombstone can never be forgotten. */
+  function mergeDeletions(a, b) {
+    var out = {}, k;
+    for (k in (a || {})) out[k] = a[k];
+    for (k in (b || {})) if (!out[k] || b[k] > out[k]) out[k] = b[k];
+    return out;
   }
 
   function filename(sessions, ext) {
@@ -190,6 +205,7 @@ var Backup = (function () {
     json: json,
     parse: parse,
     merge: merge,
+    mergeDeletions: mergeDeletions,
     filename: filename,
     FORMAT: FORMAT
   };

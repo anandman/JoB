@@ -20,7 +20,7 @@
 var App = (function () {
   "use strict";
 
-  var state = { sessions: [], filters: {}, tab: "now", tick: null };
+  var state = { sessions: [], filters: {}, tab: "now", tick: null, dropbox: false };
 
   /* ===== small helpers ===== */
 
@@ -390,7 +390,7 @@ var App = (function () {
       buttons: [
         { label: "Cancel", run: closeSheet },
         { label: "Start", class: "primary", run: function (next) {
-            Store.put(next).then(function () { closeSheet(); toast("Session started."); refresh(); });
+            Store.put(next).then(function () { closeSheet(); toast("Session started."); saved(); });
           } }
       ]
     });
@@ -408,7 +408,7 @@ var App = (function () {
       buttons: [
         { label: "Not yet", run: closeSheet },
         { label: "Save", class: "gold", run: function (next) {
-            Store.put(next).then(function () { closeSheet(); toast("Session closed."); refresh(); });
+            Store.put(next).then(function () { closeSheet(); toast("Session closed."); saved(); });
           } }
       ]
     });
@@ -424,11 +424,11 @@ var App = (function () {
       buttons: [
         { label: "Delete", class: "danger", run: function () {
             if (!confirm("Delete this session? This cannot be undone.")) return;
-            Store.remove(s.id).then(function () { closeSheet(); toast("Deleted."); refresh(); });
+            Store.remove(s.id).then(function () { closeSheet(); toast("Deleted."); saved(); });
           } },
         { label: "Cancel", run: closeSheet },
         { label: "Save", class: "primary", run: function (next) {
-            Store.put(next).then(function () { closeSheet(); toast("Saved."); refresh(); });
+            Store.put(next).then(function () { closeSheet(); toast("Saved."); saved(); });
           } }
       ]
     });
@@ -526,6 +526,7 @@ var App = (function () {
   function renderBanners() {
     var box = clear($("#banners"));
     var open = Store.running(state.sessions);
+    var hasDropbox = state.dropbox;
 
     // The forgotten color-up is the expected case, not the exception. It asks;
     // it never closes the session behind your back.
@@ -544,14 +545,20 @@ var App = (function () {
     if (un.length) {
       var oldest = un.reduce(function (a, b) { return (a.updated < b.updated) ? a : b; });
       var days = (Date.now() - oldest.updated) / 86400000;
+      var offline = navigator.onLine === false;
       box.appendChild(el("button", {
         class: "banner " + (days > 1 ? "loud" : "warn"),
-        onclick: function () { show("data"); }
+        onclick: function () { if (hasDropbox) maybeSync(true); else show("data"); }
       }, [
-        el("strong", { text: un.length + (un.length === 1 ? " session" : " sessions") + " not backed up." }),
-        el("span", { text: days > 1
-          ? "The oldest has been on this phone alone for " + Math.floor(days) + " days. Export a backup."
-          : "Export a backup when you have a signal." })
+        el("strong", { text: syncing ? "Syncing…"
+          : un.length + (un.length === 1 ? " session" : " sessions") + " not saved to Dropbox." }),
+        el("span", { text: !hasDropbox
+          ? "Nothing is connected, so this phone is the only copy. Tap to set that up."
+          : offline
+            ? "No signal. It will go up on its own once there is one — tap to try anyway."
+            : days > 1
+              ? "The oldest has been on this phone alone for " + Math.floor(days) + " days. Tap to sync."
+              : "Tap to sync." })
       ]));
     }
 
@@ -756,6 +763,10 @@ var App = (function () {
            un.length ? "down" : "up")
     ]));
 
+    box.appendChild(el("h3", { text: "Dropbox" }));
+    box.appendChild(el("div", { id: "dropbox-box" }));
+    renderDropbox();
+
     box.appendChild(el("h3", { text: "Take a copy" }));
     box.appendChild(el("p", { class: "note",
       text: "The JSON file is the backup: it restores exactly, and exporting it marks these sessions as safe. The spreadsheet is the readable version — it is generated from the same data and is not read back in." }));
@@ -791,6 +802,63 @@ var App = (function () {
       text: "Everything is stored in this browser, on this device, and is never sent anywhere. Adding the app to your home screen is what keeps the data from being cleared out after a week of not opening it." }));
   }
 
+  /* ===== syncing ===== */
+
+  var syncing = false;
+
+  /**
+   * Every save ends here. Paint first, then sync — the record is already in
+   * IndexedDB, so the interface must never wait on a network to show it.
+   */
+  function saved() {
+    return refresh().then(function () { return maybeSync(); });
+  }
+
+  /**
+   * Sync if there is anything to sync with. Silent by default: a sync that
+   * fails offline is the expected case, and the banner already says so louder
+   * and for longer than a toast could.
+   */
+  function maybeSync(loud) {
+    if (syncing) return Promise.resolve();
+    return Dropbox.connected().then(function (ok) {
+      if (!ok) { if (loud) toast("Not connected to Dropbox.", true); return; }
+      if (navigator.onLine === false) {
+        if (loud) toast("No signal. It will sync when there is one.", true);
+        return;
+      }
+      syncing = true;
+      renderBanners();
+      return Dropbox.sync().then(function (r) {
+        if (loud || r.pulled || r.removed) toast(summarise(r));
+      }).catch(function (e) {
+        if (loud) toast(e.message, true);
+      }).then(function () {
+        syncing = false;
+        return refresh();
+      });
+    });
+  }
+
+  function summarise(r) {
+    var parts = [];
+    if (r.pulled) parts.push(r.pulled + " new");
+    if (r.updated) parts.push(r.updated + " updated");
+    if (r.removed) parts.push(r.removed + " removed");
+    return parts.length ? "Synced — " + parts.join(", ") + "." : "Synced.";
+  }
+
+  function ago(ts) {
+    if (!ts) return "never";
+    var m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return m + " minute" + (m === 1 ? "" : "s") + " ago";
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + " hour" + (h === 1 ? "" : "s") + " ago";
+    var d = Math.floor(h / 24);
+    return d + " day" + (d === 1 ? "" : "s") + " ago";
+  }
+
   // Older Safari passes the answer to a callback and returns nothing, so the
   // promise form has to be treated as the optional one.
   function askForBadge() {
@@ -801,12 +869,114 @@ var App = (function () {
     } catch (e) { done(); }
   }
 
+  /**
+   * The Dropbox panel, which is three screens in one: no app key yet, a key
+   * but no connection, or connected. Rendered separately from the rest of the
+   * tab so a step can redraw without losing what is typed elsewhere.
+   */
+  function renderDropbox() {
+    var box = document.getElementById("dropbox-box");
+    if (!box) return;
+    clear(box);
+
+    Promise.all([Dropbox.appKey(), Dropbox.connected(), Store.meta("lastSync")])
+      .then(function (r) {
+        var key = r[0], live = r[1], last = r[2];
+        clear(box);
+
+        if (live) {
+          box.appendChild(el("p", { class: "note",
+            text: "Connected. The record is written to Apps/Color Up/ColorUp.json every " +
+                  "time you save, with ColorUp.xlsx beside it. Last synced " + ago(last) + "." }));
+          box.appendChild(el("div", { class: "row-actions" }, [
+            el("button", { class: "btn primary wide", text: syncing ? "Syncing…" : "Sync now",
+                           onclick: function () { maybeSync(true); } }),
+            el("button", { class: "btn wide", text: "Disconnect", onclick: function () {
+              if (!confirm("Disconnect from Dropbox? The file stays where it is.")) return;
+              Dropbox.forget().then(function () { toast("Disconnected."); renderData(); });
+            } })
+          ]));
+          return;
+        }
+
+        box.appendChild(el("p", { class: "note",
+          text: "Optional, and the only thing that puts the record anywhere but this phone. " +
+                "Scoped to its own folder, so the app cannot see the rest of your Dropbox." }));
+
+        var how = el("details");
+        how.appendChild(el("summary", { class: "muted", text: "Setting it up, once" }));
+        var ol = el("ol", { class: "steps" });
+        [
+          "Go to dropbox.com/developers/apps and choose Create app.",
+          "Pick Scoped access, then App folder, and name it Color Up.",
+          "On the Permissions tab tick files.content.read and files.content.write, then Submit.",
+          "On Settings, copy the App key and paste it below."
+        ].forEach(function (t) { ol.appendChild(el("li", { text: t })); });
+        how.appendChild(ol);
+        how.appendChild(el("p", { class: "note",
+          text: "The app key is not a secret — it identifies the app, not you, and this one is " +
+                "public anyway. Nothing that can reach your files is ever put in the address bar." }));
+        box.appendChild(how);
+
+        var keyField = el("input", { type: "text", placeholder: "App key", value: key || "",
+                                     autocapitalize: "off", autocorrect: "off", spellcheck: "false" });
+        box.appendChild(el("div", { class: "field" }, [
+          el("label", { text: "Dropbox app key" }), keyField
+        ]));
+
+        box.appendChild(el("div", { class: "row-actions" }, [
+          el("button", { class: "btn primary wide", text: "Connect", onclick: function () {
+            Dropbox.setAppKey(keyField.value)
+              .then(Dropbox.beginUrl)
+              .then(function (url) { showCodeStep(box, url); })
+              .catch(function (e) { toast(e.message, true); });
+          } })
+        ]));
+      })
+      .catch(function (e) { box.appendChild(el("p", { class: "note warn", text: e.message })); });
+  }
+
+  /**
+   * Dropbox shows the code on its own page rather than redirecting back. That
+   * is deliberate: a home screen app that navigates out to another site is not
+   * reliably returned to the same storage, and losing the handshake halfway is
+   * worse than one paste.
+   */
+  function showCodeStep(box, url) {
+    clear(box);
+    box.appendChild(el("p", { class: "note",
+      text: "Dropbox will show you a code. Copy it, come back, and paste it here." }));
+    box.appendChild(el("div", { class: "row-actions" }, [
+      el("a", { class: "btn primary wide", href: url, target: "_blank", rel: "noopener",
+                text: "Open Dropbox" })
+    ]));
+
+    var code = el("input", { type: "text", placeholder: "Paste the code",
+                             autocapitalize: "off", autocorrect: "off", spellcheck: "false" });
+    box.appendChild(el("div", { class: "field" }, [
+      el("label", { text: "Authorisation code" }), code
+    ]));
+    box.appendChild(el("div", { class: "row-actions" }, [
+      el("button", { class: "btn primary wide", text: "Finish connecting", onclick: function () {
+        Dropbox.finish(code.value)
+          .then(function () { toast("Connected. Syncing…"); renderData(); return maybeSync(true); })
+          .catch(function (e) { toast(e.message, true); });
+      } }),
+      el("button", { class: "btn wide", text: "Cancel", onclick: renderData })
+    ]));
+    // Opening it for them saves a tap; the link stays because a home screen
+    // app may refuse to open a window at all.
+    try { window.open(url, "_blank", "noopener"); } catch (e) { /* the link is there */ }
+  }
+
   function exportJson() {
-    var text = Backup.json(state.sessions);
-    download(Backup.filename(state.sessions, "json"), text, "application/json");
-    Store.markSynced(state.sessions.map(function (s) { return s.id; }))
-      .then(function () { return Store.meta("lastBackup", Date.now()); })
-      .then(function () { toast("Backed up."); refresh(); });
+    Store.deletions().then(function (deleted) {
+      var text = Backup.json(state.sessions, deleted);
+      download(Backup.filename(state.sessions, "json"), text, "application/json");
+      return Store.markSynced(state.sessions.map(function (s) { return s.id; }))
+        .then(function () { return Store.meta("lastBackup", Date.now()); })
+        .then(function () { toast("Backed up."); refresh(); });
+    });
   }
 
   function exportXlsx() {
@@ -823,14 +993,22 @@ var App = (function () {
       try { parsed = Backup.parse(String(reader.result)); }
       catch (e) { return toast(e.message, true); }
 
-      var merged = Backup.merge(state.sessions, parsed.sessions);
-      if (!merged.added && !merged.updated) return toast("Nothing new in that file.");
-      if (!confirm("Add " + merged.added + " session(s) and update " + merged.updated + "?")) return;
+      Store.deletions().then(function (mine) {
+        var deleted = Backup.mergeDeletions(mine, parsed.deleted);
+        var merged = Backup.merge(state.sessions, parsed.sessions, deleted);
+        if (!merged.added && !merged.updated && !merged.removed) {
+          return toast("Nothing new in that file.");
+        }
+        if (!confirm("Add " + merged.added + ", update " + merged.updated +
+                     ", remove " + merged.removed + "?")) return;
 
-      Store.replaceAll(merged.sessions).then(function () {
-        toast("Imported " + merged.added + " new, updated " + merged.updated + "." +
-              (parsed.note ? " " + parsed.note : ""));
-        refresh();
+        return Store.replaceAll(merged.sessions)
+          .then(function () { return Store.meta("deleted", deleted); })
+          .then(function () {
+            toast("Imported " + merged.added + " new, updated " + merged.updated + "." +
+                  (parsed.note ? " " + parsed.note : ""));
+            return saved();
+          });
       });
     };
     reader.onerror = function () { toast("Could not read that file.", true); };
@@ -858,8 +1036,10 @@ var App = (function () {
   }
 
   function refresh() {
-    return Store.all().then(function (rows) {
+    return Promise.all([Store.all(), Dropbox.connected()]).then(function (r) {
+      var rows = r[0];
       state.sessions = rows;
+      state.dropbox = r[1];
       fillList("venues", Store.seen(rows, "venue"));
       fillList("details", Store.seen(rows, "detail"));
       fillList("locations", Store.seen(rows, "location"));
@@ -888,14 +1068,18 @@ var App = (function () {
 
     // Coming back after hours in a pocket: the clock and the banners are stale.
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) refresh();
+      if (!document.hidden) refresh().then(function () { return maybeSync(); });
     });
+
+    // The whole reason the unsynced state is loud rather than fatal: the app
+    // is used where there is no signal, and catches up by itself later.
+    window.addEventListener("online", function () { maybeSync(); });
 
     refresh().catch(function (e) {
       document.getElementById("now-card").appendChild(
         el("p", { class: "empty", text: "Could not open the local database: " + e.message })
       );
-    });
+    }).then(function () { return maybeSync(); });
   }
 
   return { init: init, refresh: refresh, show: show };

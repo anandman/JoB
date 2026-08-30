@@ -58,12 +58,20 @@ var Store = (function () {
     });
   }
 
+  function isRequest(x) {
+    return !!x && typeof x === "object" && "readyState" in x && "onsuccess" in x;
+  }
+
   function tx(names, mode, fn) {
     return open().then(function (d) {
       return new Promise(function (resolve, reject) {
         var t = d.transaction(names, mode);
         var out = fn(t);
-        t.oncomplete = function () { resolve(out && out.result !== undefined ? out.result : out); };
+        // Resolve with the request's result, whatever it is. Testing
+        // `result !== undefined` instead handed the caller the IDBRequest
+        // itself whenever a key was absent — a truthy object that then passed
+        // every `if (x)` guard downstream and got stored back verbatim.
+        t.oncomplete = function () { resolve(isRequest(out) ? out.result : out); };
         t.onerror = function () { reject(t.error); };
         t.onabort = function () { reject(t.error); };
       });
@@ -225,9 +233,35 @@ var Store = (function () {
     }).then(function () { return s; });
   }
 
+  /**
+   * Deleting records a tombstone as well as removing the row.
+   *
+   * Sync merges rather than replaces, so without one a session deleted here
+   * comes straight back from any copy that still has it. The tombstone is the
+   * only record that the deletion ever happened, so it is kept forever — they
+   * are a few bytes each, and losing one silently undoes a deletion.
+   */
   function remove(sid) {
-    return tx(["sessions"], "readwrite", function (t) {
-      t.objectStore("sessions").delete(sid);
+    return deletions().then(function (d) {
+      d[sid] = Date.now();
+      return meta("deleted", d);
+    }).then(function () {
+      return tx(["sessions"], "readwrite", function (t) {
+        t.objectStore("sessions").delete(sid);
+      });
+    });
+  }
+
+  function deletions() {
+    return meta("deleted").then(function (d) { return d || {}; });
+  }
+
+  /** Drop anything deleted after the copy in hand was last written. */
+  function applyDeletions(rows, deleted) {
+    if (!deleted) return rows;
+    return rows.filter(function (r) {
+      var at = deleted[r.id];
+      return !(at && at >= (r.updated || 0));
     });
   }
 
@@ -277,6 +311,8 @@ var Store = (function () {
 
   return {
     today: today,
+    deletions: deletions,
+    applyDeletions: applyDeletions,
     W2G_THRESHOLD: W2G_THRESHOLD,
     running: running,
     seen: seen,

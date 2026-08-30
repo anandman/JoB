@@ -47,6 +47,7 @@ const APPS = [
       "js/store.js",
       "js/export.js",
       "js/analysis.js",
+      "js/dropbox.js",
       "js/app.js",
     ],
   },

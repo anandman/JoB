@@ -40,15 +40,18 @@ const near = (got, want, m) => yes(Math.abs(got - want) < 0.005, m, "got " + got
 
 /* ===== a browser, more or less ===== */
 
-const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8")
-  .replace(/<script[\s\S]*?<\/script>/g, "");
-
+const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
 const css = fs.readFileSync(path.join(ROOT, "css/style.css"), "utf8");
+
+// Take the script list from the page rather than keeping a copy of it here.
+// A hand-maintained list silently stops covering a file the moment one is
+// added, which is exactly what happened when Dropbox sync arrived.
+const SCRIPTS = Array.from(html.matchAll(/<script src="([^"?]+)/g)).map((m) => m[1]);
 
 // runScripts lets the app's own files be evaluated inside the window, which is
 // the only way a top-level `var Store = ...` becomes a global the next file can
 // see — exactly what a <script> tag does.
-const dom = new JSDOM(html, {
+const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ""), {
   url: "https://example.test/colorup/",
   pretendToBeVisual: true,
   runScripts: "dangerously",
@@ -67,10 +70,15 @@ w.confirm = () => confirmAnswer;
 w.scrollTo = () => {};
 w.URL.createObjectURL = () => "blob:test";
 w.URL.revokeObjectURL = () => {};
+// jsdom's window.crypto is a getter, so it has to be redefined rather than
+// assigned. Its subtle is missing, and PKCE needs a digest.
+Object.defineProperty(w, "crypto", { value: crypto, configurable: true });
+// Nothing here should reach the network. Anything that tries is a bug, and
+// failing loudly is better than a check quietly passing against a real server.
+w.fetch = () => Promise.reject(new Error("the interface reached the network"));
+w.open = () => null;
 
-for (const f of ["js/xlsx.js", "js/store.js", "js/export.js", "js/analysis.js", "js/app.js"]) {
-  w.eval(fs.readFileSync(path.join(ROOT, f), "utf8"));
-}
+for (const f of SCRIPTS) w.eval(fs.readFileSync(path.join(ROOT, f), "utf8"));
 // A jsdom anchor cannot navigate, so record the click instead of following it.
 w.HTMLAnchorElement.prototype.click = function () {
   downloads.push({ name: this.getAttribute("download"), href: this.getAttribute("href") });
@@ -104,6 +112,11 @@ function localStamp(y, mo, d, h, mi) {
 (async function run() {
   w.App.init();
   await settle();
+
+  console.log("\nEvery script the page loads is exercised");
+  yes(SCRIPTS.length >= 6, "the list comes from index.html, so it cannot fall behind",
+      SCRIPTS.join(" "));
+  yes(SCRIPTS.indexOf("js/dropbox.js") >= 0, "including the Dropbox client");
 
   console.log("\nThe sheet is closed until something opens it");
   {
@@ -357,6 +370,33 @@ function localStamp(y, mo, d, h, mi) {
     const bytes = w.Backup.workbook(stored, new Date(2026, 7, 30, 12, 0, 0));
     yes(bytes.length > 2000 && bytes[0] === 0x50 && bytes[1] === 0x4b,
         "the workbook is a zip with something in it");
+  }
+
+  console.log("\nThe Dropbox panel, with nothing connected");
+  {
+    // The backup above marked everything safe, so give it something to be
+    // loud about again — which is itself the behaviour: any edit un-saves.
+    const rows = await w.Store.all();
+    await w.Store.put(rows[0]);
+    await w.App.refresh();
+    w.App.show("data");
+    await settle();
+    const text = $("#data-body").textContent;
+    yes(/Dropbox/.test(text), "the tab offers it");
+    yes(/cannot see the rest of your Dropbox/.test(text),
+        "and says what it can and cannot reach before asking for anything");
+    yes(/files\.content\.read/.test(text), "with the setup steps spelled out, permissions included");
+
+    const banner = $$("#banners .banner").find((b) => /not saved to Dropbox/.test(b.textContent));
+    yes(banner, "and the banner names what is missing rather than saying \"unsynced\"");
+    yes(banner && /this phone is the only copy/.test(banner.textContent),
+        "in terms of what is actually at stake");
+
+    const before = $("#data-body").textContent;
+    click($$("#data-body .btn").find((b) => b.textContent === "Connect"));
+    await settle();
+    yes($("#data-body").textContent === before || !/Paste the code/.test($("#data-body").textContent),
+        "connecting without an app key does not pretend to have started");
   }
 
   console.log("\nStats");

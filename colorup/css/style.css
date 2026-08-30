@@ -281,3 +281,12 @@ footer {
 
 .row-actions.picks { margin: 0.35rem 0 0; gap: 0.35rem; }
 .btn.pick { font-size: 0.75rem; padding: 0.3rem 0.55rem; color: var(--color-text-muted); }
+
+/* An anchor styled as a button — the Dropbox step needs a real link, because
+   a home screen web app may refuse to open a window from script. */
+a.btn { text-decoration: none; display: inline-block; text-align: center; }
+
+.steps { margin: 0.4rem 0 0 1.1rem; font-size: 0.8rem; color: var(--color-text-muted); }
+.steps li { margin-bottom: 0.3rem; }
+
+details summary { font-size: 0.8rem; cursor: pointer; padding: 0.3rem 0; }
