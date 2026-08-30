@@ -35,7 +35,17 @@ var BJRisk = (function () {
       blurb: "2 through 7 count +1, 8 and 9 count nothing, tens and aces count −1. " +
              "Unbalanced, so there is no division: you bet off the running count " +
              "directly. The simplest system that works — no true count, no card colours.",
-      irc: function (decks) { return 4 - 4 * decks; }
+      irc: function (decks) { return 4 - 4 * decks; },
+      howto: function (decks) { return [
+        "Start the count at " + (4 - 4 * decks) + " the moment the shoe is shuffled. " +
+          "That offset is what lets you skip the division later.",
+        "Add the tag of every card you see face up — yours, the other players', and " +
+          "the dealer's — as it lands, not at the end of the hand.",
+        "Bet off the running count directly. There is no true count and nothing to " +
+          "divide, which is the whole reason to pick this one.",
+        "Self-check: a full shoe finishes at +4. If you end somewhere else you dropped " +
+          "a card, and the count you were betting on was wrong."
+      ]; }
     },
     {
       key: "red7", name: "Red 7", bc: 0.979, balanced: false,
@@ -43,7 +53,15 @@ var BJRisk = (function () {
       blurb: "2 through 6 count +1, red 7s count +1 and black 7s count nothing, " +
              "tens and aces count −1. Unbalanced, so no division. Fractionally the " +
              "most accurate of these for betting, at the cost of tracking suit colour.",
-      irc: function (decks) { return -2 * decks; }
+      irc: function (decks) { return -2 * decks; },
+      howto: function (decks) { return [
+        "Start the count at " + (-2 * decks) + " on a fresh shoe.",
+        "Sevens are the catch: a RED seven counts +1, a black seven counts nothing. " +
+          "It is the only system here where the colour of a card matters, and it is " +
+          "the thing people get wrong under pressure.",
+        "Bet off the running count directly — unbalanced, so no division.",
+        "Self-check: a full shoe finishes at 0."
+      ]; }
     },
     {
       key: "hilo", name: "Hi-Lo", bc: 0.964, balanced: true,
@@ -52,7 +70,16 @@ var BJRisk = (function () {
              "Balanced, so the running count must be divided by the decks remaining " +
              "to get a true count. The most documented system, and the one every " +
              "published index is written for.",
-      irc: function () { return 0; }
+      irc: function () { return 0; },
+      howto: function () { return [
+        "Start at 0 on a fresh shoe and add the tag of every card as you see it.",
+        "Before you size a bet, divide by the decks still to be dealt — that is the " +
+          "true count, and it is what the count is worth. A running count of +6 with " +
+          "six decks left is nothing; the same +6 with one deck left is a large edge.",
+        "Estimate decks remaining from the discard tray, not by counting cards dealt. " +
+          "Round to the nearest half deck; that is accurate enough and much faster.",
+        "Self-check: a full shoe finishes at 0, because the tags are balanced."
+      ]; }
     }
   ];
 

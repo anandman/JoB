@@ -1121,20 +1121,14 @@
     });
     t.appendChild(h); t.appendChild(r2);
     var sc = el("div", "chart-scroll"); sc.appendChild(t); card.appendChild(sc);
+    if (sy.howto) {
+      var ol = el("ol", "howto");
+      sy.howto(rules.decks).forEach(function (step) { ol.appendChild(el("li", null, step)); });
+      card.appendChild(ol);
+    }
     card.appendChild(el("p", "note", sy.balanced
-      ? "Balanced: a full shoe counts to zero, so if you end a shoe on anything else you dropped one."
-      : (function () {
-          // Where an unbalanced count must finish: the initial count plus every
-          // tag in the shoe. Getting anything else means a card was dropped.
-          var sum = 0;
-          for (var r = 0; r < E.RANKS; r++) {
-            sum += sy.tags[r] * (r === E.TEN ? 16 : 4) * rules.decks;
-          }
-          var end = sy.irc(rules.decks) + sum;
-          return "Unbalanced: start at " + sy.irc(rules.decks) + " for " + rules.decks +
-                 " deck" + (rules.decks > 1 ? "s" : "") + ", and a full shoe finishes at " +
-                 (end >= 0 ? "+" : "") + end + ". Anything else means you dropped one.";
-        })()));
+      ? "Balanced, so the running count must be divided by the decks remaining before it means anything."
+      : "Unbalanced, so the running count is read as it stands — no division."));
     box.appendChild(card);
   }
 
@@ -1166,7 +1160,7 @@
       ct.phase === "dealing" ? "Watch…" : ct.phase === "asking" ? "What is the count?" :
       ct.phase === "graded" ? "Round " + ct.stats.rounds : "Ready";
     document.getElementById("ct-shoe").textContent =
-      ctDecksLeft().toFixed(1) + " decks left";
+      ctDecksLeft().toFixed(1) + " decks left · count started at " + ctSys().irc(rules.decks);
 
     renderCountActions();
     renderCountAnswer();
@@ -1176,19 +1170,37 @@
   function renderCountActions() {
     var box = document.getElementById("ct-actions");
     box.innerHTML = "";
+
     if (ct.phase === "dealing") {
       var stop = el("button", null, "Stop and answer");
       stop.onclick = function () { ctStop(); ct.phase = "asking"; renderCount(); };
       box.appendChild(stop);
-      return;
+    } else if (ct.phase !== "asking") {   // the answer form carries its own button
+      var deal = el("button", "primary", ct.stats.rounds ? "Next round" : "Deal");
+      deal.onclick = ctStart;
+      box.appendChild(deal);
     }
-    if (ct.phase === "asking") return;    // the answer form carries its own button
-    var deal = el("button", "primary", ct.stats.rounds ? "Next round" : "Deal");
-    deal.onclick = ctStart;
-    box.appendChild(deal);
-    var shuffle = el("button", null, "Shuffle");
-    shuffle.onclick = function () { ctStop(); ct = ctCreate(); renderCount(); };
-    box.appendChild(shuffle);
+
+    // Always offered, whatever the round is doing. Losing the count is the
+    // commonest reason to want it, and that happens mid-round.
+    var sy = ctSys();
+    var reset = el("button", null, "Reset shoe");
+    reset.title = "New shoe, count back to " + sy.irc(rules.decks) +
+                  ". Your score so far is kept.";
+    reset.onclick = function () {
+      ctStop();
+      var keep = ct.stats;
+      ct = ctCreate();
+      ct.stats = keep;                    // the drill record survives a reshuffle
+      renderCount();
+    };
+    box.appendChild(reset);
+
+    if (ct.stats.rounds || ct.stats.cards) {
+      var clear = el("button", null, "Clear score");
+      clear.onclick = function () { ctStop(); ct = ctCreate(); renderCount(); };
+      box.appendChild(clear);
+    }
   }
 
   function renderCountAnswer() {
