@@ -106,6 +106,41 @@ console.log("\nDates are local, because a casino is somewhere in particular");
     ? ok("and a new session gets one") : bad("blank date " + Store.blank().date);
 }
 
+console.log("\nGoing back to the cage mid-session");
+{
+  // The opening figure and the top-ups are each typed once and never overwrite
+  // each other, so the record keeps both what you sat down with and what you
+  // went back for.
+  let d = Store.derive(session({ cashIn: 2000, bonus: 100, cashOut: 2650,
+                                 buyIns: [{ amount: 500, kind: "cash" }] }));
+  near(d.cashIn, 2500) && near(d.moneyIn, 2600) && near(d.winLoss, 50)
+    ? ok("a $500 top-up turns +$550 into +$50, which is the truth")
+    : bad("in " + d.moneyIn + " net " + d.winLoss);
+
+  d = Store.derive(session({ cashIn: 1000, cashOut: 900,
+                             buyIns: [{ amount: 200, kind: "bonus" }] }));
+  near(d.bonus, 200) && near(d.winLoss, -300)
+    ? ok("free play handed over mid-session is still the casino's money")
+    : bad("bonus " + d.bonus + " net " + d.winLoss);
+
+  d = Store.derive(session({ cashIn: 500, cashOut: 0,
+                             buyIns: [{ amount: 500 }, { amount: 500 }] }));
+  d.topUpCount === 2 && near(d.topUps, 1000) && near(d.winLoss, -1500)
+    ? ok("and three buy-ins of $500 are three buy-ins, not one of $1,500")
+    : bad("count " + d.topUpCount + " net " + d.winLoss);
+
+  d = Store.derive(session({ cashIn: 1000, cashOut: 1000 }));
+  d.topUpCount === 0 && near(d.cashIn, 1000)
+    ? ok("a session with none behaves exactly as before") : bad("regressed without top-ups");
+
+  Store.warnings(session({ venue: "X", cashIn: 100, buyIns: [{ kind: "cash" }] }))
+    .some((x) => /top-up with no amount/.test(x))
+    ? ok("an empty top-up row is flagged") : bad("no empty top-up warning");
+  Store.warnings(session({ venue: "X", cashIn: 0, bonus: 0, buyIns: [{ amount: 400 }] }))
+    .some((x) => /Nothing went in/.test(x))
+    ? bad("said nothing went in when $400 did") : ok("and money that arrived late still counts as money in");
+}
+
 console.log("\nGames, and what kind of thing each one is");
 {
   const kinds = {};

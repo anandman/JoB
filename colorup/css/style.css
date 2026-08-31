@@ -294,3 +294,15 @@ details summary { font-size: 0.8rem; cursor: pointer; padding: 0.3rem 0; }
 /* The pasted authorisation code is long and unmemorable; let it wrap rather
    than scroll a single line the user cannot read back. */
 .code-input { font-family: var(--font-mono); font-size: 16px !important; }
+
+.handpay-row .at { font-size: 0.72rem; color: var(--color-text-muted); white-space: nowrap; }
+
+.strategy-toggle { display: flex; gap: 0.4rem; }
+.toggle-btn {
+  flex: 1; font: inherit; font-size: 0.85rem; font-weight: 600;
+  padding: 0.5rem 0.6rem; border-radius: 0.45rem; cursor: pointer;
+  background: var(--color-surface); color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.toggle-btn.active { background: var(--color-raised); color: var(--color-accent);
+                     border-color: var(--color-accent); }

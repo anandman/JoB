@@ -10,19 +10,19 @@
  * VERSION purges everything.
  */
 
-const VERSION = "c3808c32";
+const VERSION = "4ef0d974";
 const CACHE = "colorup-" + VERSION;
 
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=c3808c32",
-  "./js/xlsx.js?v=c3808c32",
-  "./js/store.js?v=c3808c32",
-  "./js/export.js?v=c3808c32",
-  "./js/analysis.js?v=c3808c32",
-  "./js/dropbox.js?v=c3808c32",
-  "./js/app.js?v=c3808c32",
+  "./css/style.css?v=4ef0d974",
+  "./js/xlsx.js?v=4ef0d974",
+  "./js/store.js?v=4ef0d974",
+  "./js/export.js?v=4ef0d974",
+  "./js/analysis.js?v=4ef0d974",
+  "./js/dropbox.js?v=4ef0d974",
+  "./js/app.js?v=4ef0d974",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

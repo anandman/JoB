@@ -36,6 +36,7 @@ var Backup = (function () {
     { header: "Machine",      key: "detail",      type: "text",     width: 20 },
     { header: "Cash In",      key: "cashIn",      type: "money",    width: 12 },
     { header: "Bonus",        key: "bonus",       type: "money",    width: 11 },
+    { header: "Top-ups",      key: "topUps",      type: "text",     width: 26 },
     { header: "Cash Out",     key: "cashOut",     type: "money",    width: 12 },
     { header: "Win/(Loss)",   key: "winLoss",     type: "money",    width: 13 },
     { header: "$/Hour",       key: "perHour",     type: "money",    width: 12 },
@@ -76,8 +77,17 @@ var Backup = (function () {
       location: s.location,
       game: s.game,
       detail: s.detail,
-      cashIn: s.cashIn,
-      bonus: s.bonus,
+      // The totals, not the opening figures: this column is what the return
+      // asks for, and what the old spreadsheet's "Bet" column always meant.
+      // Zero and absent are the same thing here, and a blank cell reads as
+      // "none" where a 0 reads as a figure someone checked.
+      cashIn: d.cashIn || null,
+      bonus: d.bonus || null,
+      topUps: (s.buyIns || []).map(function (b) {
+        return "$" + (b.amount || 0) + (b.kind === "bonus" ? " free play" : "") +
+               (b.at ? " at " + new Date(b.at).toLocaleTimeString("en-US",
+                 { hour: "numeric", minute: "2-digit" }) : "");
+      }).join("; "),
       cashOut: s.cashOut,
       winLoss: d.winLoss,
       perHour: d.perHour,

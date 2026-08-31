@@ -269,6 +269,30 @@ function localStamp(y, mo, d, h, mi) {
     await settle();
   }
 
+  console.log("\nAdding money without leaving the session");
+  {
+    click($$("#now-card .btn").find((b) => b.textContent === "Add money"));
+    is($("#sheet-title").textContent, "Add money", "the running card offers it directly");
+    const amount = $("#sheet-body .field.hero input");
+    yes(amount, "with one number to type");
+
+    amount.value = "500";
+    fire(amount, "input");
+    const shown = $("#sheet-body .derived").textContent.replace(/\s+/g, "");
+    yes(/Insofar\$2,100/.test(shown) && /Then\$2,600/.test(shown),
+        "and the running total shown before and after, so the tap is checkable", shown);
+
+    click(footBtn("Add"));
+    await settle();
+
+    const open = w.Store.running(await w.Store.all());
+    is((open.buyIns || []).length, 1, "it is recorded as a top-up");
+    is(open.cashIn, 2000, "and the opening figure is left alone, because that is a different fact");
+    is(w.Store.derive(open).moneyIn, 2600, "while the money in is the total");
+    yes(/1 top-up/.test($("#now-card .since").textContent),
+        "the card says so", $("#now-card .since").textContent);
+  }
+
   console.log("\nColoring up");
   {
     click($("#now-card .big-btn"));
@@ -287,8 +311,8 @@ function localStamp(y, mo, d, h, mi) {
     type("comment", "Quad aces, hit the tier.");
 
     const shown = $("#sheet-body .derived").textContent;
-    yes(/\+\$550\.00/.test(shown),
-        "free play is money in, so this reads +$550.00 rather than +$650.00", shown);
+    yes(/\+\$50\.00/.test(shown),
+        "and the $500 gone back for is money in too, so +$550 is really +$50", shown);
 
     click(footBtn("Save"));
     await settle();
@@ -298,11 +322,14 @@ function localStamp(y, mo, d, h, mi) {
   is(rows.length, 2, "two sessions");
   {
     const s = rows[1], d = w.Store.derive(s);
-    near(d.winLoss, 550, "casino money counts as money in");
+    near(d.winLoss, 50, "casino money and money fetched later both count as money in");
+    near(d.cashIn, 2500, "cash in is the total, not the opening figure");
+    yes(/\$500/.test(w.Backup.row(s).topUps),
+        "and the sheet keeps the top-up as its own column", w.Backup.row(s).topUps);
     near(d.hours, 4.5, "four and a half hours");
     near(d.sessionTC, 1440, "1,440 tier credits earned");
     near(d.coinIn, 7200, "$7,200 through the machine at the $5 rate");
-    near(d.perHour, 122.22, "$122.22 an hour");
+    near(d.perHour, 11.11, "$11.11 an hour");
     near(d.handsPerHour, 64, "64 hands an hour at $25 a hand");
     is(d.handpayCount, 1, "one W-2G");
     near(d.handpayTotal, 4000, "for $4,000");
@@ -362,8 +389,8 @@ function localStamp(y, mo, d, h, mi) {
   {
     const t = w.Analysis.totals(w.Analysis.filter(await w.Store.all(), {}));
     is(t.sessions, 2, "the running session is left out of the totals");
-    near(t.winLoss, 975, "which are +$975");
-    near(t.grossWin, 975, "gross winnings");
+    near(t.winLoss, 475, "which are +$475");
+    near(t.grossWin, 475, "gross winnings");
     near(t.grossLoss, 0, "gross losses, kept separate and never netted against them");
   }
 
@@ -380,11 +407,24 @@ function localStamp(y, mo, d, h, mi) {
         $('#sheet-body [data-key="handpays"]'),
         "with every field present, including the ones the short forms hide");
 
+    yes($('#sheet-body [data-key="buyIns"]'),
+        "with the top-ups listed for editing, not just for reading");
+    is($('#sheet-body [data-bi="amount"]').value, "500", "showing what was added");
+
     type("cashOut", "2700");
     click(footBtn("Save"));
     await settle();
     const edited = (await w.Store.all()).find((s) => s.venue === "Eldorado");
-    near(w.Store.derive(edited).winLoss, 600, "the change takes");
+    near(w.Store.derive(edited).winLoss, 100, "the change takes");
+
+    // Removing a top-up subtracts it, which is the only sane meaning of the ×.
+    click($$("#log-list .session")[0]);
+    click($('#sheet-body [data-key="buyIns"] .drop'));
+    click(footBtn("Save"));
+    await settle();
+    const pruned = (await w.Store.all()).find((s) => s.venue === "Eldorado");
+    is((pruned.buyIns || []).length, 0, "removing a top-up removes it");
+    near(w.Store.derive(pruned).cashIn, 2000, "and gives the money back");
 
     click($$("#log-list .session")[0]);
     confirmAnswer = false;

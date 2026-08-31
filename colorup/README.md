@@ -87,6 +87,11 @@ of a session:
 money and counts as money in, so a session funded by it does not read as
 winnings.
 
+**Going back to the cage is ordinary.** Money added mid-session is recorded as
+its own top-up rather than folded into the opening figure, so the record keeps
+both what you sat down with and what you went back for — and how many times.
+Cash in, everywhere it is totalled, means all of it.
+
 **Tier credits are a coin-in proxy, not a tier credit ledger.** Session TC
 times dollars-per-TC gives roughly what went through the machine, which is the
 only figure that makes two sessions comparable. TC never reconciles between

@@ -45,7 +45,7 @@ var Analysis = (function () {
       hours: 0, hoursKnown: 0,
       winLoss: 0,
       grossWin: 0, grossLoss: 0, winners: 0, losers: 0, evens: 0,
-      cashIn: 0, bonus: 0, cashOut: 0,
+      cashIn: 0, bonus: 0, cashOut: 0, topUps: 0,
       coinIn: 0, coinInKnown: 0, coinInEstimated: 0,
       hands: 0,
       handpayCount: 0, handpayTotal: 0, handpayWithheld: 0,
@@ -59,8 +59,11 @@ var Analysis = (function () {
       else if (d.winLoss < 0) { t.grossLoss += -d.winLoss; t.losers++; }
       else t.evens++;
 
-      t.cashIn += s.cashIn || 0;
-      t.bonus += s.bonus || 0;
+      // The derived totals, so a session topped up mid-play counts what was
+      // actually put in rather than what was put in first.
+      t.cashIn += d.cashIn;
+      t.bonus += d.bonus;
+      t.topUps += d.topUps;
       t.cashOut += s.cashOut || 0;
 
       if (d.hours !== null) { t.hours += d.hours; t.hoursKnown++; }

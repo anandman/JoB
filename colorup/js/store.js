@@ -149,8 +149,31 @@ var Store = (function () {
    * session is worth.
    */
   function derive(s) {
-    var cashIn = num(s.cashIn), bonus = num(s.bonus), cashOut = num(s.cashOut);
     var d = {};
+
+    /**
+     * Money added after you sat down.
+     *
+     * Going back to the cage mid-session is ordinary, and editing the opening
+     * figure to cover it loses the fact that it happened — how deep you went
+     * and when is exactly what you would want to see later. So the opening
+     * amount and the top-ups are each typed once and never overwrite each
+     * other: `cashIn` on a session means what you sat down with, and the
+     * totals below are what the rest of the app and the spreadsheet use.
+     */
+    var added = { cash: 0, bonus: 0 };
+    (s.buyIns || []).forEach(function (b) {
+      added[b && b.kind === "bonus" ? "bonus" : "cash"] += num(b && b.amount);
+    });
+    d.topUpCount = (s.buyIns || []).length;
+    d.topUps = added.cash + added.bonus;
+
+    var cashIn = num(s.cashIn) + added.cash;
+    var bonus = num(s.bonus) + added.bonus;
+    var cashOut = num(s.cashOut);
+    d.cashIn = cashIn;
+    d.bonus = bonus;
+    d.moneyIn = cashIn + bonus;
 
     // The whole point of a session: what you walked out with, less everything
     // that went in — your money and the casino's.
@@ -223,7 +246,10 @@ var Store = (function () {
     var d = derive(s);
     var w = [];
     if (!s.venue) w.push("No venue.");
-    if (num(s.cashIn) === 0 && num(s.bonus) === 0) w.push("Nothing went in — cash in and bonus are both zero.");
+    if (d.moneyIn === 0) w.push("Nothing went in — cash in and bonus are both zero.");
+    (s.buyIns || []).forEach(function (b) {
+      if (!(num(b && b.amount) > 0)) w.push("A top-up with no amount on it.");
+    });
     if (d.hours === null) w.push("No duration, so this session has no rate per hour.");
     else if (d.hours > 12) w.push("Over twelve hours. Check the start time.");
     else if (d.hours < 0.05) w.push("Under three minutes.");
@@ -274,6 +300,7 @@ var Store = (function () {
       sessionTCOverride: null,
       tcRate: p.tcRate !== undefined && p.tcRate !== null ? p.tcRate : 10,
       perHand: p.perHand !== undefined ? p.perHand : null,
+      buyIns: [],
       handsOverride: null,
       system: p.system || "",
       handpays: [],

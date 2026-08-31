@@ -127,7 +127,8 @@ var App = (function () {
                 placeholder: "9/5 JoB $5 high limit" },
     start:    { label: "Started", kind: "datetime" },
     end:      { label: "Ended", kind: "datetime" },
-    cashIn:   { label: "Cash in", kind: "money" },
+    cashIn:   { label: "Cash in to start", kind: "money",
+                hint: "What you sat down with. Money added later goes in its own list." },
     bonus:    { label: "Free play / bonus", kind: "money",
                 hint: "Casino money. It counts as money in, so it does not read as winnings." },
     cashOut:  { label: "Cash out", kind: "money" },
@@ -148,6 +149,7 @@ var App = (function () {
                 suggest: ["Flat", "Positive progression", "Martingale", "d'Alembert",
                           "Fibonacci", "Oscar's Grind", "Paroli", "Card counting"],
                 hint: "Optional. Recorded so you can ask later whether it did anything." },
+    buyIns:   { label: "Added during the session", kind: "buyins" },
     handpays: { label: "W-2G handpays", kind: "handpays" },
     comment:  { label: "Comment", kind: "textarea" },
     winLossOverride:   { label: "Win/(loss) override", kind: "money",
@@ -161,7 +163,7 @@ var App = (function () {
                     ["perHand", "system"], "start"];
   var FORM_COLOR = ["cashOut", "end", "endTC", "handsOverride", "handpays", "comment"];
   var FORM_FULL  = ["date", "venue", "location", "game", "detail",
-                    ["start", "end"], ["cashIn", "bonus"], "cashOut",
+                    ["start", "end"], ["cashIn", "bonus"], "buyIns", "cashOut",
                     ["startTC", "endTC"], "tcRate",
                     ["perHand", "handsOverride"], "system", "handpays", "comment"];
   var FORM_OVERRIDES = ["winLossOverride", "sessionTCOverride"];
@@ -198,6 +200,8 @@ var App = (function () {
       input.value = session[key] || "";
     } else if (f.kind === "handpays") {
       return handpayNode(session, onChange);
+    } else if (f.kind === "buyins") {
+      return buyInNode(session, onChange);
     } else {
       var attrs = { id: id, "data-key": key, type: "text" };
       if (f.kind === "money") { attrs.type = "number"; attrs.inputmode = "decimal"; attrs.step = "0.01"; }
@@ -237,6 +241,56 @@ var App = (function () {
     }
 
     if (f.hint) wrap.appendChild(el("p", { class: "hint", text: f.hint }));
+    return wrap;
+  }
+
+  /**
+   * Top-ups, listed rather than folded into the opening figure.
+   *
+   * Kept separate so that neither number is ever overwritten by the other:
+   * "cash in" means what you sat down with, and these are what you went back
+   * for. Removing one subtracts it, which is the only sane meaning.
+   */
+  function buyInNode(session, onChange) {
+    var wrap = el("div", { class: "field", "data-key": "buyIns" });
+    wrap.appendChild(el("label", { text: FIELDS.buyIns.label }));
+    var rows = el("div");
+
+    function addRow(b) {
+      var amount = el("input", { type: "number", inputmode: "decimal", step: "0.01",
+                                 placeholder: "Amount", "data-bi": "amount" });
+      amount.value = b && b.amount !== undefined && b.amount !== null ? b.amount : "";
+      var kind = el("select", { "data-bi": "kind" });
+      [["cash", "Cash"], ["bonus", "Free play"]].forEach(function (o) {
+        var opt = el("option", { value: o[0], text: o[1] });
+        if (b && b.kind === o[0]) opt.selected = true;
+        kind.appendChild(opt);
+      });
+      var at = el("input", { type: "hidden", "data-bi": "at",
+                             value: (b && b.at) || new Date().toISOString() });
+      var row = el("div", { class: "handpay-row" }, [
+        el("div", { class: "field" }, [amount]),
+        el("div", { class: "field" }, [kind]),
+        at,
+        el("button", { type: "button", class: "btn drop", text: "×",
+                       onclick: function () { row.remove(); onChange(); } })
+      ]);
+      if (b && b.at) {
+        row.insertBefore(el("span", { class: "at", text: timeText(b.at) }), row.lastChild);
+      }
+      amount.addEventListener("input", onChange);
+      kind.addEventListener("change", onChange);
+      rows.appendChild(row);
+    }
+
+    (session.buyIns || []).forEach(addRow);
+    wrap.appendChild(rows);
+    wrap.appendChild(el("button", {
+      type: "button", class: "btn", text: "+ Add a top-up",
+      onclick: function () { addRow(null); onChange(); }
+    }));
+    wrap.appendChild(el("p", { class: "hint",
+      text: "On top of the cash in above, which is what you sat down with." }));
     return wrap;
   }
 
@@ -302,6 +356,17 @@ var App = (function () {
       else if (f.kind === "datetime") s[key] = fromLocalInput(v);
       else s[key] = v === "" ? (f.kind === "date" ? null : "") : v;
     });
+
+    var bi = body.querySelector('[data-key="buyIns"]');
+    if (bi) {
+      s.buyIns = Array.prototype.map.call(bi.querySelectorAll(".handpay-row"), function (row) {
+        return {
+          amount: numOrNull(row.querySelector('[data-bi="amount"]').value),
+          kind: row.querySelector('[data-bi="kind"]').value,
+          at: row.querySelector('[data-bi="at"]').value || null
+        };
+      }).filter(function (b) { return b.amount !== null; });
+    }
 
     var hp = body.querySelector('[data-key="handpays"]');
     if (hp) {
@@ -372,7 +437,9 @@ var App = (function () {
       // whole buy-in as a loss, which is both alarming and untrue.
       var settled = s.cashOut !== null && s.cashOut !== undefined;
       var lines = [
-        ["Money in", money((numOrNull(s.cashIn) || 0) + (numOrNull(s.bonus) || 0)), ""]
+        ["Money in", money(d.moneyIn) +
+                     (d.topUpCount ? " (" + d.topUpCount + " top-up" +
+                                     (d.topUpCount === 1 ? "" : "s") + ")" : ""), ""]
       ];
       if (settled) lines.push(["Win / (loss)", money(d.winLoss, { sign: true, cents: true }), netClass(d.winLoss)]);
       lines = lines.concat([
@@ -447,6 +514,100 @@ var App = (function () {
 
   function closeSheet() { $("#sheet-backdrop").hidden = true; }
 
+  /** The same chrome, for a question that is not about a field of a session. */
+  function openPlain(opts) {
+    sheet.base = null;
+    pickers = [];
+    var body = clear($("#sheet-body"));
+    var foot = clear($("#sheet-foot"));
+    $("#sheet-title").textContent = opts.title;
+    opts.build(body);
+    (opts.buttons || []).forEach(function (b) {
+      foot.appendChild(el("button", { type: "button", class: "btn wide " + (b.class || ""),
+                                      text: b.label, onclick: b.run }));
+    });
+    $("#sheet-backdrop").hidden = false;
+    var hero = body.querySelector(".field.hero input");
+    if (hero) setTimeout(function () { hero.focus(); }, 60);
+  }
+
+  /**
+   * More money, mid-session.
+   *
+   * It appends rather than editing the opening figure, so the record keeps
+   * both what you sat down with and what you went back for. One number to
+   * type, and the running total is shown before and after so the tap is
+   * checkable at a glance.
+   */
+  function addMoney(session) {
+    var kind = "cash";
+    var amount = el("input", { type: "number", inputmode: "decimal", step: "0.01",
+                               placeholder: "0" });
+    var preview = el("div", { class: "derived" });
+
+    function paint() {
+      var now = Store.derive(session);
+      var extra = numOrNull(amount.value) || 0;
+      clear(preview);
+      [["In so far", money(now.moneyIn)],
+       ["Adding", (kind === "bonus" ? "free play " : "") + money(extra)],
+       ["Then", money(now.moneyIn + extra)]].forEach(function (l) {
+        preview.appendChild(el("div", {}, [
+          el("span", { class: "muted", text: l[0] }),
+          el("b", { text: l[1] })
+        ]));
+      });
+    }
+
+    openPlain({
+      title: "Add money",
+      build: function (body) {
+        body.appendChild(el("div", { class: "field hero" }, [
+          el("label", { text: "How much are you adding?" }), amount
+        ]));
+
+        var toggle = el("div", { class: "strategy-toggle" });
+        [["cash", "Cash"], ["bonus", "Free play"]].forEach(function (o) {
+          var b = el("button", { type: "button", class: "toggle-btn" + (o[0] === kind ? " active" : ""),
+                                 text: o[1], onclick: function () {
+            kind = o[0];
+            Array.prototype.forEach.call(toggle.children, function (c) {
+              c.classList.toggle("active", c.textContent === o[1]);
+            });
+            paint();
+          } });
+          toggle.appendChild(b);
+        });
+        body.appendChild(el("div", { class: "field" }, [
+          el("label", { text: "Whose money" }), toggle,
+          el("p", { class: "hint",
+            text: "Free play is the casino's, and counts as money in either way — it just " +
+                  "does not read as winnings when you cash out." })
+        ]));
+
+        amount.addEventListener("input", paint);
+        body.appendChild(preview);
+        paint();
+      },
+      buttons: [
+        { label: "Cancel", run: closeSheet },
+        { label: "Add", class: "primary", run: function () {
+            var extra = numOrNull(amount.value);
+            if (!extra || extra <= 0) return toast("How much?", true);
+            var next = Object.assign({}, session);
+            next.buyIns = (session.buyIns || []).concat([
+              { amount: extra, kind: kind, at: new Date().toISOString() }
+            ]);
+            Store.put(next).then(function () {
+              closeSheet();
+              toast("Added " + money(extra) + ".");
+              saved();
+            });
+          } }
+      ]
+    });
+  }
+
   /* ===== the Now tab ===== */
 
   function startSession() {
@@ -519,19 +680,26 @@ var App = (function () {
     var open = Store.running(state.sessions);
 
     if (open) {
-      var live = el("div", { class: "live" }, [
+      var d = Store.derive(open);
+      card.appendChild(el("div", { class: "live" }, [
         el("div", { class: "where", text: open.venue || "Session in progress" }),
         el("div", { class: "what", text: [open.game, open.detail].filter(Boolean).join(" · ") }),
         el("div", { class: "clock", id: "live-clock", text: "0:00:00" }),
         el("div", { class: "since", text: "Started " + timeText(open.start) + " · " +
-                                          money(open.cashIn) + " in" +
-                                          (open.bonus ? " plus " + money(open.bonus) + " free play" : "") })
-      ]);
-      card.appendChild(live);
+                                          money(d.cashIn) + " in" +
+                                          (d.bonus ? " plus " + money(d.bonus) + " free play" : "") +
+                                          (d.topUpCount ? " · " + d.topUpCount + " top-up" +
+                                                          (d.topUpCount === 1 ? "" : "s") : "") })
+      ]));
       card.appendChild(el("button", { class: "big-btn cashout", text: "Color up",
                                       onclick: function () { colorUp(open); } }));
       card.appendChild(el("div", { class: "row-actions" }, [
-        el("button", { class: "btn wide", text: "Edit this session",
+        // Going back to the cage is ordinary enough to deserve its own button.
+        // Buried in the edit form it would be a thing you do with the opening
+        // figure instead, which loses that it happened at all.
+        el("button", { class: "btn wide", text: "Add money",
+                       onclick: function () { addMoney(open); } }),
+        el("button", { class: "btn wide", text: "Edit",
                        onclick: function () { editSession(open); } })
       ]));
       startClock(open);
