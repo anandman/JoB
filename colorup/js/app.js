@@ -986,26 +986,28 @@ var App = (function () {
       body.appendChild(breakdown(months.slice().reverse(), true));
     }
 
-    // One session is its own best, worst and longest, and printing it three
-    // times says nothing three times. Labelled, deduplicated, and not shown at
-    // all until there is something for an extreme to be extreme against.
-    if (rows.length > 1) {
-      var extremes = [["Best", t.best], ["Worst", t.worst], ["Longest", t.longest]];
-      var already = {};
-      var shown = extremes.filter(function (e) {
-        if (!e[1] || already[e[1].id]) return false;
-        already[e[1].id] = 1;
-        return true;
+    // One session is its own best, worst and longest, so the rows are
+    // deduplicated and each says which extreme it is. The section itself is
+    // never hidden: one that comes and goes with a count you cannot see reads
+    // as a bug, and filtering to a single session is an ordinary thing to do.
+    // It just stops claiming to have selected anything when it has not.
+    var extremes = rows.length === 1
+      ? [["Only one", t.best]]
+      : [["Best", t.best], ["Worst", t.worst], ["Longest", t.longest]];
+    var already = {};
+    var shown = extremes.filter(function (e) {
+      if (!e[1] || already[e[1].id]) return false;
+      already[e[1].id] = 1;
+      return true;
+    });
+    if (shown.length) {
+      body.appendChild(el("h3", { text: rows.length <= 2 ? "Sessions" : "Extremes" }));
+      shown.forEach(function (e) {
+        body.appendChild(el("div", { class: "extreme" }, [
+          el("span", { class: "extreme-label", text: e[0] }),
+          sessionRow(e[1])
+        ]));
       });
-      if (shown.length) {
-        body.appendChild(el("h3", { text: "Extremes" }));
-        shown.forEach(function (e) {
-          body.appendChild(el("div", { class: "extreme" }, [
-            el("span", { class: "extreme-label", text: e[0] }),
-            sessionRow(e[1])
-          ]));
-        });
-      }
     }
   }
 

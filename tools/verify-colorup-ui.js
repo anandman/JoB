@@ -560,11 +560,14 @@ function localStamp(y, mo, d, h, mi) {
     yes($("#stats-body .stat-grid"), "the tab renders from whatever is there");
 
     // One session is its own best, worst and longest. Printing it three times
-    // said nothing three times, and said it without labels.
+    // said nothing three times; hiding the section instead made it vanish
+    // whenever a filter narrowed to one, which reads as a bug.
     const only = await w.Store.all();
     if (only.length === 1) {
-      yes(!/Extremes/.test($("#stats-body").textContent),
-          "with no Extremes section, because one session is not extreme against anything");
+      is($$("#stats-body .extreme .session").length, 1,
+         "a single session still gets a row rather than the section disappearing");
+      is($$("#stats-body .extreme-label")[0].textContent, "Only one",
+         "and is not called the best of itself");
     }
     const sel = $$("#stats-filters select")[0];
     sel.value = "2026";
@@ -590,6 +593,17 @@ function localStamp(y, mo, d, h, mi) {
         "and each says which extreme it is");
     const ids = $$("#stats-body .extreme .session").length;
     is(ids, labels.length, "one row per label, never the same session twice");
+
+    // Narrowing to one session must not make a whole section disappear.
+    const gamePicker = $$("#stats-filters select")[1];
+    gamePicker.value = "Craps";
+    fire(gamePicker, "change");
+    await settle();
+    is($$("#stats-body .extreme .session").length, 1,
+       "and filtering down to one keeps it, rather than dropping the section");
+    gamePicker.value = "";
+    fire(gamePicker, "change");
+    await settle();
   }
 
   console.log(fails ? `\n${fails} FAILED\n` : "\nall checks passed\n");
