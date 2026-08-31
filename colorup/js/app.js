@@ -749,10 +749,15 @@ var App = (function () {
     var t = Analysis.totals(closed);
     var year = Analysis.totals(Analysis.filter(closed, { year: String(new Date().getFullYear()) }));
     recent.appendChild(el("h3", { text: "Where you stand" }));
-    recent.appendChild(el("div", { class: "stat-grid" }, [
+    var grid = el("div", { class: "stat-grid" }, [
       stat("This year", money(year.winLoss, { sign: true }), year.sessions + " sessions", netClass(year.winLoss)),
-      stat("Per hour", year.perHour === null ? "—" : money(year.perHour, { sign: true }),
-           hoursText(year.hours) + " played", netClass(year.perHour)),
+      stat("Per hour",
+           mark(year.perHour === null ? "—" : money(year.perHour, { sign: true }),
+                year.coverage.partialHours),
+           year.coverage.partialHours
+             ? hoursText(year.hours) + " over " + year.timed.sessions + " of " + year.sessions
+             : hoursText(year.hours) + " played",
+           netClass(year.perHour)),
       stat("All time", money(t.winLoss, { sign: true }), t.sessions + " sessions", netClass(t.winLoss)),
       stat("Last session", (function () {
         var last = closed[closed.length - 1];
@@ -761,7 +766,29 @@ var App = (function () {
         var last = closed[closed.length - 1];
         return dayText(last.date) + " · " + (last.venue || "—");
       })(), netClass(Store.derive(closed[closed.length - 1]).winLoss))
-    ]));
+    ]);
+    recent.appendChild(grid);
+    var note = footnote(year);
+    if (note) recent.appendChild(note);
+  }
+
+  // A rate computed from part of the record is marked, once, with a footnote
+  // that says which part. Silently presenting it as a whole-record figure is
+  // how "lost $4,788 an hour" got onto the screen.
+  function mark(value, partial) { return partial ? value + " *" : value; }
+
+  function footnote(t) {
+    if (!t.coverage.partialHours && !t.coverage.partialCoinIn) return null;
+    var parts = [];
+    if (t.coverage.partialHours) {
+      parts.push("per hour is from the " + t.timed.sessions + " of " + t.sessions +
+                 " sessions that recorded a start and an end");
+    }
+    if (t.coverage.partialCoinIn) {
+      parts.push("hold and coin-in are from the " + t.priced.sessions +
+                 " with a tier credit rate");
+    }
+    return el("p", { class: "note", text: "* " + parts.join("; ") + "." });
   }
 
   function stat(label, value, sub, cls) {
@@ -902,7 +929,9 @@ var App = (function () {
       list.appendChild(el("div", { class: "month-head" }, [
         el("span", { text: (MONTHS[parseInt(parts[1], 10) - 1] || "?") + " " + parts[0] }),
         el("span", { class: netClass(t.winLoss),
-                     text: money(t.winLoss, { sign: true }) + " · " + hoursText(t.hours) })
+                     text: money(t.winLoss, { sign: true }) +
+                           (t.hours > 0 ? " · " + hoursText(t.hours) +
+                                          (t.coverage.partialHours ? " *" : "") : "") })
       ]));
       rows.forEach(function (s) { list.appendChild(sessionRow(s)); });
     });
@@ -946,10 +975,15 @@ var App = (function () {
 
     body.appendChild(el("div", { class: "stat-grid" }, [
       stat("Win / (loss)", money(t.winLoss, { sign: true }), t.sessions + " sessions", netClass(t.winLoss)),
-      stat("Per hour", t.perHour === null ? "—" : money(t.perHour, { sign: true }),
-           hoursText(t.hours), netClass(t.perHour)),
-      stat("Coin in", money(t.coinIn), t.coinInEstimated ? money(t.coinInEstimated) + " pit estimated" : "measured"),
-      stat("Hold", t.hold === null ? "—" : pct(t.hold, 2),
+      stat("Per hour",
+           mark(t.perHour === null ? "—" : money(t.perHour, { sign: true }),
+                t.coverage.partialHours),
+           hoursText(t.hours) + (t.coverage.partialHours
+             ? " over " + t.timed.sessions + " of " + t.sessions : ""),
+           netClass(t.perHour)),
+      stat("Coin in", mark(money(t.coinIn), t.coverage.partialCoinIn),
+           t.coinInEstimated ? money(t.coinInEstimated) + " pit estimated" : "measured"),
+      stat("Hold", mark(t.hold === null ? "—" : pct(t.hold, 2), t.coverage.partialCoinIn),
            t.hold === null ? "" : "house kept " + pct(t.hold, 2) + " of coin in",
            t.hold === null ? "" : (t.hold > 0 ? "down" : "up")),
       stat("Sessions won", t.winners + " of " + t.sessions,
@@ -960,12 +994,8 @@ var App = (function () {
              : (t.coinInPerHour === null ? "" : money(t.coinInPerHour) + " through the machine"))
     ]));
 
-    if (t.coverage.hours < 1 || t.coverage.coinIn < 1) {
-      body.appendChild(el("p", { class: "note",
-        text: "Rates use only the sessions that can supply them: " +
-              pct(t.coverage.hours, 0) + " of these are timed and " +
-              pct(t.coverage.coinIn, 0) + " have a coin-in figure." }));
-    }
+    var note = footnote(t);
+    if (note) body.appendChild(note);
 
     // Not netted, because winnings and losses are not netted on a return.
     var year = state.filters.year;

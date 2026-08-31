@@ -419,6 +419,58 @@ function localStamp(y, mo, d, h, mi) {
     near(t.grossLoss, 0, "gross losses, kept separate and never netted against them");
   }
 
+  console.log("\nA rate only speaks for the sessions that can supply it");
+  {
+    // The shape that produced "lost $4,788 an hour" on a phone: a pile of
+    // untimed sessions carrying the losses, and two timed ones carrying the
+    // clock. The numerator was every session; the denominator only the timed.
+    for (let i = 0; i < 8; i++) {
+      await w.Store.put(Object.assign(w.Store.blank(), {
+        // One of them shares a month with a timed session, which is the case
+        // the month header has to mark: a partial clock beside a whole total.
+        id: "untimed-" + i, date: i === 0 ? "2026-08-15" : "2026-03-0" + (i + 1),
+        venue: "Peppermill", game: "Slots", cashIn: 500, cashOut: 0
+      }));
+    }
+    await w.App.refresh();
+
+    const all = w.Analysis.filter(await w.Store.all(), {});
+    const t = w.Analysis.totals(all);
+    yes(t.timed.sessions < t.sessions, "there are more sessions than there are timed ones",
+        t.timed.sessions + " of " + t.sessions);
+    near(t.perHour, t.timed.winLoss / t.timed.hours,
+         "per hour divides the timed sessions' result by the timed sessions' hours");
+    yes(Math.abs(t.perHour) < Math.abs(t.winLoss / t.hours),
+        "which is a smaller number than the whole record over part of the clock",
+        t.perHour.toFixed(0) + " against " + (t.winLoss / t.hours).toFixed(0));
+    is(t.coverage.partialHours, true, "and it knows it speaks for only part of the record");
+
+    // Hold had the same shape: a year of losses over one session's coin-in.
+    near(t.hold, -t.priced.winLoss / t.priced.coinIn,
+         "hold divides the priced sessions' result by the priced sessions' coin-in");
+
+    w.App.show("stats");
+    await settle();
+    const text = $("#stats-body").textContent;
+    yes(/\*/.test(text), "the display marks the figure rather than presenting it whole");
+    yes(/sessions that recorded a start and an end/.test(text),
+        "with a footnote naming exactly which sessions it used", text.slice(0, 200));
+
+    w.App.show("log");
+    await settle();
+    const months = $$("#log-list .month-head").map((n) => n.textContent);
+    yes(months.some((m) => /Aug 2026/.test(m) && /\*/.test(m)),
+        "and the log marks a month whose hours cover only some of its sessions",
+        months.join(" | "));
+    yes(months.some((m) => /Mar 2026/.test(m) && !/h /.test(m)),
+        "while a month with no timed session at all shows no clock to misread",
+        months.join(" | "));
+
+    for (let i = 0; i < 8; i++) await w.Store.remove("untimed-" + i);
+    await w.App.refresh();
+    await settle();
+  }
+
   console.log("\nEditing and deleting");
   {
     const running = w.Store.running(await w.Store.all());

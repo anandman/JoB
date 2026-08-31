@@ -49,7 +49,13 @@ var Analysis = (function () {
       coinIn: 0, coinInKnown: 0, coinInEstimated: 0,
       hands: 0, handsEstimated: 0,
       handpayCount: 0, handpayTotal: 0, handpayWithheld: 0,
-      best: null, worst: null, longest: null
+      best: null, worst: null, longest: null,
+
+      // A rate needs its numerator and its denominator to describe the same
+      // sessions. These carry the subsets that can answer each question: the
+      // sessions that were timed, and the ones that have a coin-in figure.
+      timed: { sessions: 0, hours: 0, winLoss: 0, coinIn: 0, hands: 0 },
+      priced: { sessions: 0, winLoss: 0, coinIn: 0, estimated: 0 }
     };
 
     sessions.forEach(function (s) {
@@ -66,11 +72,27 @@ var Analysis = (function () {
       t.topUps += d.topUps;
       t.cashOut += s.cashOut || 0;
 
-      if (d.hours !== null) { t.hours += d.hours; t.hoursKnown++; }
+      if (d.hours !== null) {
+        t.hours += d.hours;
+        t.hoursKnown++;
+        t.timed.sessions++;
+        t.timed.hours += d.hours;
+        t.timed.winLoss += d.winLoss;
+        if (d.coinIn !== null) t.timed.coinIn += d.coinIn;
+        // Hands from a typical pace are that pace multiplied by these hours,
+        // so counting them here would hand the assumption back as a finding.
+        if (d.hands !== null && !d.handsEstimated) t.timed.hands += d.hands;
+      }
       if (d.coinIn !== null) {
         t.coinIn += d.coinIn;
         t.coinInKnown++;
-        if (d.coinInIsEstimate) t.coinInEstimated += d.coinIn;
+        t.priced.sessions++;
+        t.priced.coinIn += d.coinIn;
+        t.priced.winLoss += d.winLoss;
+        if (d.coinInIsEstimate) {
+          t.coinInEstimated += d.coinIn;
+          t.priced.estimated += d.coinIn;
+        }
       }
       if (d.hands !== null) {
         t.hands += d.hands;
@@ -86,27 +108,31 @@ var Analysis = (function () {
       if (d.hours !== null && (!t.longest || d.hours > Store.derive(t.longest).hours)) t.longest = s;
     });
 
-    // Rates use only the sessions that can supply them. Dividing the whole
-    // year's win by the hours of the half of it that was timed would overstate
-    // the rate by exactly the proportion that was not.
-    t.perHour = t.hours > 0 ? t.winLoss / t.hours : null;
-    t.coinInPerHour = (t.hours > 0 && t.coinIn > 0) ? t.coinIn / t.hours : null;
-    // Excludes the sessions whose hands came from a typical pace, since for
-    // those this figure would just be that pace handed back.
-    var measured = t.hands - t.handsEstimated;
-    t.handsPerHour = (t.hours > 0 && measured > 0) ? measured / t.hours : null;
+    // Every rate is computed from the subset that can supply both halves of
+    // it. Dividing a whole year's result by the hours of the fraction that was
+    // timed overstates the rate by exactly the proportion that was not — with
+    // 2 sessions timed out of 50 it read as losing $4,788 an hour.
+    t.perHour = t.timed.hours > 0 ? t.timed.winLoss / t.timed.hours : null;
+    t.coinInPerHour = (t.timed.hours > 0 && t.timed.coinIn > 0)
+      ? t.timed.coinIn / t.timed.hours : null;
+    t.handsPerHour = (t.timed.hours > 0 && t.timed.hands > 0)
+      ? t.timed.hands / t.timed.hours : null;
     t.avgHours = t.hoursKnown ? t.hours / t.hoursKnown : null;
 
-    // Hold: the share of everything wagered that the house kept. This is the
-    // one figure comparable across games, denominations and session lengths.
-    t.hold = t.coinIn > 0 ? -t.winLoss / t.coinIn : null;
-    t.realizedReturn = t.coinIn > 0 ? 1 + t.winLoss / t.coinIn : null;
+    // Hold: the share of everything wagered that the house kept, over the
+    // sessions that recorded what was wagered. Same trap as the rate above —
+    // a year's losses over one session's coin-in is not a hold.
+    t.hold = t.priced.coinIn > 0 ? -t.priced.winLoss / t.priced.coinIn : null;
+    t.realizedReturn = t.priced.coinIn > 0 ? 1 + t.priced.winLoss / t.priced.coinIn : null;
     t.winRate = sessions.length ? t.winners / sessions.length : null;
 
-    // Every rate above is silent about how much of the record it covers.
+    // What share of the record each rate actually speaks for, so the display
+    // can say so rather than presenting a partial figure as a whole one.
     t.coverage = {
       hours: sessions.length ? t.hoursKnown / sessions.length : 0,
-      coinIn: sessions.length ? t.coinInKnown / sessions.length : 0
+      coinIn: sessions.length ? t.coinInKnown / sessions.length : 0,
+      partialHours: t.hoursKnown > 0 && t.hoursKnown < sessions.length,
+      partialCoinIn: t.coinInKnown > 0 && t.coinInKnown < sessions.length
     };
     return t;
   }
