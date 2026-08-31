@@ -35,38 +35,45 @@ var Store = (function () {
    * **A starting $/TC.** These are suggestions to save typing, not facts:
    * rates vary by property, by denomination and by promotion. Confirm at the
    * players club; the field is always editable and never inferred twice.
+   *
+   * **A typical pace**, in hands or decisions per hour. Used only when there
+   * is no better way to know — see derive() — and always labelled as the
+   * assumption it is. These are rough figures and some are very rough: a
+   * blackjack table swings from about 200 hands an hour heads-up to about 60
+   * with a full table, so 80 stands in for "a normal table" and will be wrong
+   * whenever yours is not one. Anything that matters should be counted.
    */
   var GAMES = [
-    { name: "Video Poker",           group: "Machines",  kind: "machine", tcRate: 10 },
-    { name: "Slots",                 group: "Machines",  kind: "machine", tcRate: 5 },
-    { name: "Video Keno",            group: "Machines",  kind: "machine", tcRate: 5 },
-    { name: "Blackjack",             group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Craps",                 group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Baccarat",              group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Roulette",              group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Pai Gow Poker",         group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Pai Gow Tiles",         group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Three Card Poker",      group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Ultimate Texas Hold'em", group: "Tables",   kind: "table",   tcRate: 25 },
-    { name: "Mississippi Stud",      group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Let It Ride",           group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Caribbean Stud",        group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Casino War",            group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Sic Bo",                group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Big Six",               group: "Tables",    kind: "table",   tcRate: 25 },
-    { name: "Poker Room",            group: "Elsewhere", kind: "time",    tcRate: 0 },
-    { name: "Keno",                  group: "Elsewhere", kind: "time",    tcRate: 0 },
-    { name: "Bingo",                 group: "Elsewhere", kind: "time",    tcRate: 0 },
-    { name: "Sports Betting",        group: "Elsewhere", kind: "book",    tcRate: 0 },
-    { name: "Horse Racing",          group: "Elsewhere", kind: "book",    tcRate: 0 },
-    { name: "Other",                 group: "Elsewhere", kind: "other",   tcRate: 0 }
+    { name: "Video Poker",           group: "Machines",  kind: "machine", tcRate: 10, pace: 650 },
+    { name: "Slots",                 group: "Machines",  kind: "machine", tcRate: 5, pace: 600 },
+    { name: "Video Keno",            group: "Machines",  kind: "machine", tcRate: 5, pace: 500 },
+    { name: "Blackjack",             group: "Tables",    kind: "table",   tcRate: 25, pace: 80 },
+    { name: "Craps",                 group: "Tables",    kind: "table",   tcRate: 25, pace: 100 },
+    { name: "Baccarat",              group: "Tables",    kind: "table",   tcRate: 25, pace: 70 },
+    { name: "Roulette",              group: "Tables",    kind: "table",   tcRate: 25, pace: 40 },
+    { name: "Pai Gow Poker",         group: "Tables",    kind: "table",   tcRate: 25, pace: 30 },
+    { name: "Pai Gow Tiles",         group: "Tables",    kind: "table",   tcRate: 25, pace: 30 },
+    { name: "Three Card Poker",      group: "Tables",    kind: "table",   tcRate: 25, pace: 65 },
+    { name: "Ultimate Texas Hold'em", group: "Tables",   kind: "table",   tcRate: 25, pace: 45 },
+    { name: "Mississippi Stud",      group: "Tables",    kind: "table",   tcRate: 25, pace: 55 },
+    { name: "Let It Ride",           group: "Tables",    kind: "table",   tcRate: 25, pace: 50 },
+    { name: "Caribbean Stud",        group: "Tables",    kind: "table",   tcRate: 25, pace: 50 },
+    { name: "Casino War",            group: "Tables",    kind: "table",   tcRate: 25, pace: 70 },
+    { name: "Sic Bo",                group: "Tables",    kind: "table",   tcRate: 25, pace: 45 },
+    { name: "Big Six",               group: "Tables",    kind: "table",   tcRate: 25, pace: 40 },
+    { name: "Poker Room",            group: "Elsewhere", kind: "time",    tcRate: 0, pace: 30 },
+    { name: "Keno",                  group: "Elsewhere", kind: "time",    tcRate: 0, pace: 8 },
+    { name: "Bingo",                 group: "Elsewhere", kind: "time",    tcRate: 0, pace: 10 },
+    { name: "Sports Betting",        group: "Elsewhere", kind: "book",    tcRate: 0, pace: 0 },
+    { name: "Horse Racing",          group: "Elsewhere", kind: "book",    tcRate: 0, pace: 0 },
+    { name: "Other",                 group: "Elsewhere", kind: "other",   tcRate: 0, pace: 0 }
   ];
 
   var BY_NAME = {};
   GAMES.forEach(function (g) { BY_NAME[g.name] = g; });
 
   function gameInfo(name) {
-    return BY_NAME[name] || { name: name, group: "Elsewhere", kind: "other", tcRate: 0 };
+    return BY_NAME[name] || { name: name, group: "Elsewhere", kind: "other", tcRate: 0, pace: 0 };
   }
 
   // Kept as a list of names because that is how a person reads it back.
@@ -225,13 +232,31 @@ var Store = (function () {
     // one would silently invent the answer. So a counted number of hands wins
     // when there is one, and the average bet is then derived from it rather
     // than assumed. Either way exactly one of the two is typed.
-    d.hands = (s.handsOverride !== null && s.handsOverride !== undefined)
-      ? num(s.handsOverride)
-      : ((d.coinIn && num(s.perHand) > 0) ? d.coinIn / num(s.perHand) : null);
-    d.handsCounted = s.handsOverride !== null && s.handsOverride !== undefined;
+    var pace = gameInfo(s.game).pace;
+    if (s.handsOverride !== null && s.handsOverride !== undefined) {
+      d.hands = num(s.handsOverride);
+      d.handsBasis = "counted";
+    } else if (d.coinIn && num(s.perHand) > 0) {
+      d.hands = d.coinIn / num(s.perHand);
+      d.handsBasis = "coin in";
+    } else if (pace > 0 && d.hours > 0) {
+      // Last resort, and the only one that is a guess rather than arithmetic.
+      // It is here so a session that recorded nothing but its length still has
+      // a rough size, and it is labelled everywhere it surfaces.
+      d.hands = pace * d.hours;
+      d.handsBasis = "typical pace";
+    } else {
+      d.hands = null;
+      d.handsBasis = null;
+    }
+    d.handsCounted = d.handsBasis === "counted";
+    d.handsEstimated = d.handsBasis === "typical pace";
     d.avgBet = (d.coinIn && d.hands > 0) ? d.coinIn / d.hands
              : (num(s.perHand) > 0 ? num(s.perHand) : null);
-    d.handsPerHour = (d.hands && d.hours && d.hours > 0) ? d.hands / d.hours : null;
+    // Hands per hour from a pace is the pace again, so it says nothing. Left
+    // null rather than reported as a finding.
+    d.handsPerHour = (d.hands && d.hours && d.hours > 0 && !d.handsEstimated)
+      ? d.hands / d.hours : null;
     return d;
   }
 

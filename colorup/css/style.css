@@ -306,3 +306,11 @@ details summary { font-size: 0.8rem; cursor: pointer; padding: 0.3rem 0; }
 }
 .toggle-btn.active { background: var(--color-raised); color: var(--color-accent);
                      border-color: var(--color-accent); }
+
+.extreme { display: flex; align-items: center; gap: 0.5rem; }
+.extreme .session { flex: 1; min-width: 0; }
+.extreme-label {
+  font-size: 0.62rem; color: var(--color-text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  width: 3.2rem; text-align: right; flex: none;
+}

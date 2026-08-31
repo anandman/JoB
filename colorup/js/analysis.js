@@ -47,7 +47,7 @@ var Analysis = (function () {
       grossWin: 0, grossLoss: 0, winners: 0, losers: 0, evens: 0,
       cashIn: 0, bonus: 0, cashOut: 0, topUps: 0,
       coinIn: 0, coinInKnown: 0, coinInEstimated: 0,
-      hands: 0,
+      hands: 0, handsEstimated: 0,
       handpayCount: 0, handpayTotal: 0, handpayWithheld: 0,
       best: null, worst: null, longest: null
     };
@@ -72,7 +72,10 @@ var Analysis = (function () {
         t.coinInKnown++;
         if (d.coinInIsEstimate) t.coinInEstimated += d.coinIn;
       }
-      if (d.hands !== null) t.hands += d.hands;
+      if (d.hands !== null) {
+        t.hands += d.hands;
+        if (d.handsEstimated) t.handsEstimated += d.hands;
+      }
 
       t.handpayCount += d.handpayCount;
       t.handpayTotal += d.handpayTotal;
@@ -88,7 +91,10 @@ var Analysis = (function () {
     // the rate by exactly the proportion that was not.
     t.perHour = t.hours > 0 ? t.winLoss / t.hours : null;
     t.coinInPerHour = (t.hours > 0 && t.coinIn > 0) ? t.coinIn / t.hours : null;
-    t.handsPerHour = (t.hours > 0 && t.hands > 0) ? t.hands / t.hours : null;
+    // Excludes the sessions whose hands came from a typical pace, since for
+    // those this figure would just be that pace handed back.
+    var measured = t.hands - t.handsEstimated;
+    t.handsPerHour = (t.hours > 0 && measured > 0) ? measured / t.hours : null;
     t.avgHours = t.hoursKnown ? t.hours / t.hoursKnown : null;
 
     // Hold: the share of everything wagered that the house kept. This is the

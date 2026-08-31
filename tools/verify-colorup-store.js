@@ -193,6 +193,39 @@ console.log("\nA bet that varies, which is what a progression is");
     ? ok("three numbers that cannot all be true say so") : bad("no mismatch warning");
 }
 
+console.log("\nThree ways to know how many hands, in order of authority");
+{
+  const play = (over) => Store.derive(session(Object.assign({}, H(2), over)));
+
+  let d = play({ game: "Blackjack", startTC: 0, endTC: 60, tcRate: 25,
+                 perHand: 25, handsOverride: 150 });
+  d.handsBasis === "counted" && near(d.hands, 150)
+    ? ok("counting beats everything, because you were there") : bad("basis " + d.handsBasis);
+
+  d = play({ game: "Video Poker", startTC: 0, endTC: 1312, tcRate: 10, perHand: 50 });
+  d.handsBasis === "coin in" && near(d.hands, 262.4)
+    ? ok("otherwise coin-in over the bet, which is arithmetic and not an average")
+    : bad("basis " + d.handsBasis + " hands " + d.hands);
+
+  d = play({ game: "Blackjack" });
+  d.handsBasis === "typical pace" && near(d.hands, 160)
+    ? ok("and failing both, a typical pace for the game — 80 an hour at blackjack")
+    : bad("basis " + d.handsBasis + " hands " + d.hands);
+  d.handsPerHour === null
+    ? ok("which reports no hands per hour, since that would be the pace handed back")
+    : bad("handsPerHour " + d.handsPerHour);
+
+  d = play({ game: "Pai Gow Poker" });
+  near(d.hands, 60) ? ok("pai gow is the slowest game on the floor and is priced that way")
+                    : bad("pai gow hands " + d.hands);
+  d = play({ game: "Sports Betting" });
+  d.hands === null ? ok("and a sports bet has no pace at all, so it gets no number")
+                   : bad("hands " + d.hands);
+
+  d = Store.derive(session({ game: "Blackjack" }));
+  d.hands === null ? ok("a pace needs a duration; without one it stays silent") : bad("hands " + d.hands);
+}
+
 console.log("\nSuggestions, narrowed by what else is on the form");
 {
   const rows = [

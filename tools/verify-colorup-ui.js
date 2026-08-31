@@ -359,7 +359,8 @@ function localStamp(y, mo, d, h, mi) {
     type("handsOverride", "1200");
     type("system", "d'Alembert");
     const shown = $("#sheet-body .derived").textContent.replace(/\s+/g, "");
-    yes(/1,200counted/.test(shown), "counted hands are used as counted", shown);
+    yes(/Hands1,200·counted/.test(shown),
+        "counted hands are used, and the panel says that is where the number came from", shown);
     yes(/\$6\.00workedout/.test(shown),
         "and the average bet is worked out from them rather than assumed", shown);
     click(footBtn("Save"));
@@ -557,6 +558,14 @@ function localStamp(y, mo, d, h, mi) {
     w.App.show("stats");
     await settle();
     yes($("#stats-body .stat-grid"), "the tab renders from whatever is there");
+
+    // One session is its own best, worst and longest. Printing it three times
+    // said nothing three times, and said it without labels.
+    const only = await w.Store.all();
+    if (only.length === 1) {
+      yes(!/Extremes/.test($("#stats-body").textContent),
+          "with no Extremes section, because one session is not extreme against anything");
+    }
     const sel = $$("#stats-filters select")[0];
     sel.value = "2026";
     fire(sel, "change");
@@ -565,6 +574,22 @@ function localStamp(y, mo, d, h, mi) {
         "and picking a year adds the figures a return asks for");
     yes(/do not net/.test($("#stats-body").textContent),
         "with the warning that they do not net");
+
+    // Two sessions with the same result would still repeat a row without the
+    // deduplication, so check the rows are distinct rather than just counted.
+    await w.Store.put(Object.assign(w.Store.blank(), {
+      date: "2026-07-04", venue: "Peppermill", game: "Craps", cashIn: 300, cashOut: 900,
+      start: "2026-07-04T18:00:00Z", end: "2026-07-04T21:00:00Z"
+    }));
+    await w.App.refresh();
+    w.App.show("stats");
+    await settle();
+    const labels = $$("#stats-body .extreme-label").map((n) => n.textContent);
+    yes(labels.length >= 2, "with more than one session the extremes appear", labels.join(","));
+    yes(labels.indexOf("Best") >= 0 && labels.indexOf("Worst") >= 0,
+        "and each says which extreme it is");
+    const ids = $$("#stats-body .extreme .session").length;
+    is(ids, labels.length, "one row per label, never the same session twice");
   }
 
   console.log(fails ? `\n${fails} FAILED\n` : "\nall checks passed\n");

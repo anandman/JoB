@@ -104,8 +104,9 @@ var Backup = (function () {
       hands: d.hands === null ? null : Math.round(d.hands),
       // Which number was typed and which was worked out. Under a progression
       // the average bet is a result, not an input, and the sheet should not
-      // read as though someone flat bet it.
-      handsFrom: d.hands === null ? null : (d.handsCounted ? "counted" : "coin in"),
+      // read as though someone flat bet it — nor as though a figure taken from
+      // a typical pace was measured.
+      handsFrom: d.handsBasis,
       system: s.system,
       handsPerHour: d.handsPerHour === null ? null : Math.round(d.handsPerHour),
       handpayCount: orNull(d.handpayCount, d.handpayCount),

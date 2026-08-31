@@ -143,8 +143,11 @@ var App = (function () {
                 hint: "What a hand cost on average. $25 is five coins at $5. " +
                       "On a progression leave this and fill in hands instead." },
     handsOverride: { label: "Hands played", kind: "int",
-                     hint: "If you counted them. Fill this in when the bet varied, " +
-                           "and the average bet is worked out from it." },
+                     hint: "If you counted them, or the machine told you. Fill this in " +
+                           "when the bet varied and the average bet is worked out from " +
+                           "it instead. Left blank, hands come from coin-in and the bet " +
+                           "size — or failing that, from a typical pace for the game, " +
+                           "which is a guess and says so." },
     system:   { label: "Betting system", kind: "text", list: "systems",
                 suggest: ["Flat", "Positive progression", "Martingale", "d'Alembert",
                           "Fibonacci", "Oscar's Grind", "Paroli", "Card counting"],
@@ -449,7 +452,7 @@ var App = (function () {
         ["Per hour", d.perHour === null ? "—" : money(d.perHour, { sign: true }), netClass(d.perHour)]
       ]);
       if (d.hands !== null) {
-        lines.push(["Hands", count(d.hands) + (d.handsCounted ? " counted" : ""), ""]);
+        lines.push(["Hands", count(d.hands) + " · " + d.handsBasis, ""]);
         if (d.avgBet !== null) {
           lines.push(["Average bet", money(d.avgBet, { cents: d.avgBet < 20 }) +
                                      (d.handsCounted ? " worked out" : ""), ""]);
@@ -928,7 +931,9 @@ var App = (function () {
       stat("Sessions won", t.winners + " of " + t.sessions,
            t.winRate === null ? "" : pct(t.winRate, 0)),
       stat("Hands / hour", t.handsPerHour === null ? "—" : count(t.handsPerHour),
-           t.coinInPerHour === null ? "" : money(t.coinInPerHour) + " through the machine")
+           t.handsEstimated > 0
+             ? count(t.handsEstimated) + " hands from a typical pace, left out"
+             : (t.coinInPerHour === null ? "" : money(t.coinInPerHour) + " through the machine"))
     ]));
 
     if (t.coverage.hours < 1 || t.coverage.coinIn < 1) {
@@ -981,12 +986,25 @@ var App = (function () {
       body.appendChild(breakdown(months.slice().reverse(), true));
     }
 
-    if (t.best) {
-      body.appendChild(el("h3", { text: "Extremes" }));
-      body.appendChild(sessionRow(t.best));
-      body.appendChild(sessionRow(t.worst));
-      if (t.longest && t.longest.id !== t.best.id && t.longest.id !== t.worst.id) {
-        body.appendChild(sessionRow(t.longest));
+    // One session is its own best, worst and longest, and printing it three
+    // times says nothing three times. Labelled, deduplicated, and not shown at
+    // all until there is something for an extreme to be extreme against.
+    if (rows.length > 1) {
+      var extremes = [["Best", t.best], ["Worst", t.worst], ["Longest", t.longest]];
+      var already = {};
+      var shown = extremes.filter(function (e) {
+        if (!e[1] || already[e[1].id]) return false;
+        already[e[1].id] = 1;
+        return true;
+      });
+      if (shown.length) {
+        body.appendChild(el("h3", { text: "Extremes" }));
+        shown.forEach(function (e) {
+          body.appendChild(el("div", { class: "extreme" }, [
+            el("span", { class: "extreme-label", text: e[0] }),
+            sessionRow(e[1])
+          ]));
+        });
       }
     }
   }

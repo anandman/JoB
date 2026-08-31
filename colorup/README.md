@@ -115,6 +115,22 @@ worked out instead. Exactly one of the two is ever typed, and the sheet records
 which. If hands, average bet and coin-in are all present and cannot all be
 true, the app says so.
 
+**Hands come from one of three places**, in this order, and the record always
+says which:
+
+1. **Counted** — you counted, or the machine told you.
+2. **Coin-in over the average bet** — arithmetic, not an average. Exact to the
+   extent coin-in is, which at a table means the pit's estimate.
+3. **A typical pace for the game** — a guess, used only when neither of the
+   above is available, so that a session which recorded nothing but its length
+   still has a rough size. Hands per hour is then not reported, because it
+   would only be the pace handed back.
+
+The paces are rough and some are very rough: a blackjack table runs about 200
+hands an hour heads-up and about 60 with a full table, so the 80 used here
+stands in for "a normal table" and is wrong whenever yours is not one. Count
+anything that matters.
+
 **Winnings and losses do not net.** Winning sessions are income and losing
 sessions are an itemised deduction, so the two gross figures are reported
 separately and their sum is not a number to file.
