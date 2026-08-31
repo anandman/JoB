@@ -376,6 +376,15 @@ function localStamp(y, mo, d, h, mi) {
     // instead is what a progression needs, and the average bet then follows.
     const vp = (await w.Store.all()).find((s) => s.venue === "Eldorado");
     click($$("#log-list .session")[0]);
+    // Suggestions used to be either history or the built-in list, never both,
+    // so entering one system hid every other for good — the list got shorter
+    // the more it was used.
+    const systemPicks = () => Array.from($('#sheet-body [data-key="system"]')
+      .parentNode.querySelectorAll(".pick")).map((b) => b.textContent);
+    yes(systemPicks().indexOf("Martingale") >= 0 && systemPicks().indexOf("Flat") >= 0,
+        "with nothing entered yet, the systems the app knows about are offered",
+        systemPicks().join(" | "));
+
     type("handsOverride", "1200");
     type("system", "d'Alembert");
     const shown = $("#sheet-body .derived").textContent.replace(/\s+/g, "");
@@ -384,6 +393,16 @@ function localStamp(y, mo, d, h, mi) {
     yes(/\$6\.00workedout/.test(shown),
         "and the average bet is worked out from them rather than assumed", shown);
     click(footBtn("Save"));
+    await settle();
+
+    // And with one entered, the rest are still there.
+    click($$("#log-list .session")[0]);
+    const after = Array.from($('#sheet-body [data-key="system"]')
+      .parentNode.querySelectorAll(".pick")).map((b) => b.textContent);
+    yes(after.indexOf("Martingale") >= 0,
+        "and having used one, the others are still offered rather than replaced by it",
+        after.join(" | "));
+    click(footBtn("Cancel"));
     await settle();
 
     const saved = (await w.Store.all()).find((s) => s.id === vp.id);
@@ -632,6 +651,61 @@ function localStamp(y, mo, d, h, mi) {
     click($$("#dropbox-box .btn").find((b) => b.textContent === "Start over"));
     await settle();
     yes(!$("#dropbox-box .code-input"), "and starting over puts it away");
+  }
+
+  console.log("\nThe log can be narrowed, now that it is long");
+  {
+    // A filter needs something to filter. These are removed again at the end
+    // so nothing downstream inherits them.
+    const seeded = [
+      { id: "flt-1", date: "2024-05-02", venue: "Cromwell", game: "Craps", cashIn: 200, cashOut: 350 },
+      { id: "flt-2", date: "2026-04-11", venue: "Flamingo", game: "Blackjack", cashIn: 400, cashOut: 100 },
+      { id: "flt-3", date: "2026-04-12", venue: "Flamingo", game: "Blackjack", cashIn: 300, cashOut: 800 }
+    ];
+    for (const r of seeded) await w.Store.put(Object.assign(w.Store.blank(), r));
+    await w.App.refresh();
+
+    w.App.show("log");
+    await settle();
+    const before = $$("#log-list .session").length;
+    yes(before > 3, "there is more than one session to narrow", String(before));
+
+    const pickers = $$("#log-filters select");
+    is(pickers.length, 3, "year, game and venue, the same three the stats offer");
+    const game = pickers[1];
+    game.value = "Blackjack";
+    fire(game, "change");
+    await settle();
+    const narrowed = $$("#log-list .session").length;
+    yes(narrowed > 0 && narrowed < before, "picking one narrows the list",
+        narrowed + " of " + before);
+
+    // The two tabs answer different questions; one must not move the other.
+    w.App.show("stats");
+    await settle();
+    is($$("#stats-filters select")[1].value, "",
+       "and the stats are left where they were, not dragged along");
+
+    // Two filters that are each fine and together match nothing.
+    w.App.show("log");
+    await settle();
+    const year = $$("#log-filters select")[0];
+    year.value = "2024";
+    fire(year, "change");
+    await settle();
+    yes($("#log-list .empty"),
+        "blackjack in a year with only craps says so rather than going blank");
+
+    $$("#log-filters select")[0].value = "";
+    fire($$("#log-filters select")[0], "change");
+    $$("#log-filters select")[1].value = "";
+    fire($$("#log-filters select")[1], "change");
+    await settle();
+    is($$("#log-list .session").length, before, "and clearing them brings everything back");
+
+    for (const r of seeded) await w.Store.remove(r.id);
+    await w.App.refresh();
+    await settle();
   }
 
   console.log("\nStats");

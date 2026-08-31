@@ -20,7 +20,7 @@
 var App = (function () {
   "use strict";
 
-  var state = { sessions: [], filters: {}, tab: "now", tick: null,
+  var state = { sessions: [], filters: {}, logFilters: {}, tab: "now", tick: null,
                 dropbox: false, dropboxPending: false, syncError: null };
 
   /* ===== small helpers ===== */
@@ -239,7 +239,13 @@ var App = (function () {
         var options = Store.seen(state.sessions, key,
                                  n.where ? n.where(current) : null,
                                  n.only ? n.only(current) : null);
-        if (!options.length && f.suggest) options = f.suggest;
+        // What you have used comes first, then the ones the app knows about.
+        // These used to be an either/or, so entering a single betting system
+        // hid every other suggestion for good — the list got shorter the more
+        // you used it, which is precisely backwards.
+        if (f.suggest) {
+          f.suggest.forEach(function (v) { if (options.indexOf(v) < 0) options.push(v); });
+        }
         options.filter(function (v) { return v !== input.value; })
           .slice(0, 6)
           .forEach(function (v) {
@@ -1034,20 +1040,31 @@ var App = (function () {
   }
 
   function renderLog() {
+    var box = clear($("#log-filters"));
     var list = clear($("#log-list"));
     if (!state.sessions.length) {
       list.appendChild(el("p", { class: "empty", text: "Nothing logged yet." }));
       return;
     }
+    filterBar(box, state.sessions, state.logFilters, renderLog);
+
+    // A session still on the clock belongs in the list it is being logged in,
+    // unlike in the stats, where it has no result to contribute yet.
+    var rows = Analysis.filter(state.sessions, Object.assign({ includeOpen: true },
+                                                             state.logFilters));
+    if (!rows.length) {
+      list.appendChild(el("p", { class: "empty", text: "Nothing matches that." }));
+      return;
+    }
     // Newest first: the row you want is almost always the one you just closed.
     var byMonth = {};
-    state.sessions.forEach(function (s) {
+    rows.forEach(function (s) {
       var k = (s.date || "0000-00").slice(0, 7);
       (byMonth[k] = byMonth[k] || []).push(s);
     });
     Object.keys(byMonth).sort().reverse().forEach(function (k) {
-      var rows = byMonth[k].slice().reverse();
-      var t = Analysis.totals(rows.filter(function (s) { return !(s.start && !s.end); }));
+      var month = byMonth[k].slice().reverse();
+      var t = Analysis.totals(month.filter(function (s) { return !(s.start && !s.end); }));
       var parts = k.split("-");
       list.appendChild(el("div", { class: "month-head" }, [
         el("span", { text: (MONTHS[parseInt(parts[1], 10) - 1] || "?") + " " + parts[0] }),
@@ -1056,37 +1073,49 @@ var App = (function () {
                            (t.hours > 0 ? " · " + hoursText(t.hours) +
                                           (t.coverage.partialHours ? " *" : "") : "") })
       ]));
-      rows.forEach(function (s) { list.appendChild(sessionRow(s)); });
+      month.forEach(function (s) { list.appendChild(sessionRow(s)); });
     });
   }
 
   /* ===== the Stats tab ===== */
 
-  function renderStats() {
-    var box = clear($("#stats-filters"));
-    var closed = state.sessions.filter(function (s) { return !(s.start && !s.end); });
-
+  /**
+   * Year, game and venue pickers over a set of sessions.
+   *
+   * Shared by the log and the stats, with separate state behind each: they
+   * answer different questions, and having one move the other would be a
+   * surprise. Options come from the sessions in hand, so a filter can never
+   * offer something that would empty the list.
+   */
+  function filterBar(box, rows, filters, redraw) {
     function picker(key, label, values) {
       var sel = el("select", { onchange: function () {
-        state.filters[key] = sel.value || null;
-        renderStats();
+        filters[key] = sel.value || null;
+        redraw();
       } });
       sel.appendChild(el("option", { value: "", text: label }));
       values.forEach(function (v) {
         var o = el("option", { value: v, text: v });
-        if (state.filters[key] === v) o.selected = true;
+        if (filters[key] === v) o.selected = true;
         sel.appendChild(o);
       });
       return sel;
     }
     var uniq = function (field) {
       var seen = {};
-      closed.forEach(function (s) { if (s[field]) seen[s[field]] = 1; });
+      rows.forEach(function (s) { if (s[field]) seen[s[field]] = 1; });
       return Object.keys(seen).sort();
     };
-    box.appendChild(picker("year", "All years", Analysis.years(closed)));
+    box.appendChild(picker("year", "All years", Analysis.years(rows)));
     box.appendChild(picker("game", "All games", uniq("game")));
     box.appendChild(picker("venue", "All venues", uniq("venue")));
+  }
+
+  function renderStats() {
+    var box = clear($("#stats-filters"));
+    var closed = state.sessions.filter(function (s) { return !(s.start && !s.end); });
+
+    filterBar(box, closed, state.filters, renderStats);
 
     var rows = Analysis.filter(closed, state.filters);
     var body = clear($("#stats-body"));
