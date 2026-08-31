@@ -438,11 +438,16 @@ var Store = (function () {
    * rest. Asked for a machine, that puts the ones from this venue at the front
    * without pretending you have never played anywhere else.
    */
-  function seen(rows, field, where) {
+  function seen(rows, field, where, only) {
     var near = [], far = [], i, k, matches;
     for (i = rows.length - 1; i >= 0; i--) {
       var v = rows[i][field];
       if (!v) continue;
+      // `only` excludes outright; `where` merely orders. A machine from
+      // another game is not a worse suggestion, it is a wrong one.
+      matches = true;
+      for (k in (only || {})) if (only[k] && rows[i][k] !== only[k]) matches = false;
+      if (!matches) continue;
       matches = true;
       for (k in (where || {})) if (where[k] && rows[i][k] !== where[k]) matches = false;
       var into = matches ? near : far;

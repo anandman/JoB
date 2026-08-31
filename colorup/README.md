@@ -64,6 +64,15 @@ walked out with, the tier credits it earned, any W-2G handpays, and — the
 reason this exists rather than a spreadsheet — **how long it took**. Win rate
 per hour is the number a column of totals cannot give you.
 
+**A wager is not a session.** A sports bet or a horse race is placed in a
+moment and settles whenever it settles — sometimes a year later, for a futures
+ticket — so there is no clock to run, no tier credit rate, no average bet and
+no betting system. Choosing one of those games takes the form apart to match:
+what is left is when, what you staked, and what came back. It says stake and
+returned rather than cash in and cash out, and **Log a bet** on the main screen
+opens straight into it. A poker room keeps the session form, because sitting
+down and cashing out is exactly what it is.
+
 Three things follow from where it is used, which is a casino floor at the end
 of a session:
 

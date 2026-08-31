@@ -165,7 +165,7 @@ var App = (function () {
   // Layout: a string is a full-width row, an array is a row of fields sharing it.
   var FORM_START = ["venue", "location", "game", "detail",
                     ["cashIn", "bonus"], ["startTC", "tcRate"],
-                    ["perHand", "system"], "start"];
+                    ["perHand", "system"], "date", "start"];
   var FORM_COLOR = ["cashOut", "end", "endTC", "handsOverride", "handpays", "comment"];
   var FORM_FULL  = ["venue", "location", "game", "detail",
                     "date", ["start", "end"], ["cashIn", "bonus"], "buyIns", "cashOut",
@@ -185,7 +185,8 @@ var App = (function () {
     var f = FIELDS[key];
     var id = "f-" + key;
     var wrap = el("div", { class: "field" + (key === "cashOut" ? " hero" : "") });
-    wrap.appendChild(el("label", { for: id, text: f.label }));
+    var labelNode = el("label", { for: id, text: f.label });
+    wrap.appendChild(labelNode);
 
     var input;
     if (f.kind === "select") {
@@ -234,7 +235,10 @@ var App = (function () {
       wrap.appendChild(picks);
       pickers.push(function (current) {
         clear(picks);
-        var options = Store.seen(state.sessions, key, NARROW[key] ? NARROW[key](current) : null);
+        var n = NARROW[key] || {};
+        var options = Store.seen(state.sessions, key,
+                                 n.where ? n.where(current) : null,
+                                 n.only ? n.only(current) : null);
         if (!options.length && f.suggest) options = f.suggest;
         options.filter(function (v) { return v !== input.value; })
           .slice(0, 6)
@@ -245,7 +249,9 @@ var App = (function () {
       });
     }
 
-    if (f.hint) wrap.appendChild(el("p", { class: "hint", text: f.hint }));
+    var hintNode = f.hint ? el("p", { class: "hint", text: f.hint }) : null;
+    if (hintNode) wrap.appendChild(hintNode);
+    sheetFields[key] = { wrap: wrap, label: labelNode, hint: hintNode, input: input };
     return wrap;
   }
 
@@ -339,12 +345,51 @@ var App = (function () {
     return wrap;
   }
 
-  // What each suggestion list is narrowed by. A machine belongs to a venue and
-  // a game; a city belongs to a venue; a venue belongs to nothing.
+  // What each suggestion list is narrowed by. `where` orders, `only` excludes:
+  // a machine from another game is not a worse suggestion, it is a wrong one.
   var NARROW = {
-    detail: function (s) { return { venue: s.venue, game: s.game }; },
-    location: function (s) { return { venue: s.venue }; }
+    detail: { where: function (s) { return { venue: s.venue }; },
+              only: function (s) { return { game: s.game }; } },
+    location: { where: function (s) { return { venue: s.venue }; } },
+    venue: { where: function (s) { return { game: s.game }; } },
+    system: {}
   };
+
+  /**
+   * A wager is not a session.
+   *
+   * A sports bet is placed in a moment and settles whenever it settles —
+   * sometimes a year later, for a futures ticket. There is no clock to run, no
+   * tier credit rate, no average bet and no betting system, and asking for
+   * them makes the form read as though the app has misunderstood what you are
+   * doing. So the form takes its shape from the kind of game selected, and
+   * says stake and returned rather than cash in and cash out.
+   *
+   * Only `book` is reshaped. A poker room is a session in every way that
+   * matters — you sit down, you play for hours, you cash out — so it keeps the
+   * session form even though its tier credits are earned for time.
+   */
+  var BY_KIND = {
+    book: {
+      drop: ["start", "end", "startTC", "endTC", "tcRate", "perHand",
+             "handsOverride", "system", "buyIns"],
+      labels: {
+        detail: "What you bet on",
+        cashIn: "Stake",
+        bonus: "Free bet / promo",
+        cashOut: "Returned"
+      },
+      hints: {
+        detail: "The bet itself, so it still means something in a year.",
+        cashIn: "What you risked. A losing bet returns nothing, not a negative.",
+        bonus: "A free bet or a promo credit. It counts as money in.",
+        cashOut: "What came back, stake included. Zero if it lost."
+      },
+      placeholders: { detail: "Spurs-Blazers SGP (+1850)" }
+    }
+  };
+
+  function kindRules(game) { return BY_KIND[Store.gameInfo(game).kind] || null; }
 
   /** Read the open form back into a session object. */
   function readForm(base) {
@@ -355,6 +400,10 @@ var App = (function () {
       var key = node.getAttribute("data-key");
       var f = FIELDS[key];
       if (!f || f.kind === "handpays") return;
+      // Marked as not applying to this game: recorded as absent rather than as
+      // whatever was left over from a game it did apply to.
+      var wrap = node.closest ? node.closest("[data-na]") : null;
+      if (wrap) { s[key] = f.kind === "text" || f.kind === "textarea" ? "" : null; return; }
       var v = node.value;
       if (f.kind === "money" || f.kind === "int") s[key] = numOrNull(v);
       else if (f.kind === "select") s[key] = key === "tcRate" ? numOrNull(v) : v;
@@ -363,7 +412,8 @@ var App = (function () {
     });
 
     var bi = body.querySelector('[data-key="buyIns"]');
-    if (bi) {
+    if (bi && bi.hasAttribute("data-na")) s.buyIns = [];
+    else if (bi) {
       s.buyIns = Array.prototype.map.call(bi.querySelectorAll(".handpay-row"), function (row) {
         return {
           amount: numOrNull(row.querySelector('[data-bi="amount"]').value),
@@ -395,12 +445,19 @@ var App = (function () {
   // Re-render functions for the quick-pick rows, rebuilt with each sheet.
   var pickers = [];
 
+  // The fields of the open sheet, so the form can change shape without being
+  // torn down and rebuilt under whoever is typing into it.
+  var sheetFields = {};
+  var footButtons = [];
+
   function openSheet(opts) {
     sheet.base = opts.session;
     var body = clear($("#sheet-body"));
     var foot = clear($("#sheet-foot"));
     $("#sheet-title").textContent = opts.title;
     pickers = [];
+    sheetFields = {};
+    footButtons = [];
 
     var derived = el("div", { class: "derived" });
     var warnBox = el("div");
@@ -424,11 +481,37 @@ var App = (function () {
         }
       }
 
+      // The form takes its shape from the game. Fields that do not apply are
+      // marked rather than merely hidden, so readForm can leave them out of
+      // the record — a tier credit rate on a sports bet is not a value, it is
+      // a leftover. They keep what was typed, so switching back restores it.
+      var rules = kindRules(s.game);
+      Object.keys(sheetFields).forEach(function (key) {
+        var f = sheetFields[key];
+        var gone = !!(rules && rules.drop.indexOf(key) >= 0);
+        f.wrap.hidden = gone;
+        if (gone) f.wrap.setAttribute("data-na", "1");
+        else f.wrap.removeAttribute("data-na");
+
+        var label = (rules && rules.labels[key]) || FIELDS[key].label;
+        if (f.label && f.label.textContent !== label) f.label.textContent = label;
+        var hint = (rules && rules.hints[key]) || FIELDS[key].hint;
+        if (f.hint && hint && f.hint.textContent !== hint) f.hint.textContent = hint;
+        var ph = rules && rules.placeholders && rules.placeholders[key];
+        if (f.input && ph) f.input.setAttribute("placeholder", ph);
+        else if (f.input && FIELDS[key].placeholder) f.input.setAttribute("placeholder", FIELDS[key].placeholder);
+      });
+      Array.prototype.forEach.call(body.querySelectorAll(".field-pair"), function (pair) {
+        var any = Array.prototype.some.call(pair.children, function (c) { return !c.hidden; });
+        pair.hidden = !any;
+      });
+      if (rules) s = readForm(sheet.base);
+
       // A start time already says which day it was, so the date field is only
       // asked for when there is no start time to say it. It is kept in step
       // rather than cleared, so clearing a time leaves the day behind.
       var dateField = body.querySelector('[data-key="date"]');
-      if (dateField) {
+      if (dateField && !rules) {
         var wrap = dateField.parentNode;
         if (s.start) {
           dateField.value = localDate(s.start);
@@ -456,6 +539,9 @@ var App = (function () {
         }
       }
 
+      footButtons.forEach(function (b) {
+        if (typeof b.spec.label === "function") b.node.textContent = b.spec.label(s);
+      });
       pickers.forEach(function (fn) { fn(s); });
       var d = Store.derive(s);
       clear(derived);
@@ -525,11 +611,14 @@ var App = (function () {
     body.appendChild(warnBox);
     refreshDerived();
 
-    (opts.buttons || []).forEach(function (b) {
-      foot.appendChild(el("button", {
-        type: "button", class: "btn wide " + (b.class || ""), text: b.label,
+    footButtons = (opts.buttons || []).map(function (b) {
+      var node = el("button", {
+        type: "button", class: "btn wide " + (b.class || ""),
+        text: typeof b.label === "function" ? b.label(opts.session) : b.label,
         onclick: function () { b.run(readForm(sheet.base)); }
-      }));
+      });
+      foot.appendChild(node);
+      return { spec: b, node: node };
     });
 
     $("#sheet-backdrop").hidden = false;
@@ -647,8 +736,18 @@ var App = (function () {
       layout: FORM_START,
       buttons: [
         { label: "Cancel", run: closeSheet },
-        { label: "Start", class: "primary", run: function (next) {
-            Store.put(next).then(function () { closeSheet(); toast("Session started."); saved(); });
+        { label: function (draft) {
+            // A wager is complete the moment it is written down; there is no
+            // clock to start, so the button stops offering to start one.
+            return kindRules(draft.game) ? "Save the bet" : "Start";
+          },
+          class: "primary", run: function (next) {
+            var bet = !!kindRules(next.game);
+            Store.put(next).then(function () {
+              closeSheet();
+              toast(bet ? "Bet logged." : "Session started.");
+              saved();
+            });
           } }
       ]
     });
@@ -702,6 +801,29 @@ var App = (function () {
     editSession(s, { title: "Add a past session" });
   }
 
+  /**
+   * A bet, which is a different shape of thing.
+   *
+   * Placed in a moment and settled whenever it settles. Nothing about it is a
+   * session, so it opens straight into the completed form rather than starting
+   * a clock, and inherits from the last bet rather than the last time you sat
+   * down somewhere.
+   */
+  function logBet() {
+    var books = state.sessions.filter(function (x) {
+      return Store.gameInfo(x.game).kind === "book";
+    });
+    var last = books.length ? books[books.length - 1] : null;
+    var s = Store.blank(last);
+    s.game = (last && last.game) || "Sports Betting";
+    s.cashIn = null;
+    s.startTC = null;
+    s.detail = "";
+    s.start = null;
+    s.end = null;
+    editSession(s, { title: "Log a bet" });
+  }
+
   function renderNow() {
     var card = clear($("#now-card"));
     var open = Store.running(state.sessions);
@@ -735,7 +857,8 @@ var App = (function () {
       card.appendChild(el("button", { class: "big-btn", text: "Start a session",
                                       onclick: startSession }));
       card.appendChild(el("div", { class: "row-actions" }, [
-        el("button", { class: "btn wide", text: "Add a past session", onclick: addPastSession })
+        el("button", { class: "btn wide", text: "Add a past session", onclick: addPastSession }),
+        el("button", { class: "btn wide", text: "Log a bet", onclick: logBet })
       ]));
     }
 

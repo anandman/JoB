@@ -319,3 +319,8 @@ details summary { font-size: 0.8rem; cursor: pointer; padding: 0.3rem 0; }
    was. Spelled out because .field sets margins the attribute alone would
    leave behind as a gap. */
 .field[hidden] { display: none; }
+
+/* Hidden from script when a game has no use for the pair. Same trap as the
+   sheet backdrop: an author `display` beats the user agent's [hidden] rule
+   however specific that rule is, so it has to be said here. */
+.field-pair[hidden] { display: none; }

@@ -101,6 +101,10 @@ function type(key, value) {
   fire(node, "change");
 }
 const footBtn = (label) => $$("#sheet-foot .btn").find((b) => b.textContent === label);
+const sheetFieldLabel = (key) => {
+  const f = $(`#sheet-body [data-key="${key}"]`).closest(".field");
+  return f.querySelector("label").textContent;
+};
 const sheetOpen = () => !$("#sheet-backdrop").hidden;
 
 /** Local wall time in the form a datetime-local input speaks. */
@@ -145,6 +149,10 @@ function localStamp(y, mo, d, h, mi) {
       const cls = /class="([^"]*)"/.exec(m[0]);
       if (cls) classesOfHidden.push(...cls[1].split(/\s+/).filter(Boolean));
     }
+    // Classes the app hides from script rather than in the markup. Listed by
+    // hand because there is no way to see it statically, and the failure is
+    // invisible: the element is flagged hidden and still fills the screen.
+    classesOfHidden.push("field", "field-pair");
     yes(classesOfHidden.length, "something in the page is hidden by the attribute",
         "nothing found, so this check has stopped checking anything");
     for (const c of classesOfHidden) {
@@ -285,9 +293,11 @@ function localStamp(y, mo, d, h, mi) {
 
     type("game", "Video Poker");
     const other = shownFor();
-    yes(other.indexOf("$25 table, 6 deck S17") >= 0 && other.indexOf("9/5 JoB $5 high limit") >= 0,
-        "a game you have not played there yet still offers everything, rather than nothing",
+    yes(other.indexOf("$25 table, 6 deck S17") < 0,
+        "and switching game stops offering the other game's table, which is not a machine",
         other.join(" | "));
+    yes(other.indexOf("9/5 JoB $5 high limit") >= 0,
+        "while still offering the machines from that game elsewhere", other.join(" | "));
 
     click(footBtn("Cancel"));
     await settle();
@@ -676,6 +686,59 @@ function localStamp(y, mo, d, h, mi) {
        "still labelled as both ends of a range of one");
     gamePicker.value = "";
     fire(gamePicker, "change");
+    await settle();
+  }
+
+  w.App.show("now");
+  await w.App.refresh();
+  await settle();
+
+  console.log("\nA wager is not a session");
+  {
+    click($$("#now-card .btn").find((b) => b.textContent === "Log a bet"));
+    is($("#sheet-title").textContent, "Log a bet", "bets have their own way in");
+    is($('#sheet-body [data-key="game"]').value, "Sports Betting",
+       "opening straight into a book game rather than wherever you last sat down");
+
+    const gone = (k) => $(`#sheet-body [data-key="${k}"]`).closest(".field").hidden;
+    yes(gone("start") && gone("end"),
+        "with no clock, because a futures ticket settles whenever it settles");
+    yes(gone("startTC") && gone("endTC") && gone("tcRate"),
+        "no tier credits, which a sportsbook does not award by coin-in");
+    yes(gone("perHand") && gone("handsOverride") && gone("system"),
+        "and no average bet, hands or betting system, none of which a bet has");
+    yes(!gone("date") && !gone("cashIn") && !gone("cashOut"),
+        "what is left is when, what you staked, and what came back");
+
+    is(sheetFieldLabel("cashIn"), "Stake", "and it says stake");
+    is(sheetFieldLabel("cashOut"), "Returned", "and returned");
+    is(sheetFieldLabel("detail"), "What you bet on", "rather than machine or table");
+
+    type("venue", "Caesars Sportsbook");
+    type("detail", "Spurs-Blazers SGP (+1850)");
+    type("cashIn", "100");
+    type("cashOut", "0");
+    type("date", "2026-08-30");
+    click(footBtn("Save"));
+    await settle();
+
+    const bet = (await w.Store.all()).find((s) => s.game === "Sports Betting");
+    yes(bet, "the bet is stored");
+    is(bet.start, null, "with no start");
+    is(bet.tcRate, null, "and no leftover tier credit rate from the game before it");
+    near(w.Store.derive(bet).winLoss, -100, "a losing bet is the stake, not a negative return");
+    is(w.Store.running(await w.Store.all()), null, "and nothing is left running");
+  }
+
+  console.log("\nAsking to start a bet is not a dead end");
+  {
+    click($("#now-card .big-btn"));
+    type("game", "Sports Betting");
+    is(footBtn("Save the bet") ? "Save the bet" : $$("#sheet-foot .btn").pop().textContent,
+       "Save the bet", "the start form stops offering to start a clock there is none of");
+    type("game", "Video Poker");
+    yes(footBtn("Start"), "and offers it again for something you actually sit down at");
+    click(footBtn("Cancel"));
     await settle();
   }
 
