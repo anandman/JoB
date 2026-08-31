@@ -257,17 +257,28 @@ var Dropbox = (function () {
    * removals travel as tombstones, so a session that was deleted stays
    * deleted instead of being restored by whichever copy still had it.
    */
-  function sync() {
+  function sync(opts) {
     var result = { pulled: 0, updated: 0, removed: 0, pushed: 0 };
+    var force = opts && opts.force;
 
-    return download(RECORD).then(function (text) {
+    // Forcing skips the read. It exists because a file that cannot be parsed
+    // would otherwise block every future sync — the local record could never
+    // get out — and being permanently unable to back up is worse than
+    // overwriting something Dropbox has kept a version of anyway.
+    return (force ? Promise.resolve(null) : download(RECORD)).then(function (text) {
       return Promise.all([Store.all(), Store.deletions()]).then(function (r) {
         var local = r[0], deleted = r[1];
         if (!text) return { sessions: local, deleted: deleted, changed: false };
 
         var remote;
-        try { remote = Backup.parse(text); }
-        catch (e) { throw new Error("The file in Dropbox could not be read: " + e.message); }
+        try {
+          remote = Backup.parse(text);
+        } catch (e) {
+          var err = new Error("The file in Dropbox could not be read: " + e.message +
+                              " Nothing was changed. You can overwrite it from the Data tab.");
+          err.unreadable = true;
+          throw err;
+        }
 
         var all = Backup.mergeDeletions(deleted, remote.deleted);
         var merged = Backup.merge(local, remote.sessions, all);

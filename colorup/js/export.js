@@ -159,7 +159,12 @@ var Backup = (function () {
     if (!Array.isArray(rows)) throw new Error("No sessions in that file.");
 
     var kept = rows.filter(function (r) { return r && typeof r === "object" && r.id; });
-    if (!kept.length) throw new Error("That file has no sessions with an id.");
+    // An empty list is a legitimate file, not a broken one: it is exactly what
+    // a new Dropbox account holds after its first sync from a device with
+    // nothing in it yet. Treating it as an error made that first sync poison
+    // every one after it. Rows that are all unusable is a different thing —
+    // that really is the wrong file.
+    if (rows.length && !kept.length) throw new Error("That file has no sessions with an id.");
 
     kept.forEach(function (r) {
       // Anything the exporting version knew and this one does not is left

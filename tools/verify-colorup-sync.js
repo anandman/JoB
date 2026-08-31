@@ -162,9 +162,27 @@ const wipe = () => Store.replaceAll([]).then(() => Store.meta("deleted", {}));
     await Dropbox.cancel();
   }
 
+  console.log("\nA first sync from a device with nothing on it yet");
+  {
+    // This is what happened in the field. Connecting before entering anything
+    // wrote {sessions: []}, and parse treated an empty list as a broken file —
+    // so every sync after it failed on a file the app had written itself.
+    await wipe();
+    delete far.files[Dropbox.RECORD];
+    await Dropbox.sync();
+    is(Backup.parse(far.files[Dropbox.RECORD]).sessions.length, 0,
+       "an empty store writes an empty file, which is a legitimate thing to write");
+
+    await Store.put(mk({ venue: "Eldorado", cashIn: 2000, cashOut: 1500, date: "2026-08-30" }));
+    const r = await Dropbox.sync();
+    is(r.pushed, 1, "and the next sync reads it back without choking on it");
+    is(Backup.parse(far.files[Dropbox.RECORD]).sessions.length, 1, "then pushes the real session");
+  }
+
   console.log("\nThe first sync of an empty account");
   {
     await wipe();
+    delete far.files[Dropbox.RECORD];
     await Store.put(mk({ venue: "Eldorado", cashIn: 2000, cashOut: 2650, date: "2026-08-30" }));
     const r = await Dropbox.sync();
 
@@ -240,6 +258,25 @@ const wipe = () => Store.replaceAll([]).then(() => Store.meta("deleted", {}));
     const spent = far.issued;
     await Dropbox.sync();
     is(far.issued, spent, "a live token is not refreshed for the sake of it");
+  }
+
+  console.log("\nA file that genuinely cannot be read");
+  {
+    // Being permanently unable to back up is worse than overwriting something
+    // Dropbox has kept a version of, so there has to be a way past this.
+    far.files[Dropbox.RECORD] = "this is not JSON at all";
+    let err = null;
+    try { await Dropbox.sync(); } catch (e) { err = e; }
+    yes(err && err.unreadable, "the failure is marked as a read problem, not a network one");
+    yes(err && /overwrite it from the Data tab/.test(err.message),
+        "and says what can be done about it", err && err.message);
+    yes(/not JSON at all/.test(far.files[Dropbox.RECORD]),
+        "nothing was written over it in the meantime");
+
+    const local = (await Store.all()).length;
+    const r = await Dropbox.sync({ force: true });
+    is(r.pushed, local, "forcing skips the read and pushes what is on the device");
+    is(Backup.parse(far.files[Dropbox.RECORD]).sessions.length, local, "leaving a readable file");
   }
 
   console.log("\nWhat a failure says");

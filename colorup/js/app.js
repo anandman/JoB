@@ -21,7 +21,7 @@ var App = (function () {
   "use strict";
 
   var state = { sessions: [], filters: {}, tab: "now", tick: null,
-                dropbox: false, dropboxPending: false };
+                dropbox: false, dropboxPending: false, syncError: null };
 
   /* ===== small helpers ===== */
 
@@ -785,6 +785,14 @@ var App = (function () {
       ]));
     }
 
+    if (state.syncError) {
+      box.appendChild(el("button", { class: "banner loud",
+                                     onclick: function () { show("data"); } }, [
+        el("strong", { text: "Dropbox sync is failing." }),
+        el("span", { text: state.syncError.message })
+      ]));
+    }
+
     var un = state.sessions.filter(function (s) { return !s.synced && !(s.start && !s.end); });
     if (un.length) {
       var oldest = un.reduce(function (a, b) { return (a.updated < b.updated) ? a : b; });
@@ -798,6 +806,8 @@ var App = (function () {
           : un.length + (un.length === 1 ? " session" : " sessions") + " not saved to Dropbox." }),
         el("span", { text: !hasDropbox
           ? "Nothing is connected, so this phone is the only copy. Tap to set that up."
+          : state.syncError
+            ? "The last attempt failed — see above."
           : offline
             ? "No signal. It will go up on its own once there is one — tap to try anyway."
             : days > 1
@@ -1077,7 +1087,7 @@ var App = (function () {
    * fails offline is the expected case, and the banner already says so louder
    * and for longer than a toast could.
    */
-  function maybeSync(loud) {
+  function maybeSync(loud, opts) {
     if (syncing) return Promise.resolve();
     return Dropbox.connected().then(function (ok) {
       if (!ok) { if (loud) toast("Not connected to Dropbox.", true); return; }
@@ -1087,9 +1097,14 @@ var App = (function () {
       }
       syncing = true;
       renderBanners();
-      return Dropbox.sync().then(function (r) {
+      return Dropbox.sync(opts).then(function (r) {
+        state.syncError = null;
         if (loud || r.pulled || r.removed) toast(summarise(r));
       }).catch(function (e) {
+        // Remembered rather than toasted away. A sync that keeps failing is a
+        // record that is not being backed up, which the app has no business
+        // mentioning once and then looking calm about.
+        state.syncError = { message: e.message, unreadable: !!e.unreadable };
         if (loud) toast(e.message, true);
       }).then(function () {
         syncing = false;
@@ -1151,6 +1166,20 @@ var App = (function () {
           box.appendChild(el("p", { class: "note",
             text: "Connected. The record is written to Apps/Color Up/ColorUp.json every " +
                   "time you save, with ColorUp.xlsx beside it. Last synced " + ago(last) + "." }));
+          if (state.syncError) {
+            box.appendChild(el("p", { class: "note warn", text: state.syncError.message }));
+          }
+          if (state.syncError && state.syncError.unreadable) {
+            box.appendChild(el("div", { class: "row-actions" }, [
+              el("button", { class: "btn danger wide", text: "Overwrite the file in Dropbox",
+                             onclick: function () {
+                if (!confirm("Replace the file in Dropbox with what is on this phone?\n\n" +
+                             "Anything in it that is not here would be lost — though Dropbox " +
+                             "keeps earlier versions for 30 days.")) return;
+                maybeSync(true, { force: true });
+              } })
+            ]));
+          }
           box.appendChild(el("div", { class: "row-actions" }, [
             el("button", { class: "btn primary wide", text: syncing ? "Syncing…" : "Sync now",
                            onclick: function () { maybeSync(true); } }),
