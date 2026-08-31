@@ -113,6 +113,20 @@ function localStamp(y, mo, d, h, mi) {
   w.App.init();
   await settle();
 
+  console.log("\nThe page can say which build it is");
+  {
+    // "Did it deploy?" should be answerable from the phone rather than from a
+    // shell with curl, so the stamper writes the build into the page.
+    const meta = /<meta name="build" content="([^"]*)">/.exec(html);
+    yes(meta, "index.html carries a build stamp");
+    yes(meta && /^[a-f0-9]{8}$|^dev$/.test(meta[1]),
+        "which is either a content hash or the unstamped source", meta && meta[1]);
+    yes(/controllerchange/.test(html) && /reg\.update\(\)/.test(html),
+        "and asks for a new worker on every return to the foreground");
+    yes(/sheet-backdrop/.test(html.split("controllerchange")[1] || ""),
+        "but never reloads over an open form");
+  }
+
   console.log("\nEvery script the page loads is exercised");
   yes(SCRIPTS.length >= 6, "the list comes from index.html, so it cannot fall behind",
       SCRIPTS.join(" "));

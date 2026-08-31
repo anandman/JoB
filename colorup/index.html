@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Color Up — Session Ledger</title>
   <meta name="description" content="A gambling session ledger: what you put in, what you walked out with, and how long it took.">
-  <link rel="stylesheet" href="css/style.css?v=357ad9b6">
+  <meta name="build" content="a46ddd8e">
+  <link rel="stylesheet" href="css/style.css?v=a46ddd8e">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -79,16 +80,39 @@
     <p class="disclaimer">Nothing here leaves this phone until you export it.</p>
   </footer>
 
-  <script src="js/xlsx.js?v=357ad9b6"></script>
-  <script src="js/store.js?v=357ad9b6"></script>
-  <script src="js/export.js?v=357ad9b6"></script>
-  <script src="js/analysis.js?v=357ad9b6"></script>
-  <script src="js/dropbox.js?v=357ad9b6"></script>
-  <script src="js/app.js?v=357ad9b6"></script>
+  <script src="js/xlsx.js?v=a46ddd8e"></script>
+  <script src="js/store.js?v=a46ddd8e"></script>
+  <script src="js/export.js?v=a46ddd8e"></script>
+  <script src="js/analysis.js?v=a46ddd8e"></script>
+  <script src="js/dropbox.js?v=a46ddd8e"></script>
+  <script src="js/app.js?v=a46ddd8e"></script>
   <script>
     if ("serviceWorker" in navigator) {
+      // iOS resumes a home screen app from a snapshot rather than navigating
+      // to it, so a deployed fix can sit unnoticed for as long as the app is
+      // never cold started — which is to say, indefinitely. Two halves: ask
+      // for a new worker every time the app comes to the foreground, and
+      // reload once when one takes over, since the page is by then running
+      // scripts the new worker has already replaced.
+      var hadController = !!navigator.serviceWorker.controller;
+      var reloading = false;
+
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (!hadController || reloading) return;   // first install: nothing stale
+        // Never over a form. Losing a half-typed session to a background
+        // update would be a far worse bug than the one being shipped.
+        var sheet = document.getElementById("sheet-backdrop");
+        if (sheet && !sheet.hidden) return;
+        reloading = true;
+        location.reload();
+      });
+
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("sw.js").catch(function () {
+        navigator.serviceWorker.register("sw.js").then(function (reg) {
+          document.addEventListener("visibilitychange", function () {
+            if (!document.hidden) reg.update();
+          });
+        }).catch(function () {
           // Offline support is the point, but the app still runs without it.
         });
       });

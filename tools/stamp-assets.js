@@ -88,6 +88,10 @@ function stamp(app) {
     doc = doc.replace(new RegExp('(src|href)="' + escape(a) + '(\\?v=[a-f0-9]+)?"', "g"),
                       '$1="' + a + "?v=" + version + '"');
   }
+  // A build stamp the app can show. "Is the fix on my phone?" should be
+  // answerable from the phone, not from a shell with curl.
+  doc = doc.replace(/<meta name="build" content="[^"]*">/,
+                    '<meta name="build" content="' + version + '">');
   write(html, doc);
 
   // sw.js: same version for the cache name, and stamp the precache list so it

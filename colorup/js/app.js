@@ -1065,6 +1065,13 @@ var App = (function () {
       ]));
     }
 
+    var build = document.querySelector('meta[name="build"]');
+    box.appendChild(el("h3", { text: "This app" }));
+    box.appendChild(el("p", { class: "note",
+      text: "Build " + ((build && build.content) || "unknown") +
+            ". It updates itself when you come back to it with a signal; if you " +
+            "are ever unsure, close it from the app switcher and open it again." }));
+
     box.appendChild(el("h3", { text: "Where this lives" }));
     box.appendChild(el("p", { class: "note",
       text: "Everything is stored in this browser, on this device, and is never sent anywhere. Adding the app to your home screen is what keeps the data from being cleared out after a week of not opening it." }));
