@@ -986,26 +986,32 @@ var App = (function () {
       body.appendChild(breakdown(months.slice().reverse(), true));
     }
 
-    // One session is its own best, worst and longest, so the rows are
-    // deduplicated and each says which extreme it is. The section itself is
-    // never hidden: one that comes and goes with a count you cannot see reads
-    // as a bug, and filtering to a single session is an ordinary thing to do.
-    // It just stops claiming to have selected anything when it has not.
-    var extremes = rows.length === 1
-      ? [["Only one", t.best]]
-      : [["Best", t.best], ["Worst", t.worst], ["Longest", t.longest]];
-    var already = {};
-    var shown = extremes.filter(function (e) {
-      if (!e[1] || already[e[1].id]) return false;
-      already[e[1].id] = 1;
-      return true;
+    // One session is its own best and its own worst, and so is a set that
+    // ties. Rather than printing the row twice or hiding the section — the
+    // first says nothing twice, the second makes a section vanish on a count
+    // you cannot see — the labels that land on the same session are merged
+    // onto one row. Longest is dropped from a merge rather than lengthening
+    // it, since it is the least interesting of the three and usually implied.
+    var order = [];
+    var byId = {};
+    [["Best", t.best], ["Worst", t.worst], ["Longest", t.longest]].forEach(function (e) {
+      if (!e[1]) return;
+      if (!byId[e[1].id]) { byId[e[1].id] = { session: e[1], labels: [] }; order.push(e[1].id); }
+      byId[e[1].id].labels.push(e[0]);
     });
-    if (shown.length) {
-      body.appendChild(el("h3", { text: rows.length <= 2 ? "Sessions" : "Extremes" }));
-      shown.forEach(function (e) {
+    if (order.length) {
+      body.appendChild(el("h3", { text: "Extremes" }));
+      order.forEach(function (id) {
+        var g = byId[id];
+        var labels = g.labels.length > 1
+          ? g.labels.filter(function (l) { return l !== "Longest"; })
+          : g.labels;
         body.appendChild(el("div", { class: "extreme" }, [
-          el("span", { class: "extreme-label", text: e[0] }),
-          sessionRow(e[1])
+          el("span", { class: "extreme-label",
+                       text: labels.join(" & ").replace(/ & (\w)/g, function (m, c) {
+                         return " & " + c.toLowerCase();
+                       }) }),
+          sessionRow(g.session)
         ]));
       });
     }

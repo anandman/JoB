@@ -565,9 +565,9 @@ function localStamp(y, mo, d, h, mi) {
     const only = await w.Store.all();
     if (only.length === 1) {
       is($$("#stats-body .extreme .session").length, 1,
-         "a single session still gets a row rather than the section disappearing");
-      is($$("#stats-body .extreme-label")[0].textContent, "Only one",
-         "and is not called the best of itself");
+         "a single session gets one row, not the same row twice");
+      is($$("#stats-body .extreme-label")[0].textContent, "Best & worst",
+         "labelled as both, because that is what it is");
     }
     const sel = $$("#stats-filters select")[0];
     sel.value = "2026";
@@ -601,6 +601,8 @@ function localStamp(y, mo, d, h, mi) {
     await settle();
     is($$("#stats-body .extreme .session").length, 1,
        "and filtering down to one keeps it, rather than dropping the section");
+    is($$("#stats-body .extreme-label")[0].textContent, "Best & worst",
+       "still labelled as both ends of a range of one");
     gamePicker.value = "";
     fire(gamePicker, "change");
     await settle();
