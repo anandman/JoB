@@ -116,7 +116,9 @@ var App = (function () {
   // keys, which is what makes "editable everywhere" structural rather than
   // something to remember.
   var FIELDS = {
-    date:     { label: "Date", kind: "date" },
+    date:     { label: "Date", kind: "date",
+                hint: "Only needed when you have not given a start time. A session that " +
+                      "runs past midnight is filed under the day it started." },
     venue:    { label: "Venue", kind: "text", list: "venues", placeholder: "Eldorado" },
     location: { label: "City", kind: "text", list: "locations", placeholder: "Reno, NV" },
     game:     { label: "Game", kind: "select", options: function () {
@@ -165,8 +167,8 @@ var App = (function () {
                     ["cashIn", "bonus"], ["startTC", "tcRate"],
                     ["perHand", "system"], "start"];
   var FORM_COLOR = ["cashOut", "end", "endTC", "handsOverride", "handpays", "comment"];
-  var FORM_FULL  = ["date", "venue", "location", "game", "detail",
-                    ["start", "end"], ["cashIn", "bonus"], "buyIns", "cashOut",
+  var FORM_FULL  = ["venue", "location", "game", "detail",
+                    "date", ["start", "end"], ["cashIn", "bonus"], "buyIns", "cashOut",
                     ["startTC", "endTC"], "tcRate",
                     ["perHand", "handsOverride"], "system", "handpays", "comment"];
   var FORM_OVERRIDES = ["winLossOverride", "sessionTCOverride"];
@@ -420,6 +422,28 @@ var App = (function () {
           rateNode.value = String(Store.gameInfo(s.game).tcRate);
           s = readForm(sheet.base);
         }
+      }
+
+      // A start time already says which day it was, so the date field is only
+      // asked for when there is no start time to say it. It is kept in step
+      // rather than cleared, so clearing a time leaves the day behind.
+      var dateField = body.querySelector('[data-key="date"]');
+      if (dateField) {
+        var wrap = dateField.parentNode;
+        if (s.start) {
+          dateField.value = localDate(s.start);
+          wrap.hidden = true;
+        } else {
+          wrap.hidden = false;
+        }
+      }
+
+      // An end time on the same day as the start is the overwhelmingly common
+      // case, so setting a start fills the day in and leaves only the clock.
+      var endField = body.querySelector('[data-key="end"]');
+      if (endField && s.start && !endField.value) {
+        endField.value = toLocalInput(s.start);
+        s = readForm(sheet.base);
       }
 
       // A venue you have been to before knows what city it is in.

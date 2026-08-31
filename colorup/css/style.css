@@ -314,3 +314,8 @@ details summary { font-size: 0.8rem; cursor: pointer; padding: 0.3rem 0; }
   text-transform: uppercase; letter-spacing: 0.06em;
   width: 3.2rem; text-align: right; flex: none;
 }
+
+/* The date field is hidden whenever a start time already says which day it
+   was. Spelled out because .field sets margins the attribute alone would
+   leave behind as a gap. */
+.field[hidden] { display: none; }

@@ -167,12 +167,21 @@ function localStamp(y, mo, d, h, mi) {
     is(sheetOpen(), true, "the full form opens");
     is($("#sheet-title").textContent, "Add a past session", "titled as what it is");
 
+    // Asked for, because there is no start time yet.
+    yes(!$('#sheet-body [data-key="date"]').parentNode.hidden,
+        "the date is asked for while there is no start time to say it");
     type("date", "2026-08-29");
+
     type("venue", "Silver Legacy");
     type("location", "Reno, NV");
     type("game", "Blackjack");
     type("detail", "$25 table, 6 deck S17");
     type("start", localStamp(2026, 8, 29, 21, 30));
+    yes($('#sheet-body [data-key="date"]').parentNode.hidden,
+        "and put away once a start time does, rather than asked for twice");
+    is($('#sheet-body [data-key="end"]').value, localStamp(2026, 8, 29, 21, 30),
+       "the end fills in the same day, leaving only the clock to set");
+
     type("end", localStamp(2026, 8, 30, 0, 15));
     type("cashIn", "1000");
     type("cashOut", "1425");
@@ -197,7 +206,8 @@ function localStamp(y, mo, d, h, mi) {
     const s = afterOne[0], d = w.Store.derive(s);
     near(d.winLoss, 425, "win/(loss) is cash out less cash in");
     near(d.hours, 2.75, "the clock crossed midnight without losing a day");
-    is(s.date, "2026-08-29", "and the date follows the start, not the end");
+    is(s.date, "2026-08-29",
+       "and a session running past midnight is filed under the day it started");
     near(d.sessionTC, 60, "60 tier credits");
     near(d.coinIn, 1500, "$1,500 of coin-in at the $25 table rate");
     is(d.coinInIsEstimate, true, "flagged as the pit's estimate, because a table is rated by eye");
@@ -421,6 +431,15 @@ function localStamp(y, mo, d, h, mi) {
     yes($('#sheet-body [data-key="date"]') && $('#sheet-body [data-key="cashIn"]') &&
         $('#sheet-body [data-key="handpays"]'),
         "with every field present, including the ones the short forms hide");
+
+    // 95 imported sessions have a date and no times, which is the shape that
+    // has to keep its date field.
+    type("start", "");
+    yes(!$('#sheet-body [data-key="date"]').parentNode.hidden,
+        "clearing the start time brings the date back rather than losing the day");
+    is($('#sheet-body [data-key="date"]').value, "2026-08-30",
+       "still holding the day the times had said");
+    type("start", localStamp(2026, 8, 30, 9, 0));
 
     yes($('#sheet-body [data-key="buyIns"]'),
         "with the top-ups listed for editing, not just for reading");
