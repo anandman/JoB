@@ -52,17 +52,27 @@ colorup/            # Color Up — session ledger
 tools/              # Shared tooling (scrapers, checks, icon and cache-stamp scripts)
 ```
 
-## Running locally
+## Running it
 
-```sh
-python3 -m http.server 8000
-# http://localhost:8000/          landing
-# http://localhost:8000/job/      video poker
-# http://localhost:8000/bob/      blackjack
-# http://localhost:8000/colorup/  session ledger
+Clone the repo and open `index.html` in a browser. That is the whole
+procedure — these are static pages with no build step, no dependencies and
+nothing to install. Every app works the same way:
+
+```
+index.html          the landing page
+job/index.html      video poker
+bob/index.html      blackjack
 ```
 
-Opening an app's `index.html` directly from the filesystem also works.
+**Color Up is the exception**, and only because it stores your sessions:
+browsers restrict local databases for pages opened straight off the
+filesystem, so use the hosted copy at
+https://anandman.github.io/bettor/colorup/ — or, if you want to run your own,
+serve the folder over HTTP:
+
+```sh
+python3 -m http.server 8000     # then http://localhost:8000/colorup/
+```
 
 ## Deploying
 

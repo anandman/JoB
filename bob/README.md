@@ -10,6 +10,12 @@ is the same numbers unsummarised; play mode scores a decision by the gap
 between what you did and what was best. Nothing is looked up, so changing the
 rules changes the answers rather than the disclaimer.
 
+## Running it
+
+Open `index.html` in a browser. That is it — no build step, no dependencies,
+no server. Nothing is fetched at runtime, so the filesystem works as well as
+anything else.
+
 ## What it does
 
 Five tabs.

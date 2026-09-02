@@ -22,16 +22,11 @@ indicator, and works fully offline — useful on a casino floor with no signal.
 
 Live at **https://anandman.github.io/bettor/job/**
 
-## Running locally
+## Running it
 
-Open `index.html` in a browser. That's it.
-
-Or serve it:
-
-```sh
-python3 -m http.server 8000
-# then open http://localhost:8000
-```
+Open `index.html` in a browser. That is it — no build step, no dependencies,
+no server. The scripts are plain `<script>` tags and nothing is fetched at
+runtime, so the filesystem is a perfectly good place to run it from.
 
 ## Deploying
 
@@ -424,11 +419,7 @@ Pay table payouts and expected return percentages are standard values from video
 
 ## Development
 
-No build step, no dependencies. Edit the files and reload.
-
-```sh
-python3 -m http.server 8000   # or just open index.html
-```
+No build step, no dependencies. Edit the files and reload the page.
 
 Scripts load in order: `data.js` → `poker.js` → `strategy-engine.js` →
 `casinos.js` → `promo.js` → `analyzer.js` → `app.js`. Each exposes one global; load order matters.

@@ -13,6 +13,16 @@ There is no server, no account and no analytics. Sessions live in your
 browser's own storage, on your phone. They leave only if you connect your own
 Dropbox or export a file by hand.
 
+**Which is why this one needs an address rather than a file.** The other two
+apps in this repo run happily from `file://` — open the HTML and go. Color Up
+keeps a database, and browsers will not give one to a page opened straight off
+the filesystem, nor register the service worker that makes it work offline. So
+use the hosted copy above, or serve the folder yourself:
+
+```sh
+python3 -m http.server 8000     # then http://localhost:8000/colorup/
+```
+
 Add it to your home screen. That is not cosmetic: an installed web app is
 exempt from Safari's practice of clearing storage for sites you have not
 opened in a week, and it is what lets the icon show a count of sessions you
