@@ -29,6 +29,12 @@ APPS = {
     "job": {"mark": "card", "rank": "J", "pip": "\u2665", "pip_fill": RED},  # heart
     "bob": {"mark": "card", "rank": "A", "pip": "\u2660", "pip_fill": BG},   # spade
     "colorup": {"mark": "chip", "spots": 6},
+    # The landing page is not installable, so it needs a favicon and an Apple
+    # touch icon and nothing else. Its mark is the spade the hand-written SVG
+    # always drew — the umbrella over three apps rather than one of them.
+    "": {"mark": "card", "rank": "B", "pip": "\u2660", "pip_fill": BG,
+         "targets": ["apple-touch-icon.png", "favicon-32.png",
+                     "icon-192.png", "icon-512.png"]},
 }
 
 
@@ -89,7 +95,7 @@ def draw_chip(d, S, scale, spots, bg):
 
 def main():
     import sys
-    wanted = sys.argv[1:] or sorted(APPS)
+    wanted = sys.argv[1:] or sorted(APPS, key=lambda k: k or "")
     targets = [
         ("icon-192.png", 192, 1.0, BG),
         ("icon-512.png", 512, 1.0, BG),
@@ -102,12 +108,19 @@ def main():
     ]
     for key in wanted:
         if key not in APPS:
-            raise SystemExit("unknown app %r; known: %s" % (key, ", ".join(sorted(APPS))))
+            raise SystemExit("unknown app %r; known: %s"
+                             % (key, ", ".join(sorted(k or "(landing)" for k in APPS))))
+        app = APPS[key]
         out = os.path.join(ROOT, key, "icons")
         os.makedirs(out, exist_ok=True)
+        want = app.get("targets")
+        wrote = 0
         for name, size, scale, bg in targets:
-            draw_icon(APPS[key], size, scale, bg).save(os.path.join(out, name), optimize=True)
-        print("wrote %d icons into %s/icons/" % (len(targets), key))
+            if want and name not in want:
+                continue
+            draw_icon(app, size, scale, bg).save(os.path.join(out, name), optimize=True)
+            wrote += 1
+        print("wrote %d icons into %s" % (wrote, os.path.join(key or ".", "icons") + "/"))
 
 
 if __name__ == "__main__":

@@ -1149,6 +1149,66 @@ var App = (function () {
     var note = footnote(t);
     if (note) body.appendChild(note);
 
+    // How far a result of this size could have drifted by chance. Shown
+    // against the result of the same sessions it is built from, never against
+    // the whole record.
+    var sw = Analysis.swing(rows);
+    if (sw) {
+      body.appendChild(el("h3", { text: "How much of this is luck" }));
+      body.appendChild(el("div", { class: "stat-grid" }, [
+        stat("Result", money(sw.winLoss, { sign: true }),
+             "over the " + sw.sessions + " session" + (sw.sessions === 1 ? "" : "s") +
+             " that can be measured", netClass(sw.winLoss)),
+        stat("Expected swing", "±" + money(sw.band),
+             "19 times in 20, on " + money(sw.coinIn) + " of coin in")
+      ]));
+      body.appendChild(el("p", { class: "note",
+        text: Math.abs(sw.winLoss) <= sw.band
+          ? "That result sits inside the ordinary range of luck for this much action, " +
+            "so it says almost nothing about how you played. Nearly everything at " +
+            "this sample size is noise."
+          : "That result is outside the ordinary range of luck for this much action. " +
+            "Worth a look, though a run of unusually good or bad cards is still by " +
+            "far the likeliest explanation." }));
+      body.appendChild(el("p", { class: "note",
+        text: "From a rough variance per game — about 19.5 a hand for max bet video " +
+              "poker, about 1.3 for blackjack — times the money through and the bet " +
+              "size. No pay table and no assumption about how you played. Multi-line " +
+              "play swings far less per dollar than a single line, so this band is " +
+              "wider than the truth rather than narrower." }));
+    }
+
+    // Trips, which are the unit you actually went and did.
+    var byTrip = Analysis.trips(rows);
+    if (byTrip.length > 1) {
+      body.appendChild(el("h3", { text: "By trip" }));
+      var table = el("table");
+      table.appendChild(el("thead", {}, [el("tr", {}, [
+        el("th", { text: "When" }), el("th", { text: "Days" }), el("th", { text: "N" }),
+        el("th", { text: "Where" }), el("th", { text: "Win/(loss)" })
+      ])]));
+      var tb = el("tbody");
+      byTrip.forEach(function (trip) {
+        var when = dayText(trip.start) +
+          (trip.end !== trip.start ? "–" + dayText(trip.end) : "") +
+          " " + trip.start.slice(0, 4);
+        tb.appendChild(el("tr", {}, [
+          el("td", { text: when }),
+          el("td", { class: "num", text: String(trip.days) }),
+          el("td", { class: "num", text: String(trip.sessions.length) }),
+          el("td", { text: trip.venues.length > 2
+            ? trip.venues.length + " venues" : trip.venues.join(", ") || "—" }),
+          el("td", { class: "num " + netClass(trip.totals.winLoss),
+                     text: money(trip.totals.winLoss, { sign: true }) })
+        ]));
+      });
+      table.appendChild(tb);
+      body.appendChild(el("div", { class: "table-scroll" }, [table]));
+      body.appendChild(el("p", { class: "note",
+        text: "A new trip starts after a gap of more than a day, so an overnight " +
+              "counts as carrying on. " + byTrip.length + " trips here." }));
+    }
+
     // Not netted, because winnings and losses are not netted on a return.
     var year = state.filters.year;
     if (year) {

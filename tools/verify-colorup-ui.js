@@ -733,6 +733,14 @@ function localStamp(y, mo, d, h, mi) {
     yes(/do not net/.test($("#stats-body").textContent),
         "with the warning that they do not net");
 
+    const stats = $("#stats-body").textContent;
+    yes(/How much of this is luck/.test(stats),
+        "the swing band appears once there is something to measure");
+    yes(/that can be measured/.test(stats),
+        "held against the result of the same sessions, not the whole record");
+    yes(/wider than the truth rather than narrower/.test(stats),
+        "and says which way it errs");
+
     // Two sessions with the same result would still repeat a row without the
     // deduplication, so check the rows are distinct rather than just counted.
     await w.Store.put(Object.assign(w.Store.blank(), {
@@ -742,6 +750,11 @@ function localStamp(y, mo, d, h, mi) {
     await w.App.refresh();
     w.App.show("stats");
     await settle();
+    yes(/By trip/.test($("#stats-body").textContent),
+        "trips appear once there is more than one");
+    yes(/gap of more than a day/.test($("#stats-body").textContent),
+        "saying what separates one from the next");
+
     const labels = $$("#stats-body .extreme-label").map((n) => n.textContent);
     yes(labels.length >= 2, "with more than one session the extremes appear", labels.join(","));
     yes(labels.indexOf("Best") >= 0 && labels.indexOf("Worst") >= 0,

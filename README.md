@@ -19,13 +19,15 @@ from the pay table itself, a hand analyzer that prices all 32 holds, a play
 mode scored against perfect play, bankroll and risk-of-ruin math, W-2G handpay
 exposure, and scraped Reno floor data. See [job/README.md](job/README.md).
 
-**Bettor or Bust** does the same for blackjack. A dealer probability engine
+**Bettor or Bust** does the same for blackjack. See [bob/README.md](bob/README.md). A dealer probability engine
 feeds everything else: the basic strategy chart is that grid collapsed to its
 best action, the hand analyzer is the same numbers unsummarised, and play mode
 scores each decision by the gap between what you did and the best action. Dial
 in decks, S17/H17, DAS, doubling and splitting limits, surrender and the
 blackjack payout, and the chart and house edge both move. Verified against the
-published 6-deck S17 DAS chart on all 340 cells.
+published 6-deck S17 DAS chart on all 340 cells. Index plays — the counts at
+which the second-best action becomes the best one — are derived the same way,
+for your table's rules rather than looked up from a published set.
 
 **Color Up** is the other half of the same question: not what the math says a
 session should cost, but what it did. One row per session — what went in, what

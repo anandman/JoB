@@ -77,6 +77,58 @@ console.log("\nRates, which are the reason for recording the time");
   near(d.handsPerHour, 80) ? ok("80 hands an hour") : bad("handsPerHour " + d.handsPerHour);
 }
 
+console.log("\nTrips, which are the unit you actually went and did");
+{
+  const Analysis = require(path.join(__dirname, "..", "colorup", "js", "analysis.js"));
+  const on = (d) => session({ date: d, venue: "Eldorado", cashIn: 100, cashOut: 50 });
+  // Two clusters a month apart, one of them spanning an overnight.
+  const rows = ["2026-01-02", "2026-01-03", "2026-01-03", "2026-01-04",
+                "2026-02-07", "2026-02-07"].map(on);
+  const t = Analysis.trips(rows);
+  t.length === 2 ? ok("a month's gap makes two trips, not one") : bad(t.length + " trips");
+  t[1].sessions.length === 4 && t[1].days === 3
+    ? ok("and an overnight carries on rather than starting another")
+    : bad("first trip: " + t[1].sessions.length + " sessions over " + t[1].days + " days");
+  t[0].start === "2026-02-07" ? ok("newest first, which is the end you look at")
+                              : bad("ordered " + t[0].start);
+
+  Analysis.trips(rows, 40).length === 1
+    ? ok("a wider gap folds them into one, so the rule is a setting not a law")
+    : bad("gap setting ignored");
+  Analysis.trips([]).length === 0 ? ok("and nothing makes no trips") : bad("empty made a trip");
+}
+
+console.log("\nHow much of a result is luck");
+{
+  const Analysis = require(path.join(__dirname, "..", "colorup", "js", "analysis.js"));
+  // $50,000 through a max-bet $25 video poker machine.
+  const vp = session({ game: "Video Poker", startTC: 0, endTC: 5000, tcRate: 10,
+                       perHand: 25, cashIn: 2000, cashOut: 1500 });
+  const s = Analysis.swing([vp]);
+  const want = Math.sqrt(50000 * 25 * 19.5);
+  near(s.sd, want, 0.01)
+    ? ok("the standard deviation is sqrt(coin-in x bet x variance): $" + Math.round(s.sd))
+    : bad("sd " + s.sd + ", wanted " + want);
+  near(s.band, 1.96 * want, 0.01)
+    ? ok("and the band is close to two of them either way")
+    : bad("band " + s.band);
+  s.winLoss === -500
+    ? ok("carrying the result of the very sessions it is built from")
+    : bad("winLoss " + s.winLoss);
+
+  // The trap this exists to avoid: a band over one session held up against
+  // fifty sessions of losses, which is the per-hour mistake wearing a hat.
+  const blind = session({ game: "Slots", cashIn: 900, cashOut: 0 });
+  const mixed = Analysis.swing([vp, blind]);
+  mixed.sessions === 1 && mixed.winLoss === -500
+    ? ok("a session with nothing to measure is left out of both halves")
+    : bad("sessions " + mixed.sessions + " winLoss " + mixed.winLoss);
+
+  Analysis.swing([blind]) === null
+    ? ok("and nothing measurable gives no band rather than a meaningless one")
+    : bad("produced a band from nothing");
+}
+
 console.log("\nWarnings — always advisory, never blocking");
 {
   const w = (o) => Store.warnings(session(o));

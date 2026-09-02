@@ -163,6 +163,101 @@ var Analysis = (function () {
   }
 
   /**
+   * Sessions grouped into trips, by the gaps between them.
+   *
+   * A trip is the unit that answers "did this pay for itself". Sessions
+   * cluster — five in a day, six a month later — and neither a single session
+   * nor a whole year is the thing you actually went and did.
+   *
+   * The gap is what separates them: consecutive days are one trip, a week
+   * apart is two. Default of one day means an overnight counts as continuing,
+   * which is what it is.
+   */
+  function trips(sessions, maxGapDays) {
+    var gap = (maxGapDays === undefined ? 1 : maxGapDays);
+    var dated = sessions.filter(function (s) { return s.date; })
+      .slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var out = [], current = null;
+
+    dated.forEach(function (s) {
+      var day = new Date(s.date + "T00:00:00");
+      if (current) {
+        var last = new Date(current.end + "T00:00:00");
+        var days = Math.round((day - last) / 86400000);
+        if (days > gap) current = null;
+      }
+      if (!current) {
+        current = { start: s.date, end: s.date, sessions: [] };
+        out.push(current);
+      }
+      current.sessions.push(s);
+      current.end = s.date;
+    });
+
+    return out.map(function (t) {
+      var venues = {};
+      t.sessions.forEach(function (s) { if (s.venue) venues[s.venue] = 1; });
+      return {
+        start: t.start, end: t.end,
+        days: Math.round((new Date(t.end + "T00:00:00") -
+                          new Date(t.start + "T00:00:00")) / 86400000) + 1,
+        venues: Object.keys(venues).sort(),
+        sessions: t.sessions,
+        totals: totals(t.sessions.filter(function (s) { return !(s.start && !s.end); }))
+      };
+    }).reverse();
+  }
+
+  /**
+   * How far a result of this size could reasonably have drifted from its own
+   * expectation, by chance alone.
+   *
+   * Variance per unit wagered is roughly a property of the game, not of the
+   * pay table: about 19.5 for max-bet video poker, about 1.3 for blackjack.
+   * Over N hands of size b the variance of the total is N·b²·v, and N·b is the
+   * coin-in, so the standard deviation is sqrt(coin-in × average bet × v).
+   * That needs no pay table and no strategy assumption — only how much went
+   * through and how big the bets were.
+   *
+   * It is deliberately conservative. Multi-line video poker has far lower
+   * variance per dollar wagered than a single line, so the interval on a fifty
+   * play session is wider than the truth rather than narrower.
+   */
+  var VARIANCE = { "Video Poker": 19.5, "Video Keno": 25, Slots: 20, Blackjack: 1.3,
+                   Baccarat: 0.95, Craps: 1.2, Roulette: 1.25, "Pai Gow Poker": 0.6,
+                   "Three Card Poker": 3.0, "Let It Ride": 5.0, "Caribbean Stud": 5.5,
+                   "Ultimate Texas Hold'em": 4.5, "Mississippi Stud": 5.0,
+                   "Casino War": 1.0, "Sic Bo": 3.0, "Big Six": 2.5 };
+
+  function swing(sessions) {
+    var variance = 0, priced = 0, coinIn = 0, winLoss = 0;
+    sessions.forEach(function (s) {
+      var d = Store.derive(s);
+      var v = VARIANCE[s.game];
+      if (!v || !d.coinIn || !d.avgBet) return;
+      variance += d.coinIn * d.avgBet * v;
+      coinIn += d.coinIn;
+      // The result of the same sessions the band is built from. A band over
+      // nine sessions held up against fifty sessions' losses would be the
+      // per-hour mistake again: a numerator and a denominator describing
+      // different things.
+      winLoss += d.winLoss;
+      priced++;
+    });
+    if (!priced) return null;
+    var sd = Math.sqrt(variance);
+    return {
+      sessions: priced,
+      coinIn: coinIn,
+      winLoss: winLoss,
+      sd: sd,
+      // Two standard deviations either way: the range a result of this size
+      // sits inside about nineteen times in twenty, before any edge.
+      band: 1.96 * sd
+    };
+  }
+
+  /**
    * The figures a return actually asks for. Deliberately not netted, and
    * deliberately not advice: it is the record, arranged the way the form is.
    */
@@ -183,6 +278,9 @@ var Analysis = (function () {
 
   return {
     years: years,
+    trips: trips,
+    swing: swing,
+    VARIANCE: VARIANCE,
     filter: filter,
     totals: totals,
     by: by,
