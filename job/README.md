@@ -260,6 +260,62 @@ Analysing a hand is ~100 ms in Node and several hundred on a phone, because a
 full five-card draw enumerates 1,533,939 outcomes. The UI paints a working
 state and defers the arithmetic by a tick; do not make it synchronous on input.
 
+## Where the simple card is knowingly wrong
+
+The simple card costs about **0.079% of return** against perfect play at 9/6,
+measured by dealing hands, reading the card, and pricing both holds exactly.
+For scale, the gap between a 9/6 machine and a 9/5 one is 1.09% — choosing the
+right machine is worth roughly fourteen times more than playing the card
+perfectly.
+
+`tools/audit-categories.js` compares the card against exact hold EVs **within
+one hand**, which is the only valid comparison: pricing family members on
+separate hands is misleading, because holding J alone scores higher than
+holding J and A, while in a hand containing both the ace is discarded either
+way and holding both wins. 9/5 and 8/5 come out exactly right, 0 wrong of 35
+comparisons each. Five disagreements remain, across 9/6, 8/6 and Bonus Poker,
+and they are all the same shape: **a suited ten kept where two unsuited high
+cards were the better hold.**
+
+Tested exhaustively rather than through one representative, the two high cards
+win 6 of the 9 possible combinations at 9/6 — 7 of 9 at Bonus Poker — by as
+much as 0.032 of a bet, not the 0.006 the audit's curated cases suggested. The
+ordering is real and it is not a tie.
+
+It survives because **the card's order comes from cross-hand EVs.** Each
+category is priced on its own representative hand, and a suited 10-K is priced
+on a hand where no second high card exists — so the comparison that decides
+the ranking is one the machine never actually poses. Fixing it properly means
+ranking categories by pairwise within-hand comparison instead, which is a
+change to how strategy is derived rather than a tweak, and which can produce
+cycles: if A beats B, B beats C and C beats A in their respective hands, no
+single ordering is right and a fourteen-line card has a real ceiling.
+
+What stops it mattering is that **earlier lines catch most of those hands
+anyway.** A suited 10-K alongside a jack is picked up by the two-unsuited-high
+line before the suited-ten line is ever reached. Attributing the cost hand by
+hand over two thousand sampled deals, the suited-ten decision accounts for
+about **0.002% of return — under 3% of the card's total cost**, on eight hands
+in two thousand. A thin enough attribution that the figure is worth treating
+as an order of magnitude rather than a measurement, which is all the decision
+needs: two thousandths of a percent does not justify rebuilding how the card
+is ordered.
+
+So it stays, quantified rather than hand-waved. Two things to know if you pick
+it up:
+
+- **Optimal mode is unaffected.** The analyzer, play mode and the optimal list
+  price every hold exactly and never consult this ordering. Only the fourteen
+  line simple card is involved.
+- If you do rebuild the ordering, the oracle is `audit-categories.js`, and the
+  acceptance test is the measured cost from `verify-strategy.js` — not
+  agreement with any published card.
+
+Also open, the same shape of defect with no wrong play found yet: the
+three-card straight-flush categories do not line up with published typing, and
+"3 to a Royal Flush" and "4 to a Flush" are still single lines covering wide
+families.
+
 ## Gotchas
 
 - `job/js/data.js` mixes `const` (top-level tables) and `var` (helpers). It is
