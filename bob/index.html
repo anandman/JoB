@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Bettor or Bust — Blackjack Strategy &amp; Odds</title>
   <meta name="description" content="Blackjack basic strategy, hand analyzer and house edge, derived from your table's exact rules rather than looked up.">
-  <link rel="stylesheet" href="css/style.css?v=16493d64">
+  <link rel="stylesheet" href="css/style.css?v=64f10ee4">
 
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d1117">
@@ -153,9 +153,11 @@
 
       <p class="note">Sessions are simulated hand by hand against a real
         depleting shoe with basic strategy, so a counting system's advantage is
-        measured rather than assumed. Play never deviates from basic strategy,
-        which is what a betting-only counter does; index plays would add roughly
-        a fifth again to counting's value and are not modelled.</p>
+        measured rather than assumed. Play never deviates from basic strategy, which
+        is what a betting-only counter does — so the figures here are the value of
+        varying the bet alone. Index plays would add roughly a fifth again on top;
+        they are worked out for this table on the Count tab, but are not folded
+        into these numbers.</p>
     </section>
 
     <section id="count" class="tab-content">
@@ -198,6 +200,16 @@
       <p class="note">The shoe carries between rounds, exactly as it does at a
         table — the count you are asked for is the running total since the last
         shuffle, not since the last round.</p>
+
+      <h3>Index plays</h3>
+      <p class="note">Basic strategy is the best play against an average shoe. A
+        shoe with a count on it is not average, and at some point the second-best
+        action becomes the best one. These are worked out for <strong>your</strong>
+        table's rules from the same engine as the strategy chart — not looked up
+        — so a double deck H17 game gets its own numbers rather than the six-deck
+        ones everybody quotes.</p>
+      <div class="btn-row" id="ix-actions"></div>
+      <div id="ix-body"></div>
     </section>
 
   </main>
@@ -208,13 +220,14 @@
     <p class="disclaimer">For entertainment and educational purposes. Gambling involves risk.</p>
   </footer>
 
-  <script src="js/rules.js?v=16493d64"></script>
-  <script src="js/engine.js?v=16493d64"></script>
-  <script src="js/strategy.js?v=16493d64"></script>
-  <script src="js/analyzer.js?v=16493d64"></script>
-  <script src="js/game.js?v=16493d64"></script>
-  <script src="js/risk.js?v=16493d64"></script>
-  <script src="js/app.js?v=16493d64"></script>
+  <script src="js/rules.js?v=64f10ee4"></script>
+  <script src="js/engine.js?v=64f10ee4"></script>
+  <script src="js/strategy.js?v=64f10ee4"></script>
+  <script src="js/analyzer.js?v=64f10ee4"></script>
+  <script src="js/game.js?v=64f10ee4"></script>
+  <script src="js/risk.js?v=64f10ee4"></script>
+  <script src="js/indices.js?v=64f10ee4"></script>
+  <script src="js/app.js?v=64f10ee4"></script>
   <script>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function () {

@@ -85,7 +85,7 @@
     });
     if (tab === "strategy") renderChart();
     if (tab === "risk") { renderRiskPrimer(); renderRiskControls(); }
-    if (tab === "count") { renderCountPrimer(); renderCountTags(); renderCount(); }
+    if (tab === "count") { renderCountPrimer(); renderCountTags(); renderCount(); renderIndices(); }
     if (tab !== "count") ctStop();
     window.scrollTo(0, 0);
   }
@@ -1089,6 +1089,137 @@
     // wrong answer resyncs rather than compounding into every later round.
     ct.phase = "graded";
     renderCount();
+  }
+
+  /* ===== Index plays ===== */
+
+  // Cached per rule set, because the sweep costs seconds and the answer only
+  // changes when the table does.
+  var ixCache = {};
+  var ixRunning = false;
+
+  function renderIndices() {
+    var actions = document.getElementById("ix-actions");
+    var body = document.getElementById("ix-body");
+    if (!actions || !body) return;
+    actions.innerHTML = "";
+    var key = R.key(rules);
+    var have = ixCache[key];
+
+    if (ixRunning) {
+      actions.appendChild(el("span", "note", "Working it out…"));
+      return;
+    }
+    if (!have) {
+      body.innerHTML = "";
+      var go = el("button", "btn", "Work these out for my table");
+      go.onclick = function () { computeIndices(key); };
+      actions.appendChild(go);
+      actions.appendChild(el("span", "note",
+        "A few seconds — it prices every cell of the chart at every count."));
+      return;
+    }
+
+    var again = el("button", "btn", "Recompute");
+    again.onclick = function () { delete ixCache[key]; renderIndices(); };
+    actions.appendChild(again);
+    drawIndices(body, have);
+  }
+
+  /**
+   * Worked out in slices, yielding between them.
+   *
+   * The whole sweep takes seconds. Doing it in one call would stop the page
+   * answering for that long, which reads as a crash rather than as work.
+   */
+  function computeIndices(key) {
+    var all = BJIndices.cells();
+    var at = 0, plays = [], result = null;
+    ixRunning = true;
+    renderIndices();
+
+    var body = document.getElementById("ix-body");
+    body.innerHTML = "";
+    var bar = el("p", "note", "0%");
+    body.appendChild(bar);
+
+    function slice() {
+      var chunk = BJIndices.generate(rules, { cells: all.slice(at, at + 25) });
+      plays = plays.concat(chunk.plays);
+      result = chunk;
+      at += 25;
+      if (at < all.length) {
+        bar.textContent = Math.round(at / all.length * 100) + "%";
+        setTimeout(slice, 0);
+        return;
+      }
+      result.plays = plays.sort(function (a, b) { return (b.gain || 0) - (a.gain || 0); });
+      ixCache[key] = result;
+      ixRunning = false;
+      renderIndices();
+    }
+    setTimeout(slice, 20);
+  }
+
+  var ACTION_WORD = { stand: "stand", hit: "hit", "double": "double",
+                      split: "split", surrender: "surrender" };
+
+  function drawIndices(box, res) {
+    box.innerHTML = "";
+
+    if (res.insurance !== null && res.insurance !== undefined) {
+      var ins = el("div", "banner");
+      ins.appendChild(el("strong", null, "Insurance at " + signed(res.insurance, 1)));
+      ins.appendChild(el("p", "note",
+        "The one that pays for itself. Insurance wins when more than a third of " +
+        "what is left is ten-valued, which has nothing to do with your hand — " +
+        "which is why never taking it is right until suddenly it is not."));
+      box.appendChild(ins);
+    }
+
+    var top = res.plays.slice(0, 20);
+    var table = el("table", "ladder-table");
+    var thead = el("thead"), hr = el("tr");
+    ["Hand", "vs", "Basic", "At count", "Instead", "Worth"].forEach(function (h) {
+      hr.appendChild(el("th", null, h));
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    var tb = el("tbody");
+    top.forEach(function (p) {
+      var tr = el("tr");
+      tr.appendChild(el("td", null, p.label));
+      tr.appendChild(el("td", null, p.upLabel));
+      tr.appendChild(el("td", null, ACTION_WORD[p.basic] || p.basic));
+      tr.appendChild(el("td", "num", signed(p.index, 1)));
+      tr.appendChild(el("td", null, ACTION_WORD[p.deviation] || p.deviation));
+      tr.appendChild(el("td", "num", p.gain === null ? "—" : "+" + p.gain.toFixed(3)));
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    var scroll = el("div", "table-scroll");
+    scroll.appendChild(table);
+    box.appendChild(scroll);
+
+    box.appendChild(el("p", "note",
+      "Counts are Hi-Lo true counts. \"At count\" is the first true count at which " +
+      "the second column stops being the better play; \"worth\" is what the change " +
+      "gains per unit bet at that point, which is what the list is ordered by. " +
+      res.plays.length + " cells change their mind somewhere between " +
+      signed(res.range[0], 0) + " and " + signed(res.range[1], 0) + "; the twenty " +
+      "worth most are shown."));
+
+    box.appendChild(el("p", "note",
+      "Derived at " + res.penetration + " decks remaining, for the rules set on the " +
+      "Rules tab. Published index sets differ from one another by a point or so " +
+      "because they assume different penetration and different rules — expect these " +
+      "to differ from any you have memorised, and trust these for this table."));
+
+    box.appendChild(el("p", "note warn",
+      "KO and Red 7 are unbalanced and have no true count. If you play one of " +
+      "those, deviate off the running count at its pivot instead — these numbers " +
+      "are for Hi-Lo."));
   }
 
   function renderCountPrimer() {

@@ -241,8 +241,11 @@ var BJRisk = (function () {
    * effect. Nothing here estimates an edge from the composition; it is measured.
    *
    * Play is fixed basic strategy at every count, which is what a betting-only
-   * counter actually does. Index deviations would add roughly a fifth again to
-   * counting's value and are not modelled.
+   * counter actually does, so what comes out is the value of varying the bet
+   * alone. Index deviations would add roughly a fifth again on top; they are
+   * derived for the table's own rules in indices.js, but are deliberately not
+   * folded in here — mixing them would make this answer two questions at once
+   * and neither of them clearly.
    */
   function outcomeStream(rules, n, seed, onProgress) {
     var G = BJGame, S = BJStrategy;

@@ -10,20 +10,20 @@
  * itself in the background. Bumping VERSION purges everything.
  */
 
-const VERSION = "16493d64";
+const VERSION = "64f10ee4";
 const CACHE = "bob-" + VERSION;
 
 const SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=16493d64",
-  "./js/rules.js?v=16493d64",
-  "./js/engine.js?v=16493d64",
-  "./js/strategy.js?v=16493d64",
-  "./js/analyzer.js?v=16493d64",
-  "./js/game.js?v=16493d64",
-  "./js/risk.js?v=16493d64",
-  "./js/app.js?v=16493d64",
+  "./css/style.css?v=64f10ee4",
+  "./js/rules.js?v=64f10ee4",
+  "./js/engine.js?v=64f10ee4",
+  "./js/strategy.js?v=64f10ee4",
+  "./js/analyzer.js?v=64f10ee4",
+  "./js/game.js?v=64f10ee4",
+  "./js/risk.js?v=64f10ee4",
+  "./js/app.js?v=64f10ee4",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
